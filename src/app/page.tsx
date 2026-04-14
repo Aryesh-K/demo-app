@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GridReveal } from "~/components/grid-reveal";
 import { HeroCanvas } from "~/components/hero-canvas";
 import { Button } from "~/components/ui/button";
 
@@ -52,7 +53,7 @@ export default function Home() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-10 flex flex-col gap-12">
       {/* ── Hero ── */}
-      <section className="relative flex flex-col items-center gap-6 overflow-hidden rounded-2xl bg-gradient-to-b from-sky-50 via-blue-50/40 to-transparent px-8 py-[120px] text-center">
+      <section className="relative flex min-h-[90vh] flex-col items-center justify-center gap-6 overflow-hidden rounded-2xl bg-gradient-to-b from-sky-50 via-blue-50/40 to-transparent px-8 py-[120px] text-center dark:from-blue-950/60 dark:via-blue-900/20">
         <HeroCanvas />
 
         {/* content sits above canvas */}
@@ -104,44 +105,46 @@ export default function Home() {
       </section>
 
       {/* ── Feature comparison grid ── */}
-      <section>
-        <div className="overflow-x-auto">
-          <div className="min-w-[640px] overflow-hidden rounded-xl border shadow-sm">
-            <div className="grid grid-cols-[160px_1fr_1fr]">
-              {/* ── Header row ── */}
-              <div className="border-b border-r bg-muted" />
-              <div className="border-b border-r border-blue-800 bg-blue-900 px-6 py-5 text-white">
-                <p className="font-semibold">For the General Public</p>
-              </div>
-              <div className="border-b border-green-700 bg-green-800 px-6 py-5 text-white">
-                <p className="font-semibold">For Students &amp; Educators</p>
-              </div>
+      <GridReveal>
+        <section>
+          <div className="overflow-x-auto">
+            <div className="min-w-[640px] overflow-hidden rounded-xl border shadow-sm">
+              <div className="grid grid-cols-[160px_1fr_1fr]">
+                {/* ── Header row ── */}
+                <div className="border-b border-r bg-muted" />
+                <div className="border-b border-r border-blue-800 bg-blue-900 px-6 py-5 text-white">
+                  <p className="font-semibold">For the General Public</p>
+                </div>
+                <div className="border-b border-green-700 bg-green-800 px-6 py-5 text-white">
+                  <p className="font-semibold">For Students &amp; Educators</p>
+                </div>
 
-              {/* ── Free row ── */}
-              <div className="border-b border-r bg-muted px-6 py-8">
-                <span className="font-semibold">Free</span>
-              </div>
-              <div className="border-b border-r px-6 py-8">
-                <FeatureList items={freePublicFeatures} />
-              </div>
-              <div className="border-b px-6 py-8">
-                <FeatureList items={freeStudentsFeatures} />
-              </div>
+                {/* ── Free row ── */}
+                <div className="border-b border-r bg-muted px-6 py-8">
+                  <span className="font-semibold">Free</span>
+                </div>
+                <div className="border-b border-r px-6 py-8">
+                  <FeatureList items={freePublicFeatures} />
+                </div>
+                <div className="border-b px-6 py-8">
+                  <FeatureList items={freeStudentsFeatures} />
+                </div>
 
-              {/* ── Premium row ── */}
-              <div className="border-r bg-muted px-6 pb-12 pt-8">
-                <span className="font-semibold">Premium 👑</span>
-              </div>
-              <div className="border-r bg-muted px-6 pb-12 pt-8">
-                <FeatureList items={premiumPublicFeatures} />
-              </div>
-              <div className="bg-muted px-6 pb-12 pt-8">
-                <FeatureList items={premiumStudentsFeatures} />
+                {/* ── Premium row ── */}
+                <div className="border-r bg-muted px-6 pb-12 pt-8">
+                  <span className="font-semibold">Premium 👑</span>
+                </div>
+                <div className="border-r bg-muted px-6 pb-12 pt-8">
+                  <FeatureList items={premiumPublicFeatures} />
+                </div>
+                <div className="bg-muted px-6 pb-12 pt-8">
+                  <FeatureList items={premiumStudentsFeatures} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </GridReveal>
     </main>
   );
 }
