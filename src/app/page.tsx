@@ -1,3 +1,7 @@
+import Link from "next/link";
+import { HeroCanvas } from "~/components/hero-canvas";
+import { Button } from "~/components/ui/button";
+
 const freePublicFeatures = [
   "Check interactions between 2 drugs or substances",
   "Risk level indicator (Low / Moderate / High)",
@@ -46,19 +50,59 @@ function FeatureList({ items }: { items: string[] }) {
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-5xl px-6 py-16 flex flex-col gap-12">
-      {/* Hero */}
-      <section className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-4xl font-bold tracking-tight">
-          Welcome to Lumos App
-        </h1>
-        <p className="max-w-md text-lg text-muted-foreground">
-          A production-ready Next.js starter with Supabase, shadcn/ui, and
-          Tailwind CSS v4.
-        </p>
+    <main className="mx-auto max-w-5xl px-6 py-10 flex flex-col gap-12">
+      {/* ── Hero ── */}
+      <section className="relative flex flex-col items-center gap-6 overflow-hidden rounded-2xl bg-gradient-to-b from-sky-50 via-blue-50/40 to-transparent px-8 py-16 text-center">
+        <HeroCanvas />
+
+        {/* content sits above canvas */}
+        <div className="relative z-10 flex flex-col items-center gap-6">
+          {/* Atom icon */}
+          <svg
+            viewBox="0 0 48 48"
+            className="h-10 w-10 text-blue-600/60"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <circle cx="24" cy="24" r="4" fill="currentColor" stroke="none" />
+            <ellipse cx="24" cy="24" rx="20" ry="8" />
+            <ellipse
+              cx="24"
+              cy="24"
+              rx="20"
+              ry="8"
+              transform="rotate(60 24 24)"
+            />
+            <ellipse
+              cx="24"
+              cy="24"
+              rx="20"
+              ry="8"
+              transform="rotate(-60 24 24)"
+            />
+          </svg>
+
+          <div className="flex flex-col gap-3">
+            <h1 className="text-4xl font-bold tracking-tight">ToxiClear AI</h1>
+            <p className="max-w-md text-lg text-muted-foreground">
+              Know before you take. Understand the science behind your
+              medications.
+            </p>
+          </div>
+
+          <Button
+            asChild
+            className="bg-blue-900 text-white hover:bg-blue-800"
+            size="lg"
+          >
+            <Link href="/check-mode/free">Check an Interaction →</Link>
+          </Button>
+        </div>
       </section>
 
-      {/* ToxiClear description */}
+      {/* ── ToxiClear description ── */}
       <section className="text-center">
         <p className="mx-auto max-w-2xl text-muted-foreground leading-relaxed">
           ToxiClear AI helps you understand what happens inside your body when
@@ -67,7 +111,7 @@ export default function Home() {
         </p>
       </section>
 
-      {/* Feature comparison grid */}
+      {/* ── Feature comparison grid ── */}
       <section>
         <div className="overflow-x-auto">
           <div className="min-w-[640px] overflow-hidden rounded-xl border shadow-sm">
@@ -93,13 +137,13 @@ export default function Home() {
               </div>
 
               {/* ── Premium row ── */}
-              <div className="border-r bg-muted px-6 py-8">
+              <div className="border-r bg-muted px-6 pb-12 pt-8">
                 <span className="font-semibold">Premium 👑</span>
               </div>
-              <div className="border-r bg-muted px-6 py-8">
+              <div className="border-r bg-muted px-6 pb-12 pt-8">
                 <FeatureList items={premiumPublicFeatures} />
               </div>
-              <div className="bg-muted px-6 py-8">
+              <div className="bg-muted px-6 pb-12 pt-8">
                 <FeatureList items={premiumStudentsFeatures} />
               </div>
             </div>

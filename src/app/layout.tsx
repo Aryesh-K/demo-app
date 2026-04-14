@@ -7,8 +7,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Lumos App",
-  description: "Built with create-lumos-app",
+  title: "ToxiClear AI",
+  description:
+    "Know before you take. Understand the science behind your medications.",
 };
 
 export default function RootLayout({

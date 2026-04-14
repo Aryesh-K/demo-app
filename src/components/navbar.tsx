@@ -91,7 +91,7 @@ export function Navbar() {
     <nav className="border-b border-border bg-background">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4">
         <Link href="/" className="font-semibold tracking-tight">
-          Lumos App
+          ToxiClear AI
         </Link>
         <div className="flex items-center gap-4">
           <Link
