@@ -10,11 +10,14 @@ export function GridReveal({ children }: { children: ReactNode }) {
     const el = ref.current;
     if (!el) return;
 
+    // Apply hidden state only on the client after hydration
+    el.classList.add("scroll-hidden");
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.style.opacity = "1";
-          el.style.transform = "scale(1)";
+          el.classList.remove("scroll-hidden");
+          el.classList.add("scroll-visible");
           observer.disconnect();
         }
       },
@@ -25,16 +28,5 @@ export function GridReveal({ children }: { children: ReactNode }) {
     return () => observer.disconnect();
   }, []);
 
-  return (
-    <div
-      ref={ref}
-      style={{
-        opacity: 0,
-        transform: "scale(0.95)",
-        transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
-      }}
-    >
-      {children}
-    </div>
-  );
+  return <div ref={ref}>{children}</div>;
 }

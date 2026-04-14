@@ -55,3 +55,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+.scroll-hidden {
+  opacity: 0;
+  transform: scale(0.95);
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
+}
+
+.scroll-visible {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
+}
