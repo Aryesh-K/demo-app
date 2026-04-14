@@ -31,7 +31,7 @@ export function GridReveal({ children }: { children: ReactNode }) {
       style={{
         opacity: 0,
         transform: "scale(0.95)",
-        transition: "opacity 0.6s ease, transform 0.6s ease",
+        transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
       }}
     >
       {children}

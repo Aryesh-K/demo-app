@@ -53,7 +53,7 @@ export default function Home() {
   return (
     <main className="flex flex-col">
       {/* ── Hero — full viewport width ── */}
-      <section className="relative flex min-h-[90vh] flex-col items-center justify-center gap-6 overflow-hidden bg-gradient-to-b from-sky-50 via-blue-50/40 to-transparent px-8 py-[120px] text-center dark:from-blue-950/60 dark:via-blue-900/20">
+      <section className="relative flex min-h-[90vh] w-full flex-col items-center justify-center gap-6 overflow-hidden bg-[#f8fafc] px-8 py-[120px] text-center dark:bg-background dark:bg-gradient-to-b dark:from-blue-950/60 dark:via-blue-900/20 dark:to-transparent">
         <HeroCanvas />
 
         {/* content sits above canvas */}
@@ -96,7 +96,7 @@ export default function Home() {
       </section>
 
       {/* ── Content — constrained ── */}
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-12">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 pb-20 pt-12">
         {/* ── ToxiClear description ── */}
         <section className="text-center">
           <p className="mx-auto max-w-2xl leading-relaxed text-muted-foreground">
@@ -149,6 +149,7 @@ export default function Home() {
             </div>
           </section>
         </GridReveal>
+        <hr className="border-border" />
       </div>
     </main>
   );
