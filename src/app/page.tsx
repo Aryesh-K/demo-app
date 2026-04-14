@@ -151,6 +151,7 @@ export default function Home() {
         </GridReveal>
         <hr className="border-border" />
       </div>
+      <div className="h-24" />
     </main>
   );
 }

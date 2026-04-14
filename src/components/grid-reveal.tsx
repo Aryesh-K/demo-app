@@ -1,32 +1,33 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function GridReveal({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    // Apply hidden state only on the client after hydration
-    el.classList.add("scroll-hidden");
-
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.remove("scroll-hidden");
-          el.classList.add("scroll-visible");
-          observer.disconnect();
-        }
+        if (entry.isIntersecting) setVisible(true);
       },
       { threshold: 0.1 },
     );
-
-    observer.observe(el);
+    if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
 
-  return <div ref={ref}>{children}</div>;
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "scale(1)" : "scale(0.95)",
+        transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
+      }}
+    >
+      {children}
+    </div>
+  );
 }
