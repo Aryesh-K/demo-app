@@ -52,36 +52,28 @@ export default function Home() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-10 flex flex-col gap-12">
       {/* ── Hero ── */}
-      <section className="relative flex flex-col items-center gap-6 overflow-hidden rounded-2xl bg-gradient-to-b from-sky-50 via-blue-50/40 to-transparent px-8 py-16 text-center">
+      <section className="relative flex flex-col items-center gap-6 overflow-hidden rounded-2xl bg-gradient-to-b from-sky-50 via-blue-50/40 to-transparent px-8 py-[120px] text-center">
         <HeroCanvas />
 
         {/* content sits above canvas */}
         <div className="relative z-10 flex flex-col items-center gap-6">
-          {/* Atom icon */}
+          {/* Molecule icon — two atoms joined by a single bond */}
           <svg
-            viewBox="0 0 48 48"
-            className="h-10 w-10 text-blue-600/60"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
+            viewBox="0 0 56 28"
+            className="h-8 w-16 text-blue-900"
             aria-hidden="true"
           >
-            <circle cx="24" cy="24" r="4" fill="currentColor" stroke="none" />
-            <ellipse cx="24" cy="24" rx="20" ry="8" />
-            <ellipse
-              cx="24"
-              cy="24"
-              rx="20"
-              ry="8"
-              transform="rotate(60 24 24)"
+            <circle cx="13" cy="14" r="10" fill="currentColor" />
+            <line
+              x1="23"
+              y1="14"
+              x2="33"
+              y2="14"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
             />
-            <ellipse
-              cx="24"
-              cy="24"
-              rx="20"
-              ry="8"
-              transform="rotate(-60 24 24)"
-            />
+            <circle cx="43" cy="14" r="10" fill="currentColor" />
           </svg>
 
           <div className="flex flex-col gap-3">
