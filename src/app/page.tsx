@@ -51,9 +51,9 @@ function FeatureList({ items }: { items: string[] }) {
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10 flex flex-col gap-12">
-      {/* ── Hero ── */}
-      <section className="relative flex min-h-[90vh] flex-col items-center justify-center gap-6 overflow-hidden rounded-2xl bg-gradient-to-b from-sky-50 via-blue-50/40 to-transparent px-8 py-[120px] text-center dark:from-blue-950/60 dark:via-blue-900/20">
+    <main className="flex flex-col">
+      {/* ── Hero — full viewport width ── */}
+      <section className="relative flex min-h-[90vh] flex-col items-center justify-center gap-6 overflow-hidden bg-gradient-to-b from-sky-50 via-blue-50/40 to-transparent px-8 py-[120px] text-center dark:from-blue-950/60 dark:via-blue-900/20">
         <HeroCanvas />
 
         {/* content sits above canvas */}
@@ -61,7 +61,7 @@ export default function Home() {
           {/* Molecule icon — two atoms joined by a single bond */}
           <svg
             viewBox="0 0 56 28"
-            className="h-8 w-16 text-blue-900"
+            className="h-8 w-16 text-blue-900 dark:text-blue-400"
             aria-hidden="true"
           >
             <circle cx="13" cy="14" r="10" fill="currentColor" />
@@ -95,56 +95,61 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── ToxiClear description ── */}
-      <section className="text-center">
-        <p className="mx-auto max-w-2xl text-muted-foreground leading-relaxed">
-          ToxiClear AI helps you understand what happens inside your body when
-          medications interact — whether you&apos;re a patient, caregiver,
-          student, or educator.
-        </p>
-      </section>
+      {/* ── Content — constrained ── */}
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-12">
+        {/* ── ToxiClear description ── */}
+        <section className="text-center">
+          <p className="mx-auto max-w-2xl leading-relaxed text-muted-foreground">
+            ToxiClear AI helps you understand what happens inside your body when
+            medications interact — whether you&apos;re a patient, caregiver,
+            student, or educator.
+          </p>
+        </section>
 
-      {/* ── Feature comparison grid ── */}
-      <GridReveal>
-        <section>
-          <div className="overflow-x-auto">
-            <div className="min-w-[640px] overflow-hidden rounded-xl border shadow-sm">
-              <div className="grid grid-cols-[160px_1fr_1fr]">
-                {/* ── Header row ── */}
-                <div className="border-b border-r bg-muted" />
-                <div className="border-b border-r border-blue-800 bg-blue-900 px-6 py-5 text-white">
-                  <p className="font-semibold">For the General Public</p>
-                </div>
-                <div className="border-b border-green-700 bg-green-800 px-6 py-5 text-white">
-                  <p className="font-semibold">For Students &amp; Educators</p>
-                </div>
+        {/* ── Feature comparison grid ── */}
+        <GridReveal>
+          <section>
+            <div className="overflow-x-auto">
+              <div className="min-w-[640px] overflow-hidden rounded-xl border shadow-sm">
+                <div className="grid grid-cols-[160px_1fr_1fr]">
+                  {/* ── Header row ── */}
+                  <div className="border-b border-r bg-muted" />
+                  <div className="border-b border-r border-blue-800 bg-blue-900 px-6 py-5 text-white">
+                    <p className="font-semibold">For the General Public</p>
+                  </div>
+                  <div className="border-b border-green-700 bg-green-800 px-6 py-5 text-white">
+                    <p className="font-semibold">
+                      For Students &amp; Educators
+                    </p>
+                  </div>
 
-                {/* ── Free row ── */}
-                <div className="border-b border-r bg-muted px-6 py-8">
-                  <span className="font-semibold">Free</span>
-                </div>
-                <div className="border-b border-r px-6 py-8">
-                  <FeatureList items={freePublicFeatures} />
-                </div>
-                <div className="border-b px-6 py-8">
-                  <FeatureList items={freeStudentsFeatures} />
-                </div>
+                  {/* ── Free row ── */}
+                  <div className="border-b border-r bg-muted px-6 py-8">
+                    <span className="font-semibold">Free</span>
+                  </div>
+                  <div className="border-b border-r px-6 py-8">
+                    <FeatureList items={freePublicFeatures} />
+                  </div>
+                  <div className="border-b px-6 py-8">
+                    <FeatureList items={freeStudentsFeatures} />
+                  </div>
 
-                {/* ── Premium row ── */}
-                <div className="border-r bg-muted px-6 pb-12 pt-8">
-                  <span className="font-semibold">Premium 👑</span>
-                </div>
-                <div className="border-r bg-muted px-6 pb-12 pt-8">
-                  <FeatureList items={premiumPublicFeatures} />
-                </div>
-                <div className="bg-muted px-6 pb-12 pt-8">
-                  <FeatureList items={premiumStudentsFeatures} />
+                  {/* ── Premium row ── */}
+                  <div className="border-r bg-muted px-6 pb-12 pt-8">
+                    <span className="font-semibold">Premium 👑</span>
+                  </div>
+                  <div className="border-r bg-muted px-6 pb-12 pt-8">
+                    <FeatureList items={premiumPublicFeatures} />
+                  </div>
+                  <div className="bg-muted px-6 pb-12 pt-8">
+                    <FeatureList items={premiumStudentsFeatures} />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-      </GridReveal>
+          </section>
+        </GridReveal>
+      </div>
     </main>
   );
 }

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme inline {
+@theme {
   /* OKLCH Design Tokens — Light Mode Default (zinc) */
   --color-background: oklch(1 0 0);
   --color-foreground: oklch(0.145 0 0);
