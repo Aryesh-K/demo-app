@@ -320,6 +320,7 @@ export default function CheckFree() {
   const [amountB, setAmountB] = useState("");
   const [unitA, setUnitA] = useState<Unit>("mg");
   const [unitB, setUnitB] = useState<Unit>("mg");
+  const [treatmentContext, setTreatmentContext] = useState("");
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
@@ -350,6 +351,7 @@ export default function CheckFree() {
         method2: methodB,
         amount2: amountB,
         unit2: unitB,
+        treatment_context: treatmentContext,
       }),
     })
       .then((r) => {
@@ -424,6 +426,31 @@ export default function CheckFree() {
           onAmountChange={setAmountB}
           unit={unitB}
           onUnitChange={setUnitB}
+        />
+      </div>
+
+      {/* Optional context */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <hr className="flex-1 border-border" />
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Optional Context
+          </span>
+          <hr className="flex-1 border-border" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="treatment-context">
+            What are you trying to treat? (optional)
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            This helps us give you more relevant information
+          </p>
+        </div>
+        <Input
+          id="treatment-context"
+          value={treatmentContext}
+          onChange={(e) => setTreatmentContext(e.target.value)}
+          placeholder="e.g. anxiety, chronic pain, allergies, high blood pressure"
         />
       </div>
 

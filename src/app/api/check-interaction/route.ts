@@ -9,6 +9,7 @@ interface RequestBody {
   method2: string;
   amount2?: string;
   unit2?: string;
+  treatment_context?: string;
 }
 
 interface OpenRouterResponse {
@@ -55,8 +56,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { drug1, method1, amount1, unit1, drug2, method2, amount2, unit2 } =
-    body;
+  const {
+    drug1,
+    method1,
+    amount1,
+    unit1,
+    drug2,
+    method2,
+    amount2,
+    unit2,
+    treatment_context,
+  } = body;
   console.log("[check-interaction] Drugs:", drug1, "/", drug2);
 
   const drugADesc = describeDrug(drug1, method1, amount1, unit1);
@@ -66,10 +76,15 @@ export async function POST(req: NextRequest) {
     "You are a biomedical assistant that analyzes drug and substance interactions. " +
     "Always respond with valid JSON only — no markdown, no code fences, no extra text.";
 
+  const contextLine = treatment_context?.trim()
+    ? `The user is taking these substances to treat: ${treatment_context.trim()}. Factor this into your explanation where relevant.\n\n`
+    : "";
+
   const userPrompt =
     `Analyze the interaction between:\n` +
     `Drug A: ${drugADesc}\n` +
     `Drug B: ${drugBDesc}\n\n` +
+    contextLine +
     `Respond with exactly this JSON structure:\n` +
     `{\n` +
     `  "risk_level": "high" | "moderate" | "low",\n` +
