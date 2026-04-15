@@ -73,8 +73,19 @@ export async function POST(req: NextRequest) {
   const drugBDesc = describeDrug(drug2, method2, amount2, unit2);
 
   const systemPrompt =
-    "You are a biomedical assistant that analyzes drug and substance interactions. " +
-    "Always respond with valid JSON only — no markdown, no code fences, no extra text. " +
+    "You are a clinical pharmacology assistant that analyzes drug and substance interactions with medical accuracy. " +
+    "Always respond with valid JSON only — no markdown, no code fences, no extra text.\n\n" +
+    "Use these STRICT risk level definitions:\n" +
+    "- HIGH: interactions that can cause serious harm, hospitalization, organ damage, or death. This includes:\n" +
+    "  * Two drugs from the same class (e.g. two NSAIDs, two SSRIs, two CNS depressants)\n" +
+    "  * Duplicate ingredients (e.g. acetaminophen in two products)\n" +
+    "  * Serotonin syndrome risk\n" +
+    "  * Severe liver or kidney toxicity risk\n" +
+    "  * Dangerous CNS/respiratory depression\n" +
+    "  * Significantly increased bleeding risk\n\n" +
+    "- MODERATE: interactions that cause meaningful side effects or reduced effectiveness but are unlikely to cause serious harm without monitoring\n\n" +
+    "- LOW: minimal or no clinically significant interaction\n\n" +
+    "When in doubt between HIGH and MODERATE, choose HIGH. It is safer to over-warn than under-warn.\n\n" +
     "When treatment context is provided, always reference it directly in your plain English explanation. " +
     "Do not give a generic response — tailor it to what the user is trying to treat.";
 
