@@ -167,7 +167,15 @@ export async function POST(req: NextRequest) {
     const cleaned = content
       .replace(/^```json?\s*/i, "")
       .replace(/```\s*$/, "")
-      .trim();
+      .trim()
+      // Fix smart/curly quotes that break JSON
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      // Remove any control characters (tab/newline/etc except printable ASCII)
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally stripping control chars from AI output
+      .replace(/[\u0000-\u001F\u007F]/g, " ")
+      // Fix trailing commas before } or ]
+      .replace(/,(\s*[}\]])/g, "$1");
     const result = JSON.parse(cleaned) as {
       risk_level: string;
       mechanism: string;
