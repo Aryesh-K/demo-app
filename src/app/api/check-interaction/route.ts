@@ -74,10 +74,16 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt =
     "You are a biomedical assistant that analyzes drug and substance interactions. " +
-    "Always respond with valid JSON only — no markdown, no code fences, no extra text.";
+    "Always respond with valid JSON only — no markdown, no code fences, no extra text. " +
+    "When treatment context is provided, always reference it directly in your plain English explanation. " +
+    "Do not give a generic response — tailor it to what the user is trying to treat.";
 
-  const contextLine = treatment_context?.trim()
-    ? `The user is taking these substances to treat: ${treatment_context.trim()}. Factor this into your explanation where relevant.\n\n`
+  const ctx = treatment_context?.trim();
+  const contextLine = ctx
+    ? `The user is taking these substances to treat: ${ctx}.\n\n` +
+      `You MUST address this directly in your simple_explanation field. ` +
+      `Explain how this interaction specifically affects their ability to treat ${ctx}, ` +
+      `and whether they should be concerned given what they're trying to treat.\n\n`
     : "";
 
   const userPrompt =
