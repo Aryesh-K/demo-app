@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "mistralai/mistral-7b-instruct:free",
+        model: "meta-llama/llama-3.1-8b-instruct:free",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
