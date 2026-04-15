@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -10,20 +10,29 @@ import { cn } from "~/lib/utils";
 
 const UNITS = ["mg", "mcg", "g", "mL", "tablets", "capsules"] as const;
 type Unit = (typeof UNITS)[number];
+
+const APPLICATION_METHODS = [
+  "Oral (swallowed)",
+  "Topical (applied to skin)",
+  "Inhaled",
+  "Injected",
+  "Eye/Ear drops",
+  "Other",
+] as const;
+type ApplicationMethod = (typeof APPLICATION_METHODS)[number];
+
 type Risk = "high" | "moderate" | "low";
+type Phase = "idle" | "animating" | "loading" | "results" | "error";
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── API types ────────────────────────────────────────────────────────────────
 
-const MOCK_RESULT: { risk: Risk; explanation: string } = {
-  risk: "high",
-  explanation:
-    "Fluoxetine is an antidepressant that raises serotonin levels in your brain. " +
-    "Dextromethorphan (DXM) — found in many over-the-counter cough medicines — also " +
-    "affects serotonin. Taking them together can trigger serotonin syndrome: a dangerous " +
-    "build-up of serotonin that causes agitation, confusion, a racing heartbeat, high blood " +
-    "pressure, and muscle stiffness. In serious cases it can cause seizures. This combination " +
-    "should be avoided. If you need both medications, speak with your doctor right away.",
-};
+interface ApiResult {
+  risk_level: Risk;
+  mechanism: string;
+  simple_explanation: string;
+}
+
+// ─── Risk config ──────────────────────────────────────────────────────────────
 
 type RiskConfig = {
   bg: string;
@@ -57,18 +66,20 @@ const RISK_CONFIG: Record<Risk, RiskConfig> = {
   },
 };
 
+const SELECT_CLS =
+  "h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-2 py-1 text-sm text-foreground shadow-xs outline-none focus:border-ring dark:bg-input/30";
+
 // ─── Molecule animation ───────────────────────────────────────────────────────
 
 function MoleculeAnimation({ onComplete }: { onComplete: () => void }) {
   const [phase, setPhase] = useState(0);
-  // phase 0 = initial (hidden), 1 = sliding in, 2 = bond visible, 3 = pulsing
 
   useEffect(() => {
     const timers = [
-      setTimeout(() => setPhase(1), 30), // next frame → start slide
-      setTimeout(() => setPhase(2), 650), // bond line appears
-      setTimeout(() => setPhase(3), 900), // glow pulse
-      setTimeout(onComplete, 1500), // done
+      setTimeout(() => setPhase(1), 30),
+      setTimeout(() => setPhase(2), 650),
+      setTimeout(() => setPhase(3), 900),
+      setTimeout(onComplete, 1500),
     ];
     return () => timers.forEach(clearTimeout);
   }, [onComplete]);
@@ -79,7 +90,6 @@ function MoleculeAnimation({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div className="flex items-center justify-center gap-5 py-8">
-      {/* Blue molecule */}
       <div
         className="size-11 rounded-full bg-blue-600/75"
         style={{
@@ -90,7 +100,6 @@ function MoleculeAnimation({ onComplete }: { onComplete: () => void }) {
           boxShadow: pulsing ? "0 0 28px 10px rgba(37,99,235,0.4)" : "none",
         }}
       />
-      {/* Bond line */}
       <div
         className="h-[3px] rounded-full bg-blue-400"
         style={{
@@ -99,7 +108,6 @@ function MoleculeAnimation({ onComplete }: { onComplete: () => void }) {
           transition: "opacity 0.25s ease",
         }}
       />
-      {/* Green molecule */}
       <div
         className="size-11 rounded-full bg-green-500/75"
         style={{
@@ -121,6 +129,8 @@ interface DrugGroupProps {
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
+  method: ApplicationMethod;
+  onMethodChange: (m: ApplicationMethod) => void;
   amount: string;
   onAmountChange: (v: string) => void;
   unit: Unit;
@@ -132,6 +142,8 @@ function DrugInputGroup({
   placeholder,
   value,
   onChange,
+  method,
+  onMethodChange,
   amount,
   onAmountChange,
   unit,
@@ -139,6 +151,7 @@ function DrugInputGroup({
 }: DrugGroupProps) {
   const uid = useId();
   const drugId = `${uid}-drug`;
+  const methodId = `${uid}-method`;
 
   return (
     <div className="flex flex-col gap-3">
@@ -155,6 +168,28 @@ function DrugInputGroup({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
       />
+
+      {/* Application method */}
+      <div className="flex flex-col gap-1">
+        <Label
+          htmlFor={methodId}
+          className="text-xs font-normal text-muted-foreground"
+        >
+          How is it used?
+        </Label>
+        <select
+          id={methodId}
+          value={method}
+          onChange={(e) => onMethodChange(e.target.value as ApplicationMethod)}
+          className={SELECT_CLS}
+        >
+          {APPLICATION_METHODS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Amount + units */}
       <div className="flex items-center gap-2">
@@ -190,6 +225,7 @@ function DrugInputGroup({
 // ─── Results ──────────────────────────────────────────────────────────────────
 
 interface ResultsProps {
+  result: ApiResult;
   drugA: string;
   drugB: string;
   amountA: string;
@@ -199,6 +235,7 @@ interface ResultsProps {
 }
 
 function Results({
+  result,
   drugA,
   drugB,
   amountA,
@@ -206,8 +243,7 @@ function Results({
   unitA,
   unitB,
 }: ResultsProps) {
-  const { risk, explanation } = MOCK_RESULT;
-  const cfg = RISK_CONFIG[risk];
+  const cfg = RISK_CONFIG[result.risk_level];
   const nameA = drugA.trim() || "Drug A";
   const nameB = drugB.trim() || "Drug B";
   const hasAmounts = Boolean(amountA || amountB);
@@ -234,9 +270,21 @@ function Results({
       <div className="flex flex-col gap-2">
         <h2 className="font-semibold">What&apos;s happening</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          {explanation}
+          {result.simple_explanation}
         </p>
       </div>
+
+      {/* Mechanism */}
+      {result.mechanism && (
+        <div className="flex flex-col gap-2 rounded-md bg-muted px-4 py-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Mechanism
+          </h3>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {result.mechanism}
+          </p>
+        </div>
+      )}
 
       {/* Amounts note */}
       {hasAmounts && (
@@ -261,18 +309,83 @@ function Results({
   );
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CheckFree() {
   const [drugA, setDrugA] = useState("");
   const [drugB, setDrugB] = useState("");
+  const [methodA, setMethodA] = useState<ApplicationMethod>("Oral (swallowed)");
+  const [methodB, setMethodB] = useState<ApplicationMethod>("Oral (swallowed)");
   const [amountA, setAmountA] = useState("");
   const [amountB, setAmountB] = useState("");
   const [unitA, setUnitA] = useState<Unit>("mg");
   const [unitB, setUnitB] = useState<Unit>("mg");
-  const [phase, setPhase] = useState<"idle" | "animating" | "results">("idle");
 
-  const handleAnimationComplete = useCallback(() => setPhase("results"), []);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [apiResult, setApiResult] = useState<ApiResult | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Refs to coordinate animation completion with async API response
+  const animDoneRef = useRef(false);
+  const apiResultRef = useRef<ApiResult | null>(null);
+  const apiErrorRef = useRef<string | null>(null);
+
+  function handleSubmit() {
+    setPhase("animating");
+    setApiResult(null);
+    setApiError(null);
+    animDoneRef.current = false;
+    apiResultRef.current = null;
+    apiErrorRef.current = null;
+
+    fetch("/api/check-interaction", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        drug1: drugA,
+        method1: methodA,
+        amount1: amountA,
+        unit1: unitA,
+        drug2: drugB,
+        method2: methodB,
+        amount2: amountB,
+        unit2: unitB,
+      }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("API error");
+        return r.json() as Promise<ApiResult>;
+      })
+      .then((data) => {
+        apiResultRef.current = data;
+        if (animDoneRef.current) {
+          setApiResult(data);
+          setPhase("results");
+        }
+      })
+      .catch(() => {
+        apiErrorRef.current =
+          "Failed to analyze the interaction. Please try again.";
+        if (animDoneRef.current) {
+          setApiError(apiErrorRef.current);
+          setPhase("error");
+        }
+      });
+  }
+
+  const handleAnimationComplete = useCallback(() => {
+    animDoneRef.current = true;
+    if (apiResultRef.current) {
+      setApiResult(apiResultRef.current);
+      setPhase("results");
+    } else if (apiErrorRef.current) {
+      setApiError(apiErrorRef.current);
+      setPhase("error");
+    } else {
+      // API still in-flight — show loading until it resolves
+      setPhase("loading");
+    }
+  }, []);
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[700px] flex-col gap-8 px-6 py-12">
@@ -293,6 +406,8 @@ export default function CheckFree() {
           placeholder="e.g. fluoxetine"
           value={drugA}
           onChange={setDrugA}
+          method={methodA}
+          onMethodChange={setMethodA}
           amount={amountA}
           onAmountChange={setAmountA}
           unit={unitA}
@@ -303,6 +418,8 @@ export default function CheckFree() {
           placeholder="e.g. dextromethorphan"
           value={drugB}
           onChange={setDrugB}
+          method={methodB}
+          onMethodChange={setMethodB}
           amount={amountB}
           onAmountChange={setAmountB}
           unit={unitB}
@@ -312,8 +429,8 @@ export default function CheckFree() {
 
       {/* Submit */}
       <Button
-        onClick={() => setPhase("animating")}
-        disabled={phase === "animating"}
+        onClick={handleSubmit}
+        disabled={phase === "animating" || phase === "loading"}
         className="w-full bg-blue-900 text-white hover:bg-blue-800 disabled:opacity-50"
         size="lg"
       >
@@ -325,9 +442,25 @@ export default function CheckFree() {
         <MoleculeAnimation onComplete={handleAnimationComplete} />
       )}
 
+      {/* Loading — animation done but API still in-flight */}
+      {phase === "loading" && (
+        <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
+          <div className="size-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <p className="text-sm">Analyzing interaction…</p>
+        </div>
+      )}
+
+      {/* Error */}
+      {phase === "error" && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {apiError ?? "Something went wrong. Please try again."}
+        </div>
+      )}
+
       {/* Results */}
-      {phase === "results" && (
+      {phase === "results" && apiResult && (
         <Results
+          result={apiResult}
           drugA={drugA}
           drugB={drugB}
           amountA={amountA}

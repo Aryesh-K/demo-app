@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { GridReveal } from "~/components/grid-reveal";
 import { HeroCanvas } from "~/components/hero-canvas";
+import { ScrollIndicator } from "~/components/scroll-indicator";
 import { Button } from "~/components/ui/button";
 
 const freePublicFeatures = [
@@ -93,6 +94,7 @@ export default function Home() {
             <Link href="/check/free">Check an Interaction →</Link>
           </Button>
         </div>
+        <ScrollIndicator />
       </section>
 
       {/* ── Content — constrained ── */}
