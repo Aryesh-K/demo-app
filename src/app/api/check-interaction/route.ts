@@ -34,11 +34,11 @@ export async function POST(req: NextRequest) {
     Object.keys(process.env).filter((k) => k.includes("OPEN")),
   );
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.error("[check-interaction] OPENROUTER_API_KEY is not set");
+    console.error("[check-interaction] GROQ_API_KEY is not set");
     return NextResponse.json(
-      { error: "OPENROUTER_API_KEY is not set" },
+      { error: "GROQ_API_KEY is not set" },
       { status: 503 },
     );
   }
@@ -79,23 +79,26 @@ export async function POST(req: NextRequest) {
 
   let apiResponse: Response;
   try {
-    console.log("[check-interaction] Calling OpenRouter...");
-    apiResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    console.log("[check-interaction] Calling Groq...");
+    apiResponse = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
       },
-      body: JSON.stringify({
-        model: "meta-llama/llama-3.2-3b-instruct:free",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
+    );
   } catch (err) {
-    console.error("[check-interaction] Network error calling OpenRouter:", err);
+    console.error("[check-interaction] Network error calling Groq:", err);
     return NextResponse.json(
       { error: "Network error reaching OpenRouter" },
       { status: 502 },
