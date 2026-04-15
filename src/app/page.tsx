@@ -54,7 +54,7 @@ export default function Home() {
   return (
     <main className="flex flex-col">
       {/* ── Hero — full viewport width ── */}
-      <section className="relative flex min-h-[90vh] w-full flex-col items-center justify-center gap-6 overflow-hidden bg-[#f8fafc] py-[120px] text-center dark:bg-background dark:bg-gradient-to-b dark:from-blue-950/60 dark:via-blue-900/20 dark:to-transparent">
+      <section className="relative flex min-h-[90vh] w-full flex-col items-center justify-center gap-6 overflow-hidden bg-gradient-to-b from-blue-950/60 via-blue-900/20 to-transparent py-[120px] text-center">
         <HeroCanvas />
 
         {/* content sits above canvas */}
@@ -62,7 +62,7 @@ export default function Home() {
           {/* Molecule icon — two atoms joined by a single bond */}
           <svg
             viewBox="0 0 56 28"
-            className="h-8 w-16 text-blue-900 dark:text-blue-400"
+            className="h-8 w-16 text-blue-400"
             aria-hidden="true"
           >
             <circle cx="13" cy="14" r="10" fill="currentColor" />
