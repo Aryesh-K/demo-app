@@ -29,6 +29,10 @@ function describeDrug(
 
 export async function POST(req: NextRequest) {
   console.log("[check-interaction] POST received");
+  console.log(
+    "All env keys:",
+    Object.keys(process.env).filter((k) => k.includes("OPEN")),
+  );
 
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {

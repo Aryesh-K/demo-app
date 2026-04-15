@@ -6,7 +6,7 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    OPENROUTER_API_KEY: z.string().min(1).optional(),
+    OPENROUTER_API_KEY: z.string().min(1),
   },
   client: {
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
