@@ -98,6 +98,15 @@ export async function POST(req: NextRequest) {
     : "";
 
   const userPrompt =
+    `Before analyzing, internalize these calibration examples:\n` +
+    `- aspirin + ibuprofen = HIGH (two NSAIDs, GI bleed risk)\n` +
+    `- acetaminophen + NyQuil = HIGH (duplicate acetaminophen, liver damage risk)\n` +
+    `- fluoxetine + dextromethorphan = HIGH (serotonin syndrome)\n` +
+    `- alcohol + benzodiazepines = HIGH (CNS depression, death)\n` +
+    `- ibuprofen + acetaminophen = MODERATE (different mechanisms, generally safe short term)\n` +
+    `- amoxicillin + birth control = MODERATE (reduced efficacy)\n` +
+    `- vitamin C + iron supplement = LOW (actually beneficial)\n\n` +
+    `Now analyze this interaction using the same strict standards as the examples above:\n\n` +
     `Analyze the interaction between:\n` +
     `Drug A: ${drugADesc}\n` +
     `Drug B: ${drugBDesc}\n\n` +
