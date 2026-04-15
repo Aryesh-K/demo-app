@@ -90,7 +90,7 @@ export default function Home() {
             className="bg-blue-900 text-white hover:bg-blue-800"
             size="lg"
           >
-            <Link href="/check-mode/free">Check an Interaction →</Link>
+            <Link href="/check/free">Check an Interaction →</Link>
           </Button>
         </div>
       </section>

@@ -9,10 +9,10 @@ import { cn } from "~/lib/utils";
 const dropdowns = [
   {
     label: "Check Mode",
-    basePath: "/check-mode",
+    basePath: "/check",
     items: [
-      { href: "/check-mode/free", label: "Free" },
-      { href: "/check-mode/premium", label: "Premium (Log In)" },
+      { href: "/check/free", label: "Free" },
+      { href: "/check/premium", label: "Premium (Log In)" },
     ],
   },
   {
