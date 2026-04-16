@@ -109,7 +109,8 @@ export async function POST(req: NextRequest) {
     `  "classification": "one of: CYP450 Metabolism | Serotonin Syndrome | CNS Depression | Additive Toxicity | Receptor Competition | Chemical Degradation | Absorption Interference | Duplicate Ingredients | Other",\n` +
     `  "simple_explanation": "5-7 sentences at a middle school reading level. Follow this exact structure: Sentence 1-2: What does Drug A normally do in the body on its own? Explain its job in simple terms. Sentence 3-4: What does Drug B normally do in the body on its own? Explain its job in simple terms. Sentence 5-6: What goes wrong when you take both together? What is the body overwhelmed by? Sentence 7: What does the person actually feel or experience physically? Never use technical terms without immediately explaining them in plain language. Write as if explaining to a curious 13 year old with no science background. Use everyday analogies.",\n` +
     `  "intermediate_explanation": "4-6 sentences for an A&P or AP Biology student. Explain what happens at the organ system level — which organ processes the drugs (liver, kidneys, GI tract, CNS), how the physiological response manifests, what symptoms or system-level effects occur. Reference specific anatomical structures and physiological processes. Trace the effect from molecule to organ to whole-body response.",\n` +
-    `  "key_terms": ["term1", "term2", "term3"]\n` +
+    `  "simple_key_terms": ["term1", "term2"],\n` +
+    `  "intermediate_key_terms": ["term1", "term2", "term3", "term4"]\n` +
     `}`;
 
   let apiResponse: Response;
@@ -179,7 +180,8 @@ export async function POST(req: NextRequest) {
       classification: string;
       simple_explanation: string;
       intermediate_explanation: string;
-      key_terms: string[];
+      simple_key_terms: string[];
+      intermediate_key_terms: string[];
     };
 
     let result: ParsedResult;
@@ -205,7 +207,8 @@ export async function POST(req: NextRequest) {
         classification: classMatch ? classMatch[1] : "Other",
         simple_explanation: simpMatch[1],
         intermediate_explanation: interMatch ? interMatch[1] : "",
-        key_terms: [],
+        simple_key_terms: [],
+        intermediate_key_terms: [],
       };
     }
 
@@ -227,7 +230,12 @@ export async function POST(req: NextRequest) {
       classification: result.classification ?? "Other",
       simple_explanation: result.simple_explanation ?? "",
       intermediate_explanation: result.intermediate_explanation ?? "",
-      key_terms: Array.isArray(result.key_terms) ? result.key_terms : [],
+      simple_key_terms: Array.isArray(result.simple_key_terms)
+        ? result.simple_key_terms
+        : [],
+      intermediate_key_terms: Array.isArray(result.intermediate_key_terms)
+        ? result.intermediate_key_terms
+        : [],
     });
   } catch (err) {
     console.error("[learn-interaction] Failed to parse:", err, "raw:", content);
