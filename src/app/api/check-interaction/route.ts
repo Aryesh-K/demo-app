@@ -92,15 +92,14 @@ export async function POST(req: NextRequest) {
     "- both: the interaction affects both safety and efficacy\n\n" +
     "Always mention in simple_explanation if one product is being rendered ineffective, even if there is no safety risk.\n\n" +
     "IMPORTANT: When one substance chemically destroys, oxidizes, or degrades another substance on contact — even if there is no safety risk — you MUST classify interaction_type as 'efficacy'. This is not optional. Benzoyl peroxide + any vitamin C product is ALWAYS efficacy type.\n\n" +
-    "When treatment context is provided, always reference it directly in your plain English explanation. " +
-    "Do not give a generic response — tailor it to what the user is trying to treat.";
+    "When treatment context is provided, you MUST explicitly mention it by name in the simple_explanation. " +
+    "Do not give generic responses. For example, if the user says they are treating anxiety, the explanation must reference anxiety specifically and explain how the interaction affects their ability to treat anxiety. This is non-negotiable.";
 
   const ctx = treatment_context?.trim();
   const contextLine = ctx
-    ? `The user is taking these substances to treat: ${ctx}.\n\n` +
-      `You MUST address this directly in your simple_explanation field. ` +
-      `Explain how this interaction specifically affects their ability to treat ${ctx}, ` +
-      `and whether they should be concerned given what they're trying to treat.\n\n`
+    ? `IMPORTANT: The user is treating: ${ctx}\n` +
+      `You MUST mention "${ctx}" explicitly in the simple_explanation.\n` +
+      `Do not write a generic explanation — tailor everything to ${ctx}.\n\n`
     : "";
 
   const userPrompt =
