@@ -473,7 +473,8 @@ export default function CheckFree() {
           Check Drug Interactions
         </h1>
         <p className="text-muted-foreground">
-          Enter two substances to check for interactions
+          Enter two drugs, OTC medications, or alcohol to check for
+          interactions. Supplements and cosmetic products require Premium.
         </p>
       </div>
 

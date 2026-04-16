@@ -5,7 +5,7 @@ import { ScrollIndicator } from "~/components/scroll-indicator";
 import { Button } from "~/components/ui/button";
 
 const freePublicFeatures = [
-  "Check interactions between 2 drugs or substances",
+  "Check interactions between 2 drugs, OTC medications, or alcohol",
   "Risk level indicator (Low / Moderate / High)",
   "Plain English explanation of why the combination is dangerous",
   "Works anonymously — no account needed",
@@ -20,7 +20,7 @@ const freeStudentsFeatures = [
 
 const premiumPublicFeatures = [
   "Check up to 3–5 drugs and supplements at once",
-  "Includes alcohol and herbal supplement interactions",
+  "Includes herbal supplement and vitamin interactions",
   "Save your interaction history",
   "Medication reminders",
   'Real-life context (e.g. "this may affect your focus or sleep")',
