@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
     `  "risk_level": "high" | "moderate" | "low",\n` +
     `  "interaction_type": "safety" | "efficacy" | "both",\n` +
     `  "classification": "one of: CYP450 Metabolism | Serotonin Syndrome | CNS Depression | Additive Toxicity | Receptor Competition | Chemical Degradation | Absorption Interference | Duplicate Ingredients | Other",\n` +
-    `  "simple_explanation": "2-3 sentences at middle school reading level",\n` +
+    `  "simple_explanation": "6-7 sentences at an 8th-9th grade reading level. Start by explaining what each drug normally does in the body on its own. Then explain what goes wrong when they are combined. Then explain what symptoms or effects the person might actually feel or experience. Use everyday analogies where helpful. Avoid too much technical jargon — explain it like you're talking to a 14 year old who is curious but has very little science background.",\n` +
     `  "intermediate_explanation": "4-6 sentences for an A&P or AP Biology student. Explain what happens at the organ system level — which organ processes the drugs (liver, kidneys, GI tract, CNS), how the physiological response manifests, what symptoms or system-level effects occur. Reference specific anatomical structures and physiological processes. Trace the effect from molecule to organ to whole-body response.",\n` +
     `  "key_terms": ["term1", "term2", "term3"]\n` +
     `}`;
