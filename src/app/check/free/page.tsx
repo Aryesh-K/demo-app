@@ -28,6 +28,7 @@ type Phase = "idle" | "animating" | "loading" | "results" | "error";
 
 interface ApiResult {
   risk_level: Risk;
+  interaction_type: "safety" | "efficacy" | "both";
   mechanism: string;
   simple_explanation: string;
 }
@@ -44,23 +45,23 @@ type RiskConfig = {
 
 const RISK_CONFIG: Record<Risk, RiskConfig> = {
   high: {
-    bg: "bg-red-100 dark:bg-red-950/40",
-    border: "border-red-300 dark:border-red-800",
-    text: "text-red-700 dark:text-red-300",
+    bg: "bg-red-950/40",
+    border: "border-red-800",
+    text: "text-red-300",
     label: "HIGH RISK",
     emoji: "⚠️",
   },
   moderate: {
-    bg: "bg-amber-100 dark:bg-amber-950/40",
-    border: "border-amber-300 dark:border-amber-800",
-    text: "text-amber-700 dark:text-amber-300",
+    bg: "bg-amber-950/40",
+    border: "border-amber-800",
+    text: "text-amber-300",
     label: "MODERATE RISK",
     emoji: "⚡",
   },
   low: {
-    bg: "bg-green-100 dark:bg-green-950/40",
-    border: "border-green-300 dark:border-green-800",
-    text: "text-green-700 dark:text-green-300",
+    bg: "bg-green-950/40",
+    border: "border-green-800",
+    text: "text-green-300",
     label: "LOW RISK",
     emoji: "✅",
   },
@@ -247,24 +248,37 @@ function Results({
   const nameA = drugA.trim() || "Drug A";
   const nameB = drugB.trim() || "Drug B";
   const hasAmounts = Boolean(amountA || amountB);
+  const showIneffective =
+    result.interaction_type === "efficacy" && result.risk_level === "low";
 
   return (
     <div className="flex flex-col gap-5 rounded-xl border bg-card p-6 shadow-sm">
-      {/* Risk badge */}
-      <div
-        className={cn(
-          "flex items-center gap-3 rounded-lg border px-4 py-3",
-          cfg.bg,
-          cfg.border,
-        )}
-      >
-        <span className="text-2xl leading-none" aria-hidden="true">
-          {cfg.emoji}
-        </span>
-        <span className={cn("text-sm font-bold tracking-widest", cfg.text)}>
-          {cfg.label}
-        </span>
-      </div>
+      {/* Risk / Ineffective badge */}
+      {showIneffective ? (
+        <div className="flex items-center gap-3 rounded-lg border border-purple-800 bg-purple-950/40 px-4 py-3">
+          <span className="text-2xl leading-none" aria-hidden="true">
+            🚫
+          </span>
+          <span className="text-sm font-bold tracking-widest text-purple-300">
+            INEFFECTIVE
+          </span>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "flex items-center gap-3 rounded-lg border px-4 py-3",
+            cfg.bg,
+            cfg.border,
+          )}
+        >
+          <span className="text-2xl leading-none" aria-hidden="true">
+            {cfg.emoji}
+          </span>
+          <span className={cn("text-sm font-bold tracking-widest", cfg.text)}>
+            {cfg.label}
+          </span>
+        </div>
+      )}
 
       {/* What's happening */}
       <div className="flex flex-col gap-2">

@@ -86,6 +86,11 @@ export async function POST(req: NextRequest) {
     "- MODERATE: interactions that cause meaningful side effects or reduced effectiveness but are unlikely to cause serious harm without monitoring\n\n" +
     "- LOW: minimal or no clinically significant interaction\n\n" +
     "When in doubt between HIGH and MODERATE, choose HIGH. It is safer to over-warn than under-warn.\n\n" +
+    "Also classify the interaction_type:\n" +
+    "- safety: the interaction poses a health/safety risk\n" +
+    "- efficacy: one substance chemically neutralizes, degrades, or blocks the other, rendering it ineffective (e.g. benzoyl peroxide destroying vitamin C, antacids blocking drug absorption, calcium chelating antibiotics)\n" +
+    "- both: the interaction affects both safety and efficacy\n\n" +
+    "Always mention in simple_explanation if one product is being rendered ineffective, even if there is no safety risk.\n\n" +
     "When treatment context is provided, always reference it directly in your plain English explanation. " +
     "Do not give a generic response — tailor it to what the user is trying to treat.";
 
@@ -105,7 +110,9 @@ export async function POST(req: NextRequest) {
     `- alcohol + benzodiazepines = HIGH (CNS depression, death)\n` +
     `- ibuprofen + acetaminophen = MODERATE (different mechanisms, generally safe short term)\n` +
     `- amoxicillin + birth control = MODERATE (reduced efficacy)\n` +
-    `- vitamin C + iron supplement = LOW (actually beneficial)\n\n` +
+    `- vitamin C + iron supplement = LOW, efficacy (actually beneficial — enhances absorption)\n` +
+    `- benzoyl peroxide + vitamin C serum = LOW, efficacy (benzoyl peroxide oxidizes and destroys vitamin C, rendering it useless)\n` +
+    `- tetracycline + dairy/calcium = LOW, efficacy (calcium chelates the antibiotic, blocking absorption)\n\n` +
     `Now analyze this interaction using the same strict standards as the examples above:\n\n` +
     `Analyze the interaction between:\n` +
     `Drug A: ${drugADesc}\n` +
@@ -114,6 +121,7 @@ export async function POST(req: NextRequest) {
     `Respond with exactly this JSON structure:\n` +
     `{\n` +
     `  "risk_level": "high" | "moderate" | "low",\n` +
+    `  "interaction_type": "safety" | "efficacy" | "both",\n` +
     `  "mechanism": "1-2 sentence biochemical explanation",\n` +
     `  "simple_explanation": "2-3 sentence plain English explanation at a middle school reading level"\n` +
     `}`;
@@ -192,6 +200,7 @@ export async function POST(req: NextRequest) {
 
     type ParsedResult = {
       risk_level: string;
+      interaction_type: string;
       mechanism: string;
       simple_explanation: string;
     };
@@ -203,6 +212,7 @@ export async function POST(req: NextRequest) {
     } catch {
       // If that fails, extract fields with regex as fallback
       const riskMatch = cleaned.match(/"risk_level"\s*:\s*"([^"]+)"/);
+      const typeMatch = cleaned.match(/"interaction_type"\s*:\s*"([^"]+)"/);
       const mechMatch = cleaned.match(
         /"mechanism"\s*:\s*"([\s\S]+?)(?=",\s*"|"\s*})/,
       );
@@ -214,6 +224,7 @@ export async function POST(req: NextRequest) {
 
       result = {
         risk_level: riskMatch[1],
+        interaction_type: typeMatch ? typeMatch[1] : "safety",
         mechanism: mechMatch ? mechMatch[1] : "",
         simple_explanation: simpMatch[1],
       };
@@ -225,9 +236,21 @@ export async function POST(req: NextRequest) {
         ? riskRaw
         : "moderate";
 
-    console.log("[check-interaction] Success, risk:", risk_level);
+    const typeRaw = result.interaction_type?.toLowerCase();
+    const interaction_type =
+      typeRaw === "safety" || typeRaw === "efficacy" || typeRaw === "both"
+        ? typeRaw
+        : "safety";
+
+    console.log(
+      "[check-interaction] Success, risk:",
+      risk_level,
+      "type:",
+      interaction_type,
+    );
     return NextResponse.json({
       risk_level,
+      interaction_type,
       mechanism: result.mechanism ?? "",
       simple_explanation: result.simple_explanation,
     });
