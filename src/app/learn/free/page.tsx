@@ -33,8 +33,8 @@ interface ApiResult {
   classification: string;
   simple_explanation: string;
   intermediate_explanation: string;
-  simple_key_terms: string[];
-  intermediate_key_terms: string[];
+  simple_key_terms?: string[];
+  intermediate_key_terms?: string[];
 }
 
 // ─── Risk config ──────────────────────────────────────────────────────────────
@@ -303,6 +303,9 @@ function Results({ result }: { result: ApiResult }) {
     result.risk_level === "low";
 
   const classEmoji = CLASSIFICATION_EMOJI[result.classification] ?? "🔍";
+  const simpleTerms = result.simple_key_terms ?? [];
+  const intermediateTerms = result.intermediate_key_terms ?? [];
+  const currentTerms = activeTab === "simple" ? simpleTerms : intermediateTerms;
 
   return (
     <div className="flex flex-col gap-5 rounded-xl border bg-card p-6 shadow-sm">
@@ -383,19 +386,13 @@ function Results({ result }: { result: ApiResult }) {
       </div>
 
       {/* Key terms */}
-      {(activeTab === "simple"
-        ? result.simple_key_terms
-        : result.intermediate_key_terms
-      ).length > 0 && (
+      {currentTerms.length > 0 && (
         <div className="flex flex-col gap-2">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Key Terms
           </h3>
           <div key={activeTab} className="flex flex-wrap gap-2">
-            {(activeTab === "simple"
-              ? result.simple_key_terms
-              : result.intermediate_key_terms
-            ).map((term) => (
+            {currentTerms.map((term) => (
               <span
                 key={term}
                 className="rounded-full border border-teal-800 px-3 py-1 text-xs text-teal-300"
