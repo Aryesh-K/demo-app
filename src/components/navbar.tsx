@@ -16,9 +16,9 @@ const dropdowns = [
   },
   {
     label: "Learn Mode",
-    basePath: "/learn-mode",
+    basePath: "/learn",
     items: [
-      { href: "/learn-mode/free", label: "Free" },
+      { href: "/learn/free", label: "Free" },
       { href: "/learn-mode/premium", label: "Premium (Log In)" },
     ],
   },
