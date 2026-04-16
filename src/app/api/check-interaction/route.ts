@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
     "- efficacy: one substance chemically neutralizes, degrades, or blocks the other, rendering it ineffective (e.g. benzoyl peroxide destroying vitamin C, antacids blocking drug absorption, calcium chelating antibiotics)\n" +
     "- both: the interaction affects both safety and efficacy\n\n" +
     "Always mention in simple_explanation if one product is being rendered ineffective, even if there is no safety risk.\n\n" +
+    "IMPORTANT: When one substance chemically destroys, oxidizes, or degrades another substance on contact — even if there is no safety risk — you MUST classify interaction_type as 'efficacy'. This is not optional. Benzoyl peroxide + any vitamin C product is ALWAYS efficacy type.\n\n" +
     "When treatment context is provided, always reference it directly in your plain English explanation. " +
     "Do not give a generic response — tailor it to what the user is trying to treat.";
 
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
     `- ibuprofen + acetaminophen = MODERATE (different mechanisms, generally safe short term)\n` +
     `- amoxicillin + birth control = MODERATE (reduced efficacy)\n` +
     `- vitamin C + iron supplement = LOW, efficacy (actually beneficial — enhances absorption)\n` +
-    `- benzoyl peroxide + vitamin C serum = LOW, efficacy (benzoyl peroxide oxidizes and destroys vitamin C, rendering it useless)\n` +
+    `- vitamin C serum + benzoyl peroxide = LOW risk, efficacy (benzoyl peroxide is a strong oxidizer that chemically degrades and destroys vitamin C/ascorbic acid on contact, rendering the vitamin C completely ineffective. This is a well-documented incompatibility in dermatology.)\n` +
     `- tetracycline + dairy/calcium = LOW, efficacy (calcium chelates the antibiotic, blocking absorption)\n\n` +
     `Now analyze this interaction using the same strict standards as the examples above:\n\n` +
     `Analyze the interaction between:\n` +
