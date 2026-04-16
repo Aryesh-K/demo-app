@@ -13,7 +13,8 @@ type Unit = (typeof UNITS)[number];
 
 const APPLICATION_METHODS = [
   "Oral (swallowed)",
-  "Topical (applied to skin)",
+  "Medicated topical (prescription or OTC drug)",
+  "Cosmetic/skincare (serum, moisturizer, non-medicated)",
   "Inhaled",
   "Injected",
   "Eye/Ear drops",
@@ -22,7 +23,7 @@ const APPLICATION_METHODS = [
 type ApplicationMethod = (typeof APPLICATION_METHODS)[number];
 
 type Risk = "high" | "moderate" | "low";
-type Phase = "idle" | "animating" | "loading" | "results" | "error";
+type Phase = "idle" | "animating" | "loading" | "results" | "error" | "premium";
 
 // ─── API types ────────────────────────────────────────────────────────────────
 
@@ -343,6 +344,42 @@ function Results({
   );
 }
 
+// ─── Premium detection ───────────────────────────────────────────────────────
+
+const PREMIUM_KEYWORDS = [
+  "supplement",
+  "vitamin",
+  "mineral",
+  "herbal",
+  "herb",
+  "fish oil",
+  "omega",
+  "probiotic",
+  "melatonin",
+  "zinc",
+  "magnesium",
+  "turmeric",
+  "ginger",
+  "echinacea",
+  "ginseng",
+  "serum",
+  "moisturizer",
+  "retinol",
+  "collagen",
+  "niacinamide",
+  "hyaluronic",
+  "peptide",
+  "antioxidant",
+  "essential oil",
+];
+
+function isPremium(drugName: string, method: ApplicationMethod): boolean {
+  if (method === "Cosmetic/skincare (serum, moisturizer, non-medicated)")
+    return true;
+  const name = drugName.toLowerCase();
+  return PREMIUM_KEYWORDS.some((kw) => name.includes(kw));
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CheckFree() {
@@ -366,6 +403,11 @@ export default function CheckFree() {
   const apiErrorRef = useRef<string | null>(null);
 
   function handleSubmit() {
+    if (isPremium(drugA, methodA) || isPremium(drugB, methodB)) {
+      setPhase("premium");
+      return;
+    }
+
     setPhase("animating");
     setApiResult(null);
     setApiError(null);
@@ -508,6 +550,38 @@ export default function CheckFree() {
         <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
           <div className="size-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
           <p className="text-sm">Analyzing interaction…</p>
+        </div>
+      )}
+
+      {/* Premium upgrade wall */}
+      {phase === "premium" && (
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-purple-800 bg-gradient-to-b from-purple-950/60 to-violet-950/40 p-8 text-center shadow-sm">
+          <span
+            className="text-5xl"
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              animation: "spin-slow 3s linear infinite",
+            }}
+          >
+            👑
+          </span>
+          <h2 className="text-xl font-bold text-purple-200">Premium Feature</h2>
+          <p className="max-w-sm text-sm leading-relaxed text-purple-300/80">
+            Interactions involving supplements, vitamins, or cosmetic products
+            require a premium subscription. Upgrade to unlock full analysis
+            including supplement interactions, skincare compatibility, and
+            personalized recommendations.
+          </p>
+          <Button
+            className="bg-purple-700 text-white hover:bg-purple-600"
+            size="lg"
+          >
+            Upgrade to Premium →
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Free tier includes prescription and OTC drug interactions only.
+          </p>
         </div>
       )}
 
