@@ -248,8 +248,28 @@ function Results({
   const nameA = drugA.trim() || "Drug A";
   const nameB = drugB.trim() || "Drug B";
   const hasAmounts = Boolean(amountA || amountB);
+  const degradationKeywords = [
+    "degrades",
+    "destroys",
+    "oxidizes",
+    "neutralizes",
+    "breaks down",
+    "renders",
+    "ineffective",
+    "inactivates",
+    "destabilizes",
+    "reduces the stability",
+  ];
+
+  const mentionsDegradation = degradationKeywords.some(
+    (keyword) =>
+      result.simple_explanation.toLowerCase().includes(keyword) ||
+      result.mechanism.toLowerCase().includes(keyword),
+  );
+
   const showIneffective =
-    result.interaction_type === "efficacy" && result.risk_level === "low";
+    (result.interaction_type === "efficacy" || mentionsDegradation) &&
+    result.risk_level === "low";
 
   return (
     <div className="flex flex-col gap-5 rounded-xl border bg-card p-6 shadow-sm">
