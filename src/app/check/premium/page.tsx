@@ -29,6 +29,9 @@ type Phase = "idle" | "animating" | "loading" | "results" | "error";
 const SELECT_CLS =
   "h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-2 py-1 text-sm text-foreground shadow-xs outline-none focus:border-ring dark:bg-input/30";
 
+const TEXTAREA_CLS =
+  "min-h-[80px] w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground shadow-xs outline-none focus:border-ring dark:bg-input/30 placeholder:text-muted-foreground";
+
 // ─── Drug entry type ──────────────────────────────────────────────────────────
 
 interface DrugEntry {
@@ -38,6 +41,24 @@ interface DrugEntry {
   amount: string;
   unit: Unit;
 }
+
+// ─── Health profile types ─────────────────────────────────────────────────────
+
+type HealthFieldKey = "age" | "conditions" | "medications" | "allergies";
+
+interface HealthField {
+  value: string;
+  included: boolean;
+}
+
+type HealthProfile = Record<HealthFieldKey, HealthField>;
+
+const INITIAL_HEALTH_PROFILE: HealthProfile = {
+  age: { value: "", included: true },
+  conditions: { value: "", included: true },
+  medications: { value: "", included: true },
+  allergies: { value: "", included: true },
+};
 
 // ─── API types ────────────────────────────────────────────────────────────────
 
@@ -165,6 +186,21 @@ function isCombinationIneffective(combo: Combination): boolean {
 // ─── Risk sort order ──────────────────────────────────────────────────────────
 
 const RISK_ORDER: Record<Risk, number> = { high: 0, moderate: 1, low: 2 };
+
+// ─── Build health context ─────────────────────────────────────────────────────
+
+function buildHealthContext(profile: HealthProfile): string {
+  const parts: string[] = [];
+  if (profile.age.included && profile.age.value.trim())
+    parts.push(`Age: ${profile.age.value.trim()}`);
+  if (profile.conditions.included && profile.conditions.value.trim())
+    parts.push(`Conditions: ${profile.conditions.value.trim()}`);
+  if (profile.medications.included && profile.medications.value.trim())
+    parts.push(`Current medications: ${profile.medications.value.trim()}`);
+  if (profile.allergies.included && profile.allergies.value.trim())
+    parts.push(`Allergies: ${profile.allergies.value.trim()}`);
+  return parts.join(", ");
+}
 
 // ─── Molecule animation ───────────────────────────────────────────────────────
 
@@ -331,6 +367,154 @@ function DrugCard({
           </select>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Toggle ───────────────────────────────────────────────────────────────────
+
+function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onToggle}
+      className={cn(
+        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
+        on ? "bg-yellow-600" : "bg-muted",
+      )}
+    >
+      <span
+        className={cn(
+          "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
+          on ? "translate-x-4" : "translate-x-0",
+        )}
+      />
+    </button>
+  );
+}
+
+// ─── Health profile panel ─────────────────────────────────────────────────────
+
+const HEALTH_FIELD_DEFS: Array<{
+  key: HealthFieldKey;
+  label: string;
+  placeholder: string;
+  type: "input" | "textarea";
+  inputMode?: "numeric" | "text";
+}> = [
+  {
+    key: "age",
+    label: "Age",
+    placeholder: "e.g. 34",
+    type: "input",
+    inputMode: "numeric",
+  },
+  {
+    key: "conditions",
+    label: "Known conditions",
+    placeholder: "e.g. Type 2 diabetes, hypertension",
+    type: "textarea",
+  },
+  {
+    key: "medications",
+    label: "Current medications",
+    placeholder: "e.g. metformin 500mg, lisinopril",
+    type: "textarea",
+  },
+  {
+    key: "allergies",
+    label: "Allergies",
+    placeholder: "e.g. penicillin, sulfa drugs",
+    type: "input",
+  },
+];
+
+function HealthProfilePanel({
+  profile,
+  onChange,
+}: {
+  profile: HealthProfile;
+  onChange: (key: HealthFieldKey, patch: Partial<HealthField>) => void;
+}) {
+  function sendAll() {
+    for (const { key } of HEALTH_FIELD_DEFS) {
+      onChange(key, { included: true });
+    }
+  }
+  function clearAll() {
+    for (const { key } of HEALTH_FIELD_DEFS) {
+      onChange(key, { value: "", included: true });
+    }
+  }
+
+  return (
+    <div className="sticky top-6 flex flex-col gap-4 rounded-xl border border-yellow-800/50 bg-yellow-950/20 p-4">
+      {/* Panel header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-yellow-300">
+          Health Profile
+        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={sendAll}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Include All
+          </button>
+          <span className="text-xs text-muted-foreground">·</span>
+          <button
+            type="button"
+            onClick={clearAll}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Clear All
+          </button>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Optional — toggle fields on to include them in the AI analysis.
+      </p>
+
+      {/* Fields */}
+      {HEALTH_FIELD_DEFS.map(({ key, label, placeholder, type, inputMode }) => {
+        const field = profile[key];
+        return (
+          <div key={key} className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">
+                {label}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">
+                  {field.included ? "On" : "Off"}
+                </span>
+                <Toggle
+                  on={field.included}
+                  onToggle={() => onChange(key, { included: !field.included })}
+                />
+              </div>
+            </div>
+            {type === "textarea" ? (
+              <textarea
+                value={field.value}
+                onChange={(e) => onChange(key, { value: e.target.value })}
+                placeholder={placeholder}
+                className={TEXTAREA_CLS}
+              />
+            ) : (
+              <Input
+                value={field.value}
+                onChange={(e) => onChange(key, { value: e.target.value })}
+                placeholder={placeholder}
+                inputMode={inputMode}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -506,6 +690,9 @@ export default function CheckPremium() {
   ]);
   const drugCounter = useRef(3);
   const [treatmentContext, setTreatmentContext] = useState("");
+  const [healthProfile, setHealthProfile] = useState<HealthProfile>(
+    INITIAL_HEALTH_PROFILE,
+  );
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
@@ -518,6 +705,13 @@ export default function CheckPremium() {
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+  }
+
+  function updateHealthField(key: HealthFieldKey, patch: Partial<HealthField>) {
+    setHealthProfile((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], ...patch },
+    }));
   }
 
   function addDrug() {
@@ -548,6 +742,8 @@ export default function CheckPremium() {
     apiResultRef.current = null;
     apiErrorRef.current = null;
 
+    const healthContext = buildHealthContext(healthProfile);
+
     fetch("/api/check-interaction-premium", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -559,6 +755,7 @@ export default function CheckPremium() {
           unit,
         })),
         treatment_context: treatmentContext,
+        health_context: healthContext,
       }),
     })
       .then((r) => {
@@ -599,7 +796,7 @@ export default function CheckPremium() {
     index === 0 ? "Drug A" : index === 1 ? "Drug B" : `Drug ${index + 1}`;
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[750px] flex-col gap-8 px-6 py-12">
+    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[960px] flex-col gap-8 px-6 py-12">
       {/* Header */}
       <div className="flex flex-col gap-3">
         <span className="w-fit rounded-full border border-yellow-700 bg-yellow-950/40 px-3 py-1 text-xs font-medium text-yellow-300">
@@ -613,73 +810,83 @@ export default function CheckPremium() {
         </p>
       </div>
 
-      {/* Drug cards */}
-      <div className="flex flex-col gap-4">
-        {drugs.map((drug, index) => (
-          <div
-            key={drug.id}
-            style={{ animation: "fade-in 0.3s ease forwards" }}
-          >
-            <DrugCard
-              drug={drug}
-              label={getDrugLabel(index)}
-              removable={index >= 2}
-              onNameChange={(v) => updateDrug(drug.id, { name: v })}
-              onMethodChange={(m) => updateDrug(drug.id, { method: m })}
-              onAmountChange={(v) => updateDrug(drug.id, { amount: v })}
-              onUnitChange={(u) => updateDrug(drug.id, { unit: u })}
-              onRemove={() => removeDrug(drug.id)}
+      {/* Two-column input area */}
+      <div className="grid grid-cols-[2fr_1fr] items-start gap-6">
+        {/* Left column: drug cards + optional context + submit */}
+        <div className="flex flex-col gap-4">
+          {/* Drug cards */}
+          {drugs.map((drug, index) => (
+            <div
+              key={drug.id}
+              style={{ animation: "fade-in 0.3s ease forwards" }}
+            >
+              <DrugCard
+                drug={drug}
+                label={getDrugLabel(index)}
+                removable={index >= 2}
+                onNameChange={(v) => updateDrug(drug.id, { name: v })}
+                onMethodChange={(m) => updateDrug(drug.id, { method: m })}
+                onAmountChange={(v) => updateDrug(drug.id, { amount: v })}
+                onUnitChange={(u) => updateDrug(drug.id, { unit: u })}
+                onRemove={() => removeDrug(drug.id)}
+              />
+            </div>
+          ))}
+
+          {/* Add drug button */}
+          {drugs.length < 5 && (
+            <Button
+              type="button"
+              onClick={addDrug}
+              variant="outline"
+              className="border-teal-700 text-teal-300 hover:bg-teal-950/40 hover:text-teal-200"
+            >
+              + Add Another Drug
+            </Button>
+          )}
+
+          {/* Optional context */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <hr className="flex-1 border-border" />
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Optional Context
+              </span>
+              <hr className="flex-1 border-border" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="treatment-context">
+                What is your goal or concern? (optional)
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                This helps us give you more relevant information
+              </p>
+            </div>
+            <Input
+              id="treatment-context"
+              value={treatmentContext}
+              onChange={(e) => setTreatmentContext(e.target.value)}
+              placeholder="e.g. managing anxiety, clearing acne, reducing inflammation, improving sleep"
             />
           </div>
-        ))}
 
-        {/* Add drug button */}
-        {drugs.length < 5 && (
+          {/* Submit */}
           <Button
-            type="button"
-            onClick={addDrug}
-            variant="outline"
-            className="border-teal-700 text-teal-300 hover:bg-teal-950/40 hover:text-teal-200"
+            onClick={handleSubmit}
+            disabled={phase === "animating" || phase === "loading"}
+            className="w-full bg-yellow-700 text-white hover:bg-yellow-600 disabled:opacity-50"
+            size="lg"
           >
-            + Add Another Drug
+            Analyze All Interactions →
           </Button>
-        )}
-      </div>
+        </div>
 
-      {/* Optional context */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <hr className="flex-1 border-border" />
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Optional Context
-          </span>
-          <hr className="flex-1 border-border" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="treatment-context">
-            What are you trying to treat? (optional)
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            This helps us give you more relevant information
-          </p>
-        </div>
-        <Input
-          id="treatment-context"
-          value={treatmentContext}
-          onChange={(e) => setTreatmentContext(e.target.value)}
-          placeholder="e.g. anxiety, chronic pain, allergies, high blood pressure"
+        {/* Right column: health profile panel */}
+        <HealthProfilePanel
+          profile={healthProfile}
+          onChange={updateHealthField}
         />
       </div>
-
-      {/* Submit */}
-      <Button
-        onClick={handleSubmit}
-        disabled={phase === "animating" || phase === "loading"}
-        className="w-full bg-yellow-700 text-white hover:bg-yellow-600 disabled:opacity-50"
-        size="lg"
-      >
-        Analyze All Interactions →
-      </Button>
 
       {/* Molecule animation */}
       {phase === "animating" && (
