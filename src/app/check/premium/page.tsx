@@ -792,6 +792,31 @@ export default function CheckPremium() {
     }
   }, []);
 
+  function handleNewCheck() {
+    setDrugs([
+      {
+        id: "drug-1",
+        name: "",
+        method: "Oral (swallowed)",
+        amount: "",
+        unit: "mg",
+      },
+      {
+        id: "drug-2",
+        name: "",
+        method: "Oral (swallowed)",
+        amount: "",
+        unit: "mg",
+      },
+    ]);
+    drugCounter.current = 3;
+    setTreatmentContext("");
+    setPhase("idle");
+    setApiResult(null);
+    setApiError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   const getDrugLabel = (index: number) =>
     index === 0 ? "Drug A" : index === 1 ? "Drug B" : `Drug ${index + 1}`;
 
@@ -909,7 +934,20 @@ export default function CheckPremium() {
       )}
 
       {/* Results */}
-      {phase === "results" && apiResult && <Results result={apiResult} />}
+      {phase === "results" && apiResult && (
+        <>
+          <Results result={apiResult} />
+          <Button
+            type="button"
+            onClick={handleNewCheck}
+            variant="outline"
+            size="lg"
+            className="w-full border-yellow-700 text-yellow-300 hover:bg-yellow-950/40 hover:text-yellow-200"
+          >
+            Start New Check
+          </Button>
+        </>
+      )}
     </main>
   );
 }
