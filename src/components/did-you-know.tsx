@@ -61,7 +61,7 @@ export function DidYouKnow() {
   }, [goTo]);
 
   useEffect(() => {
-    const id = setInterval(advance, 6000);
+    const id = setInterval(advance, 12000);
     return () => clearInterval(id);
   }, [advance]);
 
@@ -92,10 +92,10 @@ export function DidYouKnow() {
             transition: "opacity 0.22s ease",
           }}
         >
-          <p className="text-center text-lg font-medium leading-relaxed text-white">
+          <p className="text-center text-2xl font-medium leading-relaxed text-white">
             {current.fact}
           </p>
-          <p className="text-xs text-slate-500">— {current.source}</p>
+          <p className="text-sm text-slate-500">— {current.source}</p>
         </div>
 
         {/* Controls */}
@@ -105,13 +105,13 @@ export function DidYouKnow() {
             type="button"
             onClick={() => goTo((index - 1 + COUNT) % COUNT)}
             aria-label="Previous fact"
-            className="flex size-8 items-center justify-center rounded-full text-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+            className="flex size-6 items-center justify-center rounded-full p-3 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
           >
             ←
           </button>
 
           {/* Dots */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-3">
             {FACTS.map((f, i) => (
               <button
                 key={f.source}
@@ -121,8 +121,8 @@ export function DidYouKnow() {
                 className={cn(
                   "rounded-full transition-all duration-300",
                   i === index
-                    ? "h-2 w-4 bg-teal-400"
-                    : "size-2 bg-slate-600 hover:bg-slate-500",
+                    ? "h-3 w-5 bg-teal-400"
+                    : "size-3 bg-slate-600 hover:bg-slate-500",
                 )}
               />
             ))}
@@ -133,7 +133,7 @@ export function DidYouKnow() {
             type="button"
             onClick={() => goTo((index + 1) % COUNT)}
             aria-label="Next fact"
-            className="flex size-8 items-center justify-center rounded-full text-lg text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+            className="flex size-6 items-center justify-center rounded-full p-3 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
           >
             →
           </button>
