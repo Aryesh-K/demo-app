@@ -13,6 +13,12 @@ interface RxNormApiResponse {
   };
 }
 
+interface RxNormApproxResponse {
+  approximateGroup?: {
+    candidate?: Array<{ rxcui?: string }>;
+  };
+}
+
 interface FDALabelApiResponse {
   results?: Array<{
     warnings?: string[];
@@ -79,20 +85,68 @@ async function fetchWithTimeout(url: string): Promise<Response> {
 async function getRxNormData(
   drugName: string,
 ): Promise<{ rxcui: string | null; standardName: string | null }> {
+  const enc = encodeURIComponent(drugName);
+  console.log("[rxnorm] Fetching:", drugName);
   try {
-    const url = `https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${encodeURIComponent(drugName)}&search=1`;
-    console.log("[rxnorm] Fetching:", drugName);
-    const res = await fetchWithTimeout(url);
-    console.log("[rxnorm] Response status:", res.status);
-    if (!res.ok) return { rxcui: null, standardName: null };
-    const data = (await res.json()) as RxNormApiResponse;
-    console.log("[rxnorm] Response body:", JSON.stringify(data).slice(0, 300));
-    const ids = data.idGroup?.rxnormId;
-    if (!ids?.length) return { rxcui: null, standardName: null };
-    return {
-      rxcui: ids[0] ?? null,
-      standardName: data.idGroup?.name ?? null,
-    };
+    // Strategy 1: exact match
+    const res1 = await fetchWithTimeout(
+      `https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${enc}&search=0`,
+    );
+    console.log("[rxnorm] Response status:", res1.status);
+    if (res1.ok) {
+      const data = (await res1.json()) as RxNormApiResponse;
+      console.log(
+        "[rxnorm] Raw response for",
+        drugName,
+        JSON.stringify(data).slice(0, 200),
+      );
+      const ids = data.idGroup?.rxnormId;
+      if (ids?.length) {
+        return {
+          rxcui: ids[0] ?? null,
+          standardName: data.idGroup?.name ?? null,
+        };
+      }
+    }
+
+    // Strategy 2: approximate match
+    const res2 = await fetchWithTimeout(
+      `https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${enc}&search=1`,
+    );
+    console.log("[rxnorm] Response status (search=1):", res2.status);
+    if (res2.ok) {
+      const data = (await res2.json()) as RxNormApiResponse;
+      console.log(
+        "[rxnorm] Raw response for",
+        drugName,
+        JSON.stringify(data).slice(0, 200),
+      );
+      const ids = data.idGroup?.rxnormId;
+      if (ids?.length) {
+        return {
+          rxcui: ids[0] ?? null,
+          standardName: data.idGroup?.name ?? null,
+        };
+      }
+    }
+
+    // Strategy 3: spelling suggestions
+    const res3 = await fetchWithTimeout(
+      `https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${enc}&maxEntries=1`,
+    );
+    console.log("[rxnorm] Response status (approx):", res3.status);
+    if (res3.ok) {
+      const data = (await res3.json()) as RxNormApproxResponse;
+      console.log(
+        "[rxnorm] Raw response for",
+        drugName,
+        JSON.stringify(data).slice(0, 200),
+      );
+      const rxcui = data.approximateGroup?.candidate?.[0]?.rxcui ?? null;
+      if (rxcui) return { rxcui, standardName: null };
+    }
+
+    return { rxcui: null, standardName: null };
   } catch {
     return { rxcui: null, standardName: null };
   }
