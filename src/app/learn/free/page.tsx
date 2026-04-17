@@ -436,6 +436,22 @@ export default function LearnFree() {
   const apiResultRef = useRef<ApiResult | null>(null);
   const apiErrorRef = useRef<string | null>(null);
 
+  function handleNewCheck() {
+    setDrugA("");
+    setDrugB("");
+    setMethodA("Oral (swallowed)");
+    setMethodB("Oral (swallowed)");
+    setAmountA("");
+    setAmountB("");
+    setUnitA("mg");
+    setUnitB("mg");
+    setTreatmentContext("");
+    setApiResult(null);
+    setApiError(null);
+    setPhase("idle");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function handleSubmit() {
     if (isPremium(drugA, methodA) || isPremium(drugB, methodB)) {
       setPhase("premium");
@@ -659,6 +675,19 @@ export default function LearnFree() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Start New Analysis */}
+      {phase === "results" && apiResult && (
+        <Button
+          type="button"
+          onClick={handleNewCheck}
+          variant="outline"
+          size="lg"
+          className="mt-4 w-full border-teal-700 text-teal-300 hover:bg-teal-950/40 hover:text-teal-200"
+        >
+          Start New Analysis
+        </Button>
       )}
     </main>
   );
