@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DidYouKnow } from "~/components/did-you-know";
 import { GridReveal } from "~/components/grid-reveal";
 import { HeroCanvas } from "~/components/hero-canvas";
 import { ScrollIndicator } from "~/components/scroll-indicator";
@@ -98,6 +99,9 @@ export default function Home() {
         </div>
         <ScrollIndicator />
       </section>
+
+      {/* ── Did You Know ── */}
+      <DidYouKnow />
 
       {/* ── Content — constrained ── */}
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 pb-20 pt-12">
