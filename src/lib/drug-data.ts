@@ -81,9 +81,12 @@ async function getRxNormData(
 ): Promise<{ rxcui: string | null; standardName: string | null }> {
   try {
     const url = `https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${encodeURIComponent(drugName)}&search=1`;
+    console.log("[rxnorm] Fetching:", drugName);
     const res = await fetchWithTimeout(url);
+    console.log("[rxnorm] Response status:", res.status);
     if (!res.ok) return { rxcui: null, standardName: null };
     const data = (await res.json()) as RxNormApiResponse;
+    console.log("[rxnorm] Response body:", JSON.stringify(data).slice(0, 300));
     const ids = data.idGroup?.rxnormId;
     if (!ids?.length) return { rxcui: null, standardName: null };
     return {
@@ -106,8 +109,10 @@ interface FDAResult {
 async function tryFDAUrl(url: string): Promise<FDAResult | null> {
   try {
     const res = await fetchWithTimeout(url);
+    console.log("[fda] Response status:", res.status);
     if (!res.ok) return null;
     const data = (await res.json()) as FDALabelApiResponse;
+    console.log("[fda] Response body:", JSON.stringify(data).slice(0, 300));
     const r = data.results?.[0];
     if (!r) return null;
     return {
@@ -121,6 +126,7 @@ async function tryFDAUrl(url: string): Promise<FDAResult | null> {
 }
 
 async function getFDALabel(drugName: string): Promise<FDAResult> {
+  console.log("[fda] Fetching:", drugName);
   const enc = encodeURIComponent(drugName);
   return (
     (await tryFDAUrl(
@@ -146,9 +152,12 @@ async function getNIHInteractions(
   if (!rxcui1 || !rxcui2) return empty;
   try {
     const url = `https://rxnav.nlm.nih.gov/REST/interaction/interaction.json?rxcui=${rxcui1}`;
+    console.log("[nih] Fetching rxcui:", rxcui1);
     const res = await fetchWithTimeout(url);
+    console.log("[nih] Response status:", res.status);
     if (!res.ok) return empty;
     const data = (await res.json()) as NIHInteractionApiResponse;
+    console.log("[nih] Response body:", JSON.stringify(data).slice(0, 300));
     const pairs: NIHInteractionPair[] =
       data.interactionTypeGroup
         ?.flatMap((g) => g.interactionType ?? [])
