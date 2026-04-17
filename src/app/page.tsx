@@ -79,8 +79,10 @@ export default function Home() {
           </svg>
 
           <div className="flex flex-col gap-3">
-            <h1 className="text-4xl font-bold tracking-tight">ToxiClear AI</h1>
-            <p className="max-w-md text-lg text-muted-foreground">
+            <h1 className="text-5xl font-bold tracking-tight md:text-7xl">
+              ToxiClear AI
+            </h1>
+            <p className="max-w-md text-xl text-slate-200 md:text-2xl">
               Know before you take. Understand the science behind your
               medications.
             </p>
