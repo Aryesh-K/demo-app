@@ -93,7 +93,7 @@ export function Navbar() {
         <Link href="/" className="font-semibold tracking-tight">
           ToxiClear AI
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-1 items-center gap-4">
           <Link
             href="/"
             className={cn(
@@ -112,6 +112,12 @@ export function Navbar() {
             />
           ))}
         </div>
+        <Link
+          href="/signup"
+          className="rounded-md bg-yellow-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-yellow-600"
+        >
+          Sign Up
+        </Link>
       </div>
     </nav>
   );

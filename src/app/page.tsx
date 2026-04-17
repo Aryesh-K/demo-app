@@ -158,6 +158,24 @@ export default function Home() {
           </section>
         </GridReveal>
         <hr className="border-border" />
+
+        {/* ── Get Premium CTA ── */}
+        <section className="flex flex-col items-center gap-5 py-16 text-center">
+          <p className="text-lg font-semibold">
+            Ready to unlock the full ToxiClear AI experience?
+          </p>
+          <Button
+            asChild
+            size="lg"
+            className="bg-yellow-700 text-white hover:bg-yellow-600"
+          >
+            <Link href="/signup">Get Premium →</Link>
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Supplements • Cosmetics • Advanced Learning • Personalized Health
+            Context
+          </p>
+        </section>
       </div>
       <div className="h-24" />
     </main>

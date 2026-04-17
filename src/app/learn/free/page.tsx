@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -629,6 +630,36 @@ export default function LearnFree() {
 
       {/* Results */}
       {phase === "results" && apiResult && <Results result={apiResult} />}
+
+      {/* Premium upsell */}
+      {phase === "results" && apiResult && (
+        <div className="rounded-xl bg-gradient-to-r from-yellow-700 to-amber-600 p-[1px]">
+          <div className="flex flex-col gap-4 rounded-[11px] bg-background p-6">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl leading-none">👑</span>
+              <div className="flex flex-col gap-1">
+                <p className="font-semibold">Want more from ToxiClear AI?</p>
+              </div>
+            </div>
+            <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
+              <li>🔬 Interactive pathway diagrams</li>
+              <li>📚 Curriculum-aligned explanations for AP Bio and Pre-Med</li>
+              <li>💊 Supplement and cosmetic interactions</li>
+              <li>🏥 Personalized analysis using your health profile</li>
+            </ul>
+            <Button
+              asChild
+              className="w-fit bg-yellow-700 text-white hover:bg-yellow-600"
+              size="lg"
+            >
+              <Link href="/signup">Get Premium →</Link>
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Upgrade anytime. Cancel anytime.
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

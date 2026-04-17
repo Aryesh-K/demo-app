@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -575,10 +576,11 @@ export default function CheckFree() {
             personalized recommendations.
           </p>
           <Button
+            asChild
             className="bg-purple-700 text-white hover:bg-purple-600"
             size="lg"
           >
-            Upgrade to Premium →
+            <Link href="/signup">Upgrade to Premium →</Link>
           </Button>
           <p className="text-xs text-muted-foreground">
             Free tier includes prescription and OTC drug interactions only.
