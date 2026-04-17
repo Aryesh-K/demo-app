@@ -27,24 +27,6 @@ interface FDALabelApiResponse {
   }>;
 }
 
-interface NIHInteractionConcept {
-  minConceptItem?: { rxcui?: string };
-}
-
-interface NIHInteractionPair {
-  interactionConcept?: NIHInteractionConcept[];
-  severity?: string;
-  description?: string;
-}
-
-interface NIHInteractionApiResponse {
-  interactionTypeGroup?: Array<{
-    interactionType?: Array<{
-      interactionPair?: NIHInteractionPair[];
-    }>;
-  }>;
-}
-
 // ─── Public types ──────────────────────────────────────────────────────────────
 
 export interface DrugData {
@@ -147,7 +129,8 @@ async function getRxNormData(
     }
 
     return { rxcui: null, standardName: null };
-  } catch {
+  } catch (err) {
+    console.log("[drug-data] CATCH ERROR in getRxNormData:", err);
     return { rxcui: null, standardName: null };
   }
 }
@@ -169,12 +152,21 @@ async function tryFDAUrl(url: string): Promise<FDAResult | null> {
     console.log("[fda] Response body:", JSON.stringify(data).slice(0, 300));
     const r = data.results?.[0];
     if (!r) return null;
+    console.log(
+      "[fda] Extracted warnings:",
+      !!r.warnings,
+      "interactions:",
+      !!r.drug_interactions,
+      "description:",
+      !!r.description,
+    );
     return {
       warnings: r.warnings?.[0]?.slice(0, 500) ?? null,
       interactions: r.drug_interactions?.[0]?.slice(0, 500) ?? null,
       description: r.description?.[0]?.slice(0, 300) ?? null,
     };
-  } catch {
+  } catch (err) {
+    console.log("[drug-data] CATCH ERROR in tryFDAUrl:", err);
     return null;
   }
 }
@@ -188,49 +180,11 @@ async function getFDALabel(drugName: string): Promise<FDAResult> {
     )) ??
     (await tryFDAUrl(
       `https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${enc}"&limit=1`,
+    )) ??
+    (await tryFDAUrl(
+      `https://api.fda.gov/drug/label.json?search=openfda.substance_name:"${enc}"&limit=1`,
     )) ?? { warnings: null, interactions: null, description: null }
   );
-}
-
-// ─── NIH Drug Interaction ─────────────────────────────────────────────────────
-
-async function getNIHInteractions(
-  rxcui1: string | null,
-  rxcui2: string | null,
-): Promise<NIHInteractionResult> {
-  const empty: NIHInteractionResult = {
-    hasInteraction: false,
-    severity: null,
-    description: null,
-  };
-  if (!rxcui1 || !rxcui2) return empty;
-  try {
-    const url = `https://rxnav.nlm.nih.gov/REST/interaction/interaction.json?rxcui=${rxcui1}`;
-    console.log("[nih] Fetching rxcui:", rxcui1);
-    const res = await fetchWithTimeout(url);
-    console.log("[nih] Response status:", res.status);
-    if (!res.ok) return empty;
-    const data = (await res.json()) as NIHInteractionApiResponse;
-    console.log("[nih] Response body:", JSON.stringify(data).slice(0, 300));
-    const pairs: NIHInteractionPair[] =
-      data.interactionTypeGroup
-        ?.flatMap((g) => g.interactionType ?? [])
-        .flatMap((t) => t.interactionPair ?? []) ?? [];
-    for (const pair of pairs) {
-      const rxcuis =
-        pair.interactionConcept?.map((c) => c.minConceptItem?.rxcui) ?? [];
-      if (rxcuis.includes(rxcui2)) {
-        return {
-          hasInteraction: true,
-          severity: pair.severity ?? null,
-          description: pair.description ?? null,
-        };
-      }
-    }
-    return empty;
-  } catch {
-    return empty;
-  }
 }
 
 // ─── Build prompt context string ──────────────────────────────────────────────
@@ -238,11 +192,9 @@ async function getNIHInteractions(
 export function buildDataContext(
   drug1Data: DrugData,
   drug2Data: DrugData,
-  knownInteraction: NIHInteractionResult,
+  _knownInteraction: NIHInteractionResult,
 ): string {
-  const nihLine = knownInteraction.hasInteraction
-    ? `KNOWN INTERACTION FOUND — Severity: ${knownInteraction.severity ?? "unspecified"}, Details: ${knownInteraction.description ?? "none"}`
-    : "No direct interaction record found";
+  const nihLine = "Not available (deprecated)";
 
   return (
     `VERIFIED DRUG DATABASE DATA (use this to inform your analysis):\n\n` +
@@ -269,18 +221,22 @@ export async function fetchDrugPairData(
       getRxNormData(drug2),
     ]);
 
-    const [fda1, fda2, nihInteraction] = await Promise.all([
+    const [fda1, fda2] = await Promise.all([
       getFDALabel(drug1),
       getFDALabel(drug2),
-      getNIHInteractions(rxNorm1.rxcui, rxNorm2.rxcui),
     ]);
 
     return {
       drug1Data: { inputName: drug1, ...rxNorm1, ...fda1 },
       drug2Data: { inputName: drug2, ...rxNorm2, ...fda2 },
-      knownInteraction: nihInteraction,
+      knownInteraction: {
+        hasInteraction: false,
+        severity: null,
+        description: null,
+      },
     };
-  } catch {
+  } catch (err) {
+    console.log("[drug-data] CATCH ERROR in fetchDrugPairData:", err);
     return {
       drug1Data: {
         inputName: drug1,

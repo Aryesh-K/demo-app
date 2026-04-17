@@ -71,13 +71,12 @@ export async function POST(req: NextRequest) {
   const dataContext = pairDataResults
     .map((pd) => {
       console.log(
-        "[drug-data] FDA data found:",
-        !!pd.drug1Data.warnings,
-        !!pd.drug2Data.warnings,
+        "[drug-data] FDA drug1 data:",
+        !!pd.drug1Data.warnings || !!pd.drug1Data.interactions,
       );
       console.log(
-        "[drug-data] NIH interaction found:",
-        pd.knownInteraction.hasInteraction,
+        "[drug-data] FDA drug2 data:",
+        !!pd.drug2Data.warnings || !!pd.drug2Data.interactions,
       );
       return buildDataContext(pd.drug1Data, pd.drug2Data, pd.knownInteraction);
     })

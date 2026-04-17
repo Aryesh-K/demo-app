@@ -65,13 +65,12 @@ export async function POST(req: NextRequest) {
     drug2,
   );
   console.log(
-    "[drug-data] FDA data found:",
-    !!drug1Data.warnings,
-    !!drug2Data.warnings,
+    "[drug-data] FDA drug1 data:",
+    !!drug1Data.warnings || !!drug1Data.interactions,
   );
   console.log(
-    "[drug-data] NIH interaction found:",
-    knownInteraction.hasInteraction,
+    "[drug-data] FDA drug2 data:",
+    !!drug2Data.warnings || !!drug2Data.interactions,
   );
   const dataContext = buildDataContext(drug1Data, drug2Data, knownInteraction);
 
