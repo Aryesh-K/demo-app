@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { buildDataContext, fetchDrugPairData } from "~/lib/drug-data";
 
 interface RequestBody {
   drug1: string;
@@ -69,6 +70,21 @@ export async function POST(req: NextRequest) {
   } = body;
   console.log("[check-interaction] Drugs:", drug1, "/", drug2);
 
+  const { drug1Data, drug2Data, knownInteraction } = await fetchDrugPairData(
+    drug1,
+    drug2,
+  );
+  console.log(
+    "[drug-data] FDA data found:",
+    !!drug1Data.warnings,
+    !!drug2Data.warnings,
+  );
+  console.log(
+    "[drug-data] NIH interaction found:",
+    knownInteraction.hasInteraction,
+  );
+  const dataContext = buildDataContext(drug1Data, drug2Data, knownInteraction);
+
   const drugADesc = describeDrug(drug1, method1, amount1, unit1);
   const drugBDesc = describeDrug(drug2, method2, amount2, unit2);
 
@@ -103,6 +119,7 @@ export async function POST(req: NextRequest) {
     : "";
 
   const userPrompt =
+    dataContext +
     `Before analyzing, internalize these calibration examples:\n` +
     `- aspirin + ibuprofen = HIGH (two NSAIDs, GI bleed risk)\n` +
     `- acetaminophen + NyQuil = HIGH (duplicate acetaminophen, liver damage risk)\n` +

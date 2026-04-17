@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { buildDataContext, fetchDrugPairData } from "~/lib/drug-data";
 
 interface DrugInput {
   name: string;
@@ -56,6 +57,33 @@ export async function POST(req: NextRequest) {
     .map((d, i) => `${i + 1}. ${describeDrug(d)}`)
     .join("\n");
 
+  // ─── Multi-database pre-fetch (top 3 pairs) ────────────────────────────────
+  const topPairs = drugs
+    .flatMap((d1, i) =>
+      drugs.slice(i + 1).map((d2) => ({ d1: d1.name, d2: d2.name })),
+    )
+    .slice(0, 3);
+
+  const pairDataResults = await Promise.all(
+    topPairs.map(({ d1, d2 }) => fetchDrugPairData(d1, d2)),
+  );
+
+  const dataContext = pairDataResults
+    .map((pd) => {
+      console.log(
+        "[drug-data] FDA data found:",
+        !!pd.drug1Data.warnings,
+        !!pd.drug2Data.warnings,
+      );
+      console.log(
+        "[drug-data] NIH interaction found:",
+        pd.knownInteraction.hasInteraction,
+      );
+      return buildDataContext(pd.drug1Data, pd.drug2Data, pd.knownInteraction);
+    })
+    .join("\n");
+  // ──────────────────────────────────────────────────────────────────────────
+
   const systemPrompt =
     "You are a clinical pharmacology expert analyzing multiple drug interactions with medical precision. " +
     "Always respond with valid JSON only — no markdown, no code fences, no extra text.\n\n" +
@@ -84,6 +112,7 @@ export async function POST(req: NextRequest) {
     : "";
 
   const userPrompt =
+    dataContext +
     `Analyze interactions between these substances:\n${drugList}\n\n` +
     contextLine +
     healthLine +
