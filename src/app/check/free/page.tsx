@@ -398,6 +398,7 @@ export default function CheckFree() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Refs to coordinate animation completion with async API response
   const animDoneRef = useRef(false);
@@ -417,11 +418,28 @@ export default function CheckFree() {
     setNotes("");
     setApiResult(null);
     setApiError(null);
+    setValidationError(null);
     setPhase("idle");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleSubmit() {
+    const trimA = drugA.trim();
+    const trimB = drugB.trim();
+    if (!trimA || !trimB) {
+      setValidationError("Please enter both Drug A and Drug B before checking.");
+      return;
+    }
+    if (trimA.length < 2) {
+      setValidationError(`Drug name '${trimA}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+      return;
+    }
+    if (trimB.length < 2) {
+      setValidationError(`Drug name '${trimB}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+      return;
+    }
+    setValidationError(null);
+
     if (isPremium(drugA, methodA) || isPremium(drugB, methodB)) {
       setPhase("premium");
       return;
@@ -450,8 +468,11 @@ export default function CheckFree() {
         notes,
       }),
     })
-      .then((r) => {
-        if (!r.ok) throw new Error("API error");
+      .then(async (r) => {
+        if (!r.ok) {
+          const errData = await r.json().catch(() => ({})) as { message?: string };
+          throw new Error(errData.message ?? "Failed to analyze the interaction. Please try again.");
+        }
         return r.json() as Promise<ApiResult>;
       })
       .then((data) => {
@@ -461,9 +482,11 @@ export default function CheckFree() {
           setPhase("results");
         }
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         apiErrorRef.current =
-          "Failed to analyze the interaction. Please try again.";
+          err instanceof Error && err.message
+            ? err.message
+            : "Failed to analyze the interaction. Please try again.";
         if (animDoneRef.current) {
           setApiError(apiErrorRef.current);
           setPhase("error");

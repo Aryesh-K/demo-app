@@ -30,6 +30,31 @@ function describeDrug(
   return parts.join(", ");
 }
 
+// ─── Unknown drug detection ───────────────────────────────────────────────────
+
+const UNKNOWN_DRUG_PHRASES = [
+  "not a medication",
+  "not a drug",
+  "not a real",
+  "unknown substance",
+  "cannot identify",
+  "no such drug",
+];
+
+function findBadDrug(text: string, candidates: string[]): string | null {
+  const lower = text.toLowerCase();
+  if (!UNKNOWN_DRUG_PHRASES.some((p) => lower.includes(p))) return null;
+  for (const phrase of UNKNOWN_DRUG_PHRASES) {
+    const idx = lower.indexOf(phrase);
+    if (idx === -1) continue;
+    const win = lower.slice(Math.max(0, idx - 120), idx + 120);
+    for (const c of candidates) {
+      if (c.trim() && win.includes(c.toLowerCase().trim())) return c;
+    }
+  }
+  return candidates.filter((c) => c.trim()).join(" or ") || "one of the entered substances";
+}
+
 export async function POST(req: NextRequest) {
   console.log("[check-interaction] POST received");
   console.log(
@@ -264,6 +289,18 @@ export async function POST(req: NextRequest) {
       typeRaw === "safety" || typeRaw === "efficacy" || typeRaw === "both"
         ? typeRaw
         : "safety";
+
+    const checkText = `${result.simple_explanation ?? ""} ${result.mechanism ?? ""}`;
+    const badDrug = findBadDrug(checkText, [drug1, drug2]);
+    if (badDrug) {
+      return NextResponse.json(
+        {
+          error: "unrecognized_drug",
+          message: `We couldn't identify '${badDrug}' as a known medication or substance. Please check the spelling or try the generic name (e.g. 'acetaminophen' instead of 'Tylenol').`,
+        },
+        { status: 400 },
+      );
+    }
 
     console.log(
       "[check-interaction] Success, risk:",
