@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -25,7 +25,7 @@ const APPLICATION_METHODS = [
 type ApplicationMethod = (typeof APPLICATION_METHODS)[number];
 
 type Risk = "high" | "moderate" | "low";
-type Phase = "idle" | "animating" | "loading" | "results" | "error" | "premium";
+type Phase = "idle" | "animating" | "results" | "error" | "premium";
 
 // ─── API types ────────────────────────────────────────────────────────────────
 
@@ -75,53 +75,70 @@ const SELECT_CLS =
 
 // ─── Molecule animation ───────────────────────────────────────────────────────
 
-function MoleculeAnimation({ onComplete }: { onComplete: () => void }) {
-  const [phase, setPhase] = useState(0);
+function MoleculeAnimation({ fading }: { fading: boolean }) {
+  const [animPhase, setAnimPhase] = useState(0);
+  const stateRef = useRef({ cancelled: false, timers: [] as ReturnType<typeof setTimeout>[] });
 
   useEffect(() => {
-    const timers = [
-      setTimeout(() => setPhase(1), 30),
-      setTimeout(() => setPhase(2), 650),
-      setTimeout(() => setPhase(3), 900),
-      setTimeout(onComplete, 1500),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [onComplete]);
+    const s = stateRef.current;
+    s.cancelled = false;
 
-  const sliding = phase >= 1;
-  const bonded = phase >= 2;
-  const pulsing = phase >= 3;
+    function runCycle() {
+      if (s.cancelled) return;
+      s.timers.forEach(clearTimeout);
+      s.timers = [];
+      setAnimPhase(0);
+      s.timers.push(
+        setTimeout(() => { if (!s.cancelled) setAnimPhase(1); }, 50),
+        setTimeout(() => { if (!s.cancelled) setAnimPhase(2); }, 600),
+        setTimeout(() => { if (!s.cancelled) setAnimPhase(3); }, 850),
+        setTimeout(() => runCycle(), 2200),
+      );
+    }
+
+    runCycle();
+    return () => {
+      s.cancelled = true;
+      s.timers.forEach(clearTimeout);
+    };
+  }, []);
+
+  const sliding = animPhase >= 1;
+  const bonded = animPhase >= 2;
+  const pulsing = animPhase >= 3;
 
   return (
-    <div className="flex items-center justify-center gap-5 py-8">
-      <div
-        className="size-11 rounded-full bg-blue-600/75"
-        style={{
-          opacity: sliding ? 1 : 0,
-          transform: sliding ? "translateX(0)" : "translateX(-52px)",
-          transition:
-            "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
-          boxShadow: pulsing ? "0 0 28px 10px rgba(37,99,235,0.4)" : "none",
-        }}
-      />
-      <div
-        className="h-[3px] rounded-full bg-blue-400"
-        style={{
-          width: "2.25rem",
-          opacity: bonded ? 1 : 0,
-          transition: "opacity 0.25s ease",
-        }}
-      />
-      <div
-        className="size-11 rounded-full bg-green-500/75"
-        style={{
-          opacity: sliding ? 1 : 0,
-          transform: sliding ? "translateX(0)" : "translateX(52px)",
-          transition:
-            "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
-          boxShadow: pulsing ? "0 0 28px 10px rgba(34,197,94,0.4)" : "none",
-        }}
-      />
+    <div
+      className="flex flex-col items-center gap-4 py-8"
+      style={{ opacity: fading ? 0 : 1, transition: "opacity 0.3s ease" }}
+    >
+      <div className="flex items-center justify-center gap-5">
+        <div
+          className="size-11 rounded-full bg-blue-600/75"
+          style={{
+            opacity: sliding ? 1 : 0,
+            transform: sliding ? "translateX(0)" : "translateX(-52px)",
+            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            boxShadow: pulsing ? "0 0 28px 10px rgba(37,99,235,0.4)" : "none",
+          }}
+        />
+        <div
+          className="h-[3px] rounded-full bg-blue-400"
+          style={{ width: "2.25rem", opacity: bonded ? 1 : 0, transition: "opacity 0.25s ease" }}
+        />
+        <div
+          className="size-11 rounded-full bg-green-500/75"
+          style={{
+            opacity: sliding ? 1 : 0,
+            transform: sliding ? "translateX(0)" : "translateX(52px)",
+            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            boxShadow: pulsing ? "0 0 28px 10px rgba(34,197,94,0.4)" : "none",
+          }}
+        />
+      </div>
+      <p className="animate-pulse text-sm text-muted-foreground">
+        Analyzing interaction…
+      </p>
     </div>
   );
 }
@@ -401,12 +418,7 @@ export default function CheckFree() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [premiumReason, setPremiumReason] = useState<"prescription" | "supplement" | null>(null);
-
-  // Refs to coordinate animation completion with async API response
-  const animDoneRef = useRef(false);
-  const apiResultRef = useRef<ApiResult | null>(null);
-  const apiErrorRef = useRef<string | null>(null);
-  const apiValidationErrorRef = useRef<string | null>(null);
+  const [animFading, setAnimFading] = useState(false);
 
   function handleNewCheck() {
     setDrugA("");
@@ -456,12 +468,9 @@ export default function CheckFree() {
     }
 
     setPhase("animating");
+    setAnimFading(false);
     setApiResult(null);
     setApiError(null);
-    animDoneRef.current = false;
-    apiResultRef.current = null;
-    apiErrorRef.current = null;
-    apiValidationErrorRef.current = null;
 
     fetch("/api/check-interaction", {
       method: "POST",
@@ -491,48 +500,32 @@ export default function CheckFree() {
         return r.json() as Promise<ApiResult>;
       })
       .then((data) => {
-        apiResultRef.current = data;
-        if (animDoneRef.current) {
+        setAnimFading(true);
+        setTimeout(() => {
+          setAnimFading(false);
           setApiResult(data);
           setPhase("results");
-        }
+        }, 300);
       })
       .catch((err: unknown) => {
-        if (err instanceof Error && (err as Error & { isValidation?: boolean }).isValidation) {
-          apiValidationErrorRef.current = err.message;
-          if (animDoneRef.current) {
+        const isValidation = err instanceof Error && (err as Error & { isValidation?: boolean }).isValidation;
+        setAnimFading(true);
+        setTimeout(() => {
+          setAnimFading(false);
+          if (isValidation && err instanceof Error) {
             setValidationError(err.message);
             setPhase("idle");
-          }
-        } else {
-          apiErrorRef.current =
-            err instanceof Error && err.message
-              ? err.message
-              : "Failed to analyze the interaction. Please try again.";
-          if (animDoneRef.current) {
-            setApiError(apiErrorRef.current);
+          } else {
+            setApiError(
+              err instanceof Error && err.message
+                ? err.message
+                : "Failed to analyze the interaction. Please try again.",
+            );
             setPhase("error");
           }
-        }
+        }, 300);
       });
   }
-
-  const handleAnimationComplete = useCallback(() => {
-    animDoneRef.current = true;
-    if (apiResultRef.current) {
-      setApiResult(apiResultRef.current);
-      setPhase("results");
-    } else if (apiValidationErrorRef.current) {
-      setValidationError(apiValidationErrorRef.current);
-      setPhase("idle");
-    } else if (apiErrorRef.current) {
-      setApiError(apiErrorRef.current);
-      setPhase("error");
-    } else {
-      // API still in-flight — show loading until it resolves
-      setPhase("loading");
-    }
-  }, []);
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[700px] flex-col gap-8 px-6 py-12">
@@ -651,24 +644,16 @@ export default function CheckFree() {
       {/* Submit */}
       <Button
         onClick={handleSubmit}
-        disabled={phase === "animating" || phase === "loading"}
+        disabled={phase === "animating"}
         className="w-full bg-blue-900 text-white hover:bg-blue-800 disabled:opacity-50"
         size="lg"
       >
         Check Interaction →
       </Button>
 
-      {/* Molecule animation */}
+      {/* Molecule animation — loops until API responds */}
       {phase === "animating" && (
-        <MoleculeAnimation onComplete={handleAnimationComplete} />
-      )}
-
-      {/* Loading — animation done but API still in-flight */}
-      {phase === "loading" && (
-        <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
-          <div className="size-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <p className="text-sm">Analyzing interaction…</p>
-        </div>
+        <MoleculeAnimation fading={animFading} />
       )}
 
       {/* Premium upgrade wall */}
