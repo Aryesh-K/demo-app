@@ -13,7 +13,7 @@ const freePublicFeatures = [
 ];
 
 const freeStudentsFeatures = [
-  "Check interactions between 2 drugs",
+  "Check interactions between 2 drugs, OTC medications, or alcohol",
   "Basic biological mechanism explanation",
   "Intro-level biochemistry context (neurotransmitters, enzymes)",
   "Two explanation levels: simple and intermediate",
@@ -23,16 +23,17 @@ const premiumPublicFeatures = [
   "Check up to 3–5 drugs and supplements at once",
   "Includes herbal supplement and vitamin interactions",
   "Save your interaction history",
-  "Medication reminders",
   'Real-life context (e.g. "this may affect your focus or sleep")',
+  "Saved user profile that auto-updates and includes prescribed medications",
+  "Curriculum-aligned explanation modes for middle school/honors biology, AP Biology, and pre-med students",
 ];
 
 const premiumStudentsFeatures = [
   "Advanced biochemical pathway explanations",
-  "Multi-layer learning mode (beginner → advanced → pre-med)",
   "Interaction classification (CYP450, serotonin, CNS depression)",
-  "Visual pathway diagrams",
-  '"Explain to a patient / student / pre-med" modes',
+  "Immersive 3D interactive models tailored to selected explanation level",
+  "Case study mode — analyze interactions for a specific patient profile",
+  "Curriculum-aligned explanations for middle school/honors biology, AP Biology, and pre-med students",
 ];
 
 function FeatureList({ items }: { items: string[] }) {
