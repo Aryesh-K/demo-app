@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -23,7 +23,7 @@ const APPLICATION_METHODS = [
 ] as const;
 type ApplicationMethod = (typeof APPLICATION_METHODS)[number];
 
-type Phase = "idle" | "animating" | "loading" | "results" | "error";
+type Phase = "idle" | "animating" | "results" | "error";
 
 const SELECT_CLS =
   "h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-2 py-1 text-sm text-foreground shadow-xs outline-none focus:border-ring dark:bg-input/30";
@@ -150,35 +150,31 @@ const CLASSIFICATION_EMOJI: Record<string, string> = {
   Other: "🔍",
 };
 
-// ─── Text segment helpers ─────────────────────────────────────────────────────
+// ─── Text segment helpers — first occurrence only ─────────────────────────────
 
 type Segment =
   | { type: "text"; content: string }
-  | { type: "term"; content: string; termDef: KeyTerm };
+  | { type: "term"; content: string; termIndex: number; termDef: KeyTerm };
 
-function buildSegments(
-  text: string,
-  terms: KeyTerm[],
-): { segments: Segment[]; matchedTermNames: Set<string> } {
-  const matchedTermNames = new Set<string>();
+function buildSegments(text: string, terms: KeyTerm[]): Segment[] {
+  if (!terms.length) return [{ type: "text", content: text }];
 
-  if (!terms.length) {
-    return { segments: [{ type: "text", content: text }], matchedTermNames };
-  }
+  // Attach original index, sort longest-first to avoid partial matches
+  const indexed = terms.map((t, i) => ({ ...t, originalIndex: i }));
+  const sorted = [...indexed].sort((a, b) => b.term.length - a.term.length);
 
-  const sortedTerms = [...terms].sort((a, b) => b.term.length - a.term.length);
-
-  const pattern = sortedTerms
+  const pattern = sorted
     .map((t) => t.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:ed|es|ing|s)?")
     .join("|");
 
   const parts = text.split(new RegExp(`(${pattern})`, "gi"));
   const segments: Segment[] = [];
+  const highlighted = new Set<number>(); // track already-highlighted term indices
 
   for (const part of parts) {
     if (!part) continue;
     const lp = part.toLowerCase();
-    const matchedTerm = sortedTerms.find((t) => {
+    const matched = sorted.find((t) => {
       const lt = t.term.toLowerCase();
       return (
         lp === lt ||
@@ -188,15 +184,21 @@ function buildSegments(
         lp === lt + "ing"
       );
     });
-    if (matchedTerm) {
-      matchedTermNames.add(matchedTerm.term.toLowerCase());
-      segments.push({ type: "term", content: part, termDef: matchedTerm });
+
+    if (matched && !highlighted.has(matched.originalIndex)) {
+      highlighted.add(matched.originalIndex);
+      segments.push({
+        type: "term",
+        content: part,
+        termIndex: matched.originalIndex,
+        termDef: matched,
+      });
     } else {
       segments.push({ type: "text", content: part });
     }
   }
 
-  return { segments, matchedTermNames };
+  return segments;
 }
 
 // ─── Term chip ────────────────────────────────────────────────────────────────
@@ -205,7 +207,6 @@ function TermChip({
   displayText,
   term,
   definition,
-  termKey,
   isOpen,
   onToggle,
   variant = "pill",
@@ -213,19 +214,17 @@ function TermChip({
   displayText: string;
   term: string;
   definition: string;
-  termKey: string;
   isOpen: boolean;
-  onToggle: () => void;
+  onToggle: (e: React.MouseEvent) => void;
   variant?: "inline" | "pill";
 }) {
   return (
-    <span className="relative inline">
+    <span className="relative inline" style={{ zIndex: isOpen ? 51 : "auto" }}>
       <button
         type="button"
-        data-termkey={termKey}
         onClick={(e) => {
           e.stopPropagation();
-          onToggle();
+          onToggle(e);
         }}
         className={
           variant === "pill"
@@ -241,8 +240,8 @@ function TermChip({
 
       {isOpen && (
         <span
-          className="absolute left-0 top-[calc(100%+6px)] z-50 w-60 rounded-xl border border-teal-800 bg-card p-3 shadow-xl"
-          style={{ animation: "fade-in 0.15s ease forwards" }}
+          className="absolute left-0 top-[calc(100%+6px)] z-50 w-64 rounded-xl border border-teal-800 bg-card p-3 shadow-xl"
+          style={{ animation: "fade-in 0.2s ease forwards" }}
           onClick={(e) => e.stopPropagation()}
         >
           <span className="flex items-start justify-between gap-1.5">
@@ -251,7 +250,7 @@ function TermChip({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onToggle();
+                onToggle(e);
               }}
               className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
@@ -267,53 +266,79 @@ function TermChip({
   );
 }
 
-// ─── Molecule animation ───────────────────────────────────────────────────────
+// ─── Molecule animation — loops until unmounted ───────────────────────────────
 
-function MoleculeAnimation({ onComplete }: { onComplete: () => void }) {
-  const [phase, setPhase] = useState(0);
+function MoleculeAnimation({ fading }: { fading: boolean }) {
+  const [animPhase, setAnimPhase] = useState(0);
+  const stateRef = useRef({ cancelled: false, timers: [] as ReturnType<typeof setTimeout>[] });
 
   useEffect(() => {
-    const timers = [
-      setTimeout(() => setPhase(1), 30),
-      setTimeout(() => setPhase(2), 650),
-      setTimeout(() => setPhase(3), 900),
-      setTimeout(onComplete, 1500),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [onComplete]);
+    const s = stateRef.current;
+    s.cancelled = false;
 
-  const sliding = phase >= 1;
-  const bonded = phase >= 2;
-  const pulsing = phase >= 3;
+    function runCycle() {
+      if (s.cancelled) return;
+      s.timers.forEach(clearTimeout);
+      s.timers = [];
+      setAnimPhase(0);
+      s.timers.push(
+        setTimeout(() => { if (!s.cancelled) setAnimPhase(1); }, 50),
+        setTimeout(() => { if (!s.cancelled) setAnimPhase(2); }, 600),
+        setTimeout(() => { if (!s.cancelled) setAnimPhase(3); }, 850),
+        setTimeout(() => runCycle(), 2200),
+      );
+    }
+
+    runCycle();
+    return () => {
+      s.cancelled = true;
+      s.timers.forEach(clearTimeout);
+    };
+  }, []);
+
+  const sliding = animPhase >= 1;
+  const bonded = animPhase >= 2;
+  const pulsing = animPhase >= 3;
 
   return (
-    <div className="flex items-center justify-center gap-5 py-8">
-      <div
-        className="size-11 rounded-full bg-yellow-600/75"
-        style={{
-          opacity: sliding ? 1 : 0,
-          transform: sliding ? "translateX(0)" : "translateX(-52px)",
-          transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
-          boxShadow: pulsing ? "0 0 28px 10px rgba(202,138,4,0.4)" : "none",
-        }}
-      />
-      <div
-        className="h-[3px] rounded-full bg-yellow-400"
-        style={{
-          width: "2.25rem",
-          opacity: bonded ? 1 : 0,
-          transition: "opacity 0.25s ease",
-        }}
-      />
-      <div
-        className="size-11 rounded-full bg-amber-500/75"
-        style={{
-          opacity: sliding ? 1 : 0,
-          transform: sliding ? "translateX(0)" : "translateX(52px)",
-          transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
-          boxShadow: pulsing ? "0 0 28px 10px rgba(245,158,11,0.4)" : "none",
-        }}
-      />
+    <div
+      className="flex flex-col items-center gap-4 py-8"
+      style={{
+        opacity: fading ? 0 : 1,
+        transition: "opacity 0.3s ease",
+      }}
+    >
+      <div className="flex items-center justify-center gap-5">
+        <div
+          className="size-11 rounded-full bg-yellow-600/75"
+          style={{
+            opacity: sliding ? 1 : 0,
+            transform: sliding ? "translateX(0)" : "translateX(-52px)",
+            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            boxShadow: pulsing ? "0 0 28px 10px rgba(202,138,4,0.4)" : "none",
+          }}
+        />
+        <div
+          className="h-[3px] rounded-full bg-yellow-400"
+          style={{
+            width: "2.25rem",
+            opacity: bonded ? 1 : 0,
+            transition: "opacity 0.25s ease",
+          }}
+        />
+        <div
+          className="size-11 rounded-full bg-amber-500/75"
+          style={{
+            opacity: sliding ? 1 : 0,
+            transform: sliding ? "translateX(0)" : "translateX(52px)",
+            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            boxShadow: pulsing ? "0 0 28px 10px rgba(245,158,11,0.4)" : "none",
+          }}
+        />
+      </div>
+      <p className="animate-pulse text-sm text-muted-foreground">
+        Analyzing interactions…
+      </p>
     </div>
   );
 }
@@ -500,9 +525,6 @@ function CaseStudyPanel({
   profile: HealthProfile;
   onChange: (key: HealthFieldKey, patch: Partial<HealthField>) => void;
 }) {
-  function includeAll() {
-    for (const { key } of CASE_STUDY_FIELD_DEFS) onChange(key, { included: true });
-  }
   function clearAll() {
     for (const { key } of CASE_STUDY_FIELD_DEFS)
       onChange(key, { value: "", included: true });
@@ -512,23 +534,13 @@ function CaseStudyPanel({
     <div className="sticky top-6 flex flex-col gap-4 rounded-xl border border-yellow-800/50 bg-yellow-950/20 p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-yellow-300">Patient Profile</h2>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={includeAll}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Include All
-          </button>
-          <span className="text-xs text-muted-foreground">·</span>
-          <button
-            type="button"
-            onClick={clearAll}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Clear All
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={clearAll}
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Clear All
+        </button>
       </div>
       <p className="text-xs text-muted-foreground">
         Toggle fields on to include them in the analysis.
@@ -576,20 +588,18 @@ function CaseStudyPanel({
 // ─── Results ──────────────────────────────────────────────────────────────────
 
 function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
-  const [activeTermKey, setActiveTermKey] = useState<string | null>(null);
-
-  useEffect(() => {
-    function handleDocClick() {
-      setActiveTermKey(null);
-    }
-    document.addEventListener("click", handleDocClick);
-    return () => document.removeEventListener("click", handleDocClick);
-  }, []);
+  // Track which term chip is open by its [comboIndex, termIndex] encoded as a string
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   const levelDef = LEVELS.find((l) => l.id === level)!;
 
+  function closeAll() {
+    setOpenKey(null);
+  }
+
   return (
-    <div className="flex flex-col gap-6">
+    // Clicking anywhere in results that isn't a chip closes the open popup
+    <div className="flex flex-col gap-6" onClick={closeAll}>
       {/* Level indicator */}
       <div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-800 bg-yellow-950/30 px-3 py-1 text-xs font-medium text-yellow-300">
@@ -597,9 +607,12 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
         </span>
       </div>
 
-      {/* Overall summary */}
+      {/* Surface Summary */}
       {result.overall_summary && (
-        <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Surface Summary
+          </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
             {result.overall_summary}
           </p>
@@ -613,32 +626,33 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
             Interaction Breakdown
           </h2>
 
-          {result.combinations.map((combo) => {
-            const comboKey = `${combo.drug_a}-${combo.drug_b}`;
+          {result.combinations.map((combo, comboIdx) => {
+            const comboKey = `${comboIdx}`;
             const classEmoji = CLASSIFICATION_EMOJI[combo.classification] ?? "🔍";
 
-            // Detect format: object terms or plain string terms
-            const isObjectFormat =
-              combo.key_terms.length === 0 ||
-              typeof combo.key_terms[0] !== "string";
-
+            // Normalize terms to KeyTerm objects
             const normalizedTerms: KeyTerm[] = combo.key_terms.map((t) =>
               typeof t === "string" ? { term: t, definition: "" } : t,
             );
 
-            const { segments, matchedTermNames } = isObjectFormat
-              ? buildSegments(combo.explanation, normalizedTerms)
-              : {
-                  segments: [
-                    { type: "text" as const, content: combo.explanation },
-                  ],
-                  matchedTermNames: new Set<string>(),
-                };
+            // Determine if we have rich object terms (with definitions)
+            const hasDefinitions =
+              normalizedTerms.length > 0 &&
+              normalizedTerms.some((t) => t.definition.length > 0);
 
-            const pillTerms = isObjectFormat
-              ? normalizedTerms.filter(
-                  (t) => !matchedTermNames.has(t.term.toLowerCase()),
-                )
+            // Build segments — first occurrence of each term highlighted
+            const segments = hasDefinitions
+              ? buildSegments(combo.explanation, normalizedTerms)
+              : [{ type: "text" as const, content: combo.explanation }];
+
+            // Terms not already highlighted in text → show as pills
+            const highlightedIndices = new Set(
+              segments
+                .filter((s): s is Extract<typeof s, { type: "term" }> => s.type === "term")
+                .map((s) => s.termIndex),
+            );
+            const pillTerms = hasDefinitions
+              ? normalizedTerms.filter((_, i) => !highlightedIndices.has(i))
               : normalizedTerms;
 
             return (
@@ -646,14 +660,14 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
                 key={comboKey}
                 className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5"
               >
-                {/* Drug pair */}
+                {/* Drug pair header */}
                 <span className="text-sm font-semibold">
                   {combo.drug_a}{" "}
                   <span className="text-muted-foreground">+</span>{" "}
                   {combo.drug_b}
                 </span>
 
-                {/* Classification badge only */}
+                {/* Classification badge */}
                 <div className="flex flex-wrap gap-2">
                   <span className="flex items-center gap-1.5 rounded-full border border-teal-800 bg-teal-950/40 px-3 py-1 text-xs font-medium text-teal-300">
                     <span aria-hidden="true">{classEmoji}</span>
@@ -661,60 +675,56 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
                   </span>
                 </div>
 
-                {/* Explanation — highlighted if object terms, plain if string terms */}
+                {/* Explanation — with first-occurrence term highlighting */}
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {isObjectFormat
-                    ? segments.map((seg, i) => {
-                        if (seg.type === "text") return seg.content;
-                        const tKey = `${comboKey}-inline-${seg.termDef.term}-${i}`;
-                        return (
-                          <TermChip
-                            key={tKey}
-                            displayText={seg.content}
-                            term={seg.termDef.term}
-                            definition={seg.termDef.definition}
-                            termKey={tKey}
-                            isOpen={activeTermKey === tKey}
-                            onToggle={() =>
-                              setActiveTermKey(
-                                activeTermKey === tKey ? null : tKey,
-                              )
-                            }
-                            variant="inline"
-                          />
-                        );
-                      })
-                    : combo.explanation}
+                  {segments.map((seg, segIdx) => {
+                    if (seg.type === "text") return seg.content;
+                    const chipKey = `${comboKey}-${seg.termIndex}`;
+                    return (
+                      <TermChip
+                        key={segIdx}
+                        displayText={seg.content}
+                        term={seg.termDef.term}
+                        definition={seg.termDef.definition}
+                        isOpen={openKey === chipKey}
+                        onToggle={(e) => {
+                          e.stopPropagation();
+                          setOpenKey(openKey === chipKey ? null : chipKey);
+                        }}
+                        variant="inline"
+                      />
+                    );
+                  })}
                 </p>
 
-                {/* Key terms pills */}
+                {/* Key term pills — terms not already highlighted in text */}
                 {pillTerms.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    {pillTerms.map((termObj) => {
-                      if (!isObjectFormat || !termObj.definition) {
+                    {pillTerms.map((termObj, pillIdx) => {
+                      if (!hasDefinitions || !termObj.definition) {
                         return (
                           <span
-                            key={termObj.term}
+                            key={pillIdx}
                             className="rounded-full border border-teal-800 bg-teal-950/40 px-2.5 py-0.5 text-xs text-teal-300"
                           >
                             {termObj.term}
                           </span>
                         );
                       }
-                      const pillKey = `${comboKey}-pill-${termObj.term}`;
+                      // Find the actual term index in normalizedTerms
+                      const actualIdx = normalizedTerms.indexOf(termObj);
+                      const pillKey = `${comboKey}-pill-${actualIdx}`;
                       return (
                         <TermChip
-                          key={pillKey}
+                          key={pillIdx}
                           displayText={termObj.term}
                           term={termObj.term}
                           definition={termObj.definition}
-                          termKey={pillKey}
-                          isOpen={activeTermKey === pillKey}
-                          onToggle={() =>
-                            setActiveTermKey(
-                              activeTermKey === pillKey ? null : pillKey,
-                            )
-                          }
+                          isOpen={openKey === pillKey}
+                          onToggle={(e) => {
+                            e.stopPropagation();
+                            setOpenKey(openKey === pillKey ? null : pillKey);
+                          }}
                           variant="pill"
                         />
                       );
@@ -729,8 +739,7 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
 
       {/* Disclaimer */}
       <p className="border-t pt-4 text-xs text-muted-foreground">
-        This information is for educational purposes only and is not medical
-        advice. Always consult a healthcare professional.
+        This information is for educational purposes only and is not medical advice.
       </p>
     </div>
   );
@@ -751,14 +760,11 @@ export default function LearnPremium() {
     INITIAL_HEALTH_PROFILE,
   );
   const [phase, setPhase] = useState<Phase>("idle");
+  const [animFading, setAnimFading] = useState(false);
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [submittedCount, setSubmittedCount] = useState(0);
   const [submittedLevel, setSubmittedLevel] = useState<1 | 2 | 3 | null>(null);
-
-  const animDoneRef = useRef(false);
-  const apiResultRef = useRef<ApiResult | null>(null);
-  const apiErrorRef = useRef<string | null>(null);
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
@@ -787,13 +793,11 @@ export default function LearnPremium() {
   function handleSubmit() {
     if (!selectedLevel) return;
     setPhase("animating");
+    setAnimFading(false);
     setApiResult(null);
     setApiError(null);
     setSubmittedCount(drugs.length);
     setSubmittedLevel(selectedLevel);
-    animDoneRef.current = false;
-    apiResultRef.current = null;
-    apiErrorRef.current = null;
 
     const healthContext = isCaseStudy ? buildHealthContext(caseStudyProfile) : "";
 
@@ -807,7 +811,7 @@ export default function LearnPremium() {
           amount,
           unit,
         })),
-        treatment_context: treatmentContext,
+        treatment_context: isCaseStudy ? treatmentContext : "",
         health_context: healthContext,
         level: selectedLevel,
         is_case_study: isCaseStudy,
@@ -818,33 +822,23 @@ export default function LearnPremium() {
         return r.json() as Promise<ApiResult>;
       })
       .then((data) => {
-        apiResultRef.current = data;
-        if (animDoneRef.current) {
+        // Fade out animation, then show results
+        setAnimFading(true);
+        setTimeout(() => {
+          setAnimFading(false);
           setApiResult(data);
           setPhase("results");
-        }
+        }, 300);
       })
       .catch(() => {
-        apiErrorRef.current = "Failed to analyze the interactions. Please try again.";
-        if (animDoneRef.current) {
-          setApiError(apiErrorRef.current);
+        setAnimFading(true);
+        setTimeout(() => {
+          setAnimFading(false);
+          setApiError("Failed to analyze the interactions. Please try again.");
           setPhase("error");
-        }
+        }, 300);
       });
   }
-
-  const handleAnimationComplete = useCallback(() => {
-    animDoneRef.current = true;
-    if (apiResultRef.current) {
-      setApiResult(apiResultRef.current);
-      setPhase("results");
-    } else if (apiErrorRef.current) {
-      setApiError(apiErrorRef.current);
-      setPhase("error");
-    } else {
-      setPhase("loading");
-    }
-  }, []);
 
   function handleNewAnalysis() {
     setSelectedLevel(null);
@@ -857,6 +851,7 @@ export default function LearnPremium() {
     setTreatmentContext("");
     setCaseStudyProfile(INITIAL_HEALTH_PROFILE);
     setPhase("idle");
+    setAnimFading(false);
     setApiResult(null);
     setApiError(null);
     setSubmittedLevel(null);
@@ -1022,36 +1017,32 @@ export default function LearnPremium() {
                 </Button>
               )}
 
-              {/* Optional context */}
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <hr className="flex-1 border-border" />
-                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Optional Context
-                  </span>
-                  <hr className="flex-1 border-border" />
+              {/* Goal / concern — only shown in case study mode */}
+              {isCaseStudy && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <hr className="flex-1 border-border" />
+                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Optional Context
+                    </span>
+                    <hr className="flex-1 border-border" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="treatment-context">
+                      What is the patient&apos;s goal or concern? (optional)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      This helps tailor the educational analysis
+                    </p>
+                  </div>
+                  <Input
+                    id="treatment-context"
+                    value={treatmentContext}
+                    onChange={(e) => setTreatmentContext(e.target.value)}
+                    placeholder="e.g. managing the patient's chronic pain, treating patient's anxiety"
+                  />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="treatment-context">
-                    {isCaseStudy
-                      ? "What is the patient's goal or concern? (optional)"
-                      : "What is your goal or concern? (optional)"}
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    This helps us give you more relevant information
-                  </p>
-                </div>
-                <Input
-                  id="treatment-context"
-                  value={treatmentContext}
-                  onChange={(e) => setTreatmentContext(e.target.value)}
-                  placeholder={
-                    isCaseStudy
-                      ? "e.g. managing the patient's chronic pain, treating patient's anxiety"
-                      : "e.g. managing anxiety, clearing acne, reducing inflammation, improving sleep"
-                  }
-                />
-              </div>
+              )}
 
               <Button
                 onClick={handleSubmit}
@@ -1073,17 +1064,9 @@ export default function LearnPremium() {
         </div>
       )}
 
-      {/* Molecule animation */}
+      {/* Molecule animation — loops until API responds */}
       {phase === "animating" && (
-        <MoleculeAnimation onComplete={handleAnimationComplete} />
-      )}
-
-      {/* Loading */}
-      {phase === "loading" && (
-        <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
-          <div className="size-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          <p className="text-sm">Analyzing {submittedCount} substances…</p>
-        </div>
+        <MoleculeAnimation fading={animFading} />
       )}
 
       {/* Error */}
