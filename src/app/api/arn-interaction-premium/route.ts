@@ -45,8 +45,16 @@ function normalizeKeyTerm(raw: unknown): { term: string; definition: string } {
 
 // ─── Level-specific system prompts ───────────────────────────────────────────
 
+const EDUCATOR_PREAMBLE =
+  "IMPORTANT: You are writing educational content for a biology/pharmacology learning platform, NOT giving medical advice. " +
+  "Your audience is students who want to understand the science. " +
+  "NEVER say any of these phrases: \"consult a doctor\", \"seek medical advice\", \"talk to your healthcare provider\", " +
+  "\"this is not medical advice\", \"I recommend you\", \"you should\", \"the patient should\". " +
+  "ALWAYS frame everything as educational biology/pharmacology explanation. You are a science teacher, not a clinician.\n\n";
+
 const LEVEL_SYSTEM_PROMPTS: Record<1 | 2 | 3, string> = {
   1:
+    EDUCATOR_PREAMBLE +
     "You are a passionate honors biology teacher explaining drug interactions to curious 9th grade students. " +
     "Always respond with valid JSON only — no markdown, no code fences, no extra text.\n\n" +
     "Your explanations must be detailed, engaging, and scientifically accurate while remaining accessible. " +
@@ -76,6 +84,7 @@ const LEVEL_SYSTEM_PROMPTS: Record<1 | 2 | 3, string> = {
     "When in doubt choose HIGH.",
 
   2:
+    EDUCATOR_PREAMBLE +
     "You are an AP Biology teacher explaining drug interactions to advanced students preparing for the AP exam and college. " +
     "Always respond with valid JSON only — no markdown, no code fences, no extra text.\n\n" +
     "Your explanations must be rigorous, precise, and demonstrate deep molecular and cellular understanding. " +
@@ -103,6 +112,7 @@ const LEVEL_SYSTEM_PROMPTS: Record<1 | 2 | 3, string> = {
     "When in doubt choose HIGH.",
 
   3:
+    EDUCATOR_PREAMBLE +
     "You are a clinical pharmacology professor teaching pre-med students who need to understand drug interactions at a level that prepares them for medical school. " +
     "Always respond with valid JSON only — no markdown, no code fences, no extra text.\n\n" +
     "Your explanations must be at the level of a pharmacology textbook combined with clinical case discussion. Write 7-9 sentences minimum.\n\n" +
@@ -234,14 +244,18 @@ export async function POST(req: NextRequest) {
     healthLine +
     `\nAnalyze at ${LEVEL_NAMES[validLevel]} understanding level.\n` +
     `Key term definitions: ${KEY_TERM_DEF_GUIDANCE[validLevel]}\n\n` +
+    `CRITICAL QUALITY REQUIREMENTS:\n` +
+    `- Each explanation MUST be at least 6 sentences long\n` +
+    `- Each sentence must add NEW biological information — no repetition\n` +
+    `- Do NOT use filler phrases like "it is important to note" or "it should be mentioned"\n` +
+    `- Be specific: name the actual receptor, enzyme, or pathway — never say "affects the brain" without saying HOW\n` +
+    `- Explain causality: don't just say what happens, say WHY it happens at the molecular level\n\n` +
     `Return this exact JSON for each drug pair:\n` +
     `{\n` +
     `  "combinations": [\n` +
     `    {\n` +
     `      "drug_a": "name",\n` +
     `      "drug_b": "name",\n` +
-    `      "risk_level": "high" | "moderate" | "low",\n` +
-    `      "interaction_type": "safety" | "efficacy" | "both",\n` +
     `      "classification": "CYP450 Metabolism | Serotonin Syndrome | CNS Depression | Additive Toxicity | Receptor Competition | Chemical Degradation | Absorption Interference | Duplicate Ingredients | Other",\n` +
     `      "explanation": "6-8 sentences fully written at the selected curriculum level. Start with what each drug does individually, then explain the interaction, then the outcome.",\n` +
     `      "key_terms": [\n` +
@@ -250,11 +264,9 @@ export async function POST(req: NextRequest) {
     `      ]\n` +
     `    }\n` +
     `  ],\n` +
-    `  "overall_risk": "high" | "moderate" | "low",\n` +
-    `  "overall_summary": "2-3 sentences at the selected level summarizing the most important finding.",\n` +
-    `  "recommendation": "Avoid this combination | Consult your doctor | Use with caution | Generally safe"\n` +
+    `  "overall_summary": "2-3 sentences at the selected level summarizing the most important finding."\n` +
     `}\n` +
-    `Sort combinations from highest to lowest risk. Only include combinations with at least LOW interaction significance — skip truly inert pairs.`;
+    `Only include combinations with at least LOW interaction significance — skip truly inert pairs.`;
 
   let apiResponse: Response;
   try {
@@ -320,8 +332,6 @@ export async function POST(req: NextRequest) {
     type ParsedCombination = {
       drug_a: string;
       drug_b: string;
-      risk_level: string;
-      interaction_type: string;
       classification: string;
       explanation: string;
       key_terms: unknown[];
@@ -329,9 +339,7 @@ export async function POST(req: NextRequest) {
 
     type ParsedResult = {
       combinations: ParsedCombination[];
-      overall_risk: string;
       overall_summary: string;
-      recommendation: string;
     };
 
     let result: ParsedResult;
@@ -339,11 +347,9 @@ export async function POST(req: NextRequest) {
       result = JSON.parse(cleaned) as ParsedResult;
     } catch {
       // Regex fallback
-      const overallRiskMatch = cleaned.match(/"overall_risk"\s*:\s*"([^"]+)"/);
       const summaryMatch = cleaned.match(
         /"overall_summary"\s*:\s*"([\s\S]+?)(?=",\s*"|"\s*})/,
       );
-      const recMatch = cleaned.match(/"recommendation"\s*:\s*"([^"]+)"/);
 
       let combs: ParsedCombination[] = [];
       const combsText = cleaned.match(
@@ -357,64 +363,30 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      if (!overallRiskMatch) throw new Error("Could not extract fields");
+      if (!summaryMatch && combs.length === 0)
+        throw new Error("Could not extract fields");
 
       result = {
         combinations: combs,
-        overall_risk: overallRiskMatch[1],
         overall_summary: summaryMatch ? summaryMatch[1] : "",
-        recommendation: recMatch ? recMatch[1] : "Consult your doctor",
       };
     }
 
-    const riskRaw = result.overall_risk?.toLowerCase();
-    const overall_risk =
-      riskRaw === "high" || riskRaw === "moderate" || riskRaw === "low"
-        ? riskRaw
-        : "moderate";
-
-    const VALID_RECS = [
-      "Avoid this combination",
-      "Consult your doctor",
-      "Use with caution",
-      "Generally safe",
-    ] as const;
-    type ValidRec = (typeof VALID_RECS)[number];
-    const recommendation = (VALID_RECS as readonly string[]).includes(
-      result.recommendation,
-    )
-      ? (result.recommendation as ValidRec)
-      : "Consult your doctor";
-
     const combinations = (
       Array.isArray(result.combinations) ? result.combinations : []
-    ).map((c) => {
-      const rl = c.risk_level?.toLowerCase();
-      const it = c.interaction_type?.toLowerCase();
-      return {
-        drug_a: c.drug_a ?? "",
-        drug_b: c.drug_b ?? "",
-        risk_level: (
-          rl === "high" || rl === "moderate" || rl === "low" ? rl : "moderate"
-        ) as "high" | "moderate" | "low",
-        interaction_type: (
-          it === "safety" || it === "efficacy" || it === "both" ? it : "safety"
-        ) as "safety" | "efficacy" | "both",
-        classification: c.classification ?? "Other",
-        explanation: c.explanation ?? "",
-        key_terms: Array.isArray(c.key_terms)
-          ? c.key_terms
-              .map(normalizeKeyTerm)
-              .filter((t) => t.term.length > 0)
-          : [],
-      };
-    });
+    ).map((c) => ({
+      drug_a: c.drug_a ?? "",
+      drug_b: c.drug_b ?? "",
+      classification: c.classification ?? "Other",
+      explanation: c.explanation ?? "",
+      key_terms: Array.isArray(c.key_terms)
+        ? c.key_terms.map(normalizeKeyTerm).filter((t) => t.term.length > 0)
+        : [],
+    }));
 
     return NextResponse.json({
-      overall_risk,
       combinations,
       overall_summary: result.overall_summary ?? "",
-      recommendation,
     });
   } catch (err) {
     console.error(
