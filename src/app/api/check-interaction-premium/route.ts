@@ -13,6 +13,7 @@ interface RequestBody {
   treatment_context?: string;
   health_context?: string;
   notes?: string;
+  isSingleDrugMode?: boolean;
 }
 
 interface GroqResponse {
@@ -46,8 +47,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { drugs, treatment_context, health_context, notes } = body;
-  if (!Array.isArray(drugs) || drugs.length < 2) {
+  const { drugs, treatment_context, health_context, notes, isSingleDrugMode } = body;
+  if (!Array.isArray(drugs) || (isSingleDrugMode ? drugs.length < 1 : drugs.length < 2)) {
     return NextResponse.json(
       { error: "At least 2 drugs required" },
       { status: 400 },
@@ -115,9 +116,15 @@ export async function POST(req: NextRequest) {
     ? `Additional context from user: ${notes.trim()}\n\n`
     : "";
 
+  const drugSection = isSingleDrugMode
+    ? `Check how ${describeDrug(drugs[0]!)} interacts with each of the patient's current medications listed in the health profile. ` +
+      `Treat each current medication as a separate Drug B and analyze pairwise. ` +
+      `If no medications are listed in the health profile, return an empty combinations array.\n\n`
+    : `Analyze interactions between these substances:\n${drugList}\n\n`;
+
   const userPrompt =
     dataContext +
-    `Analyze interactions between these substances:\n${drugList}\n\n` +
+    drugSection +
     contextLine +
     healthLine +
     notesLine +

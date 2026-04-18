@@ -14,6 +14,7 @@ interface RequestBody {
   treatment_context?: string;
   health_context?: string;
   notes?: string;
+  isSingleDrugMode?: boolean;
   level: 1 | 2 | 3;
   is_case_study?: boolean;
 }
@@ -173,10 +174,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { drugs, treatment_context, health_context, notes, level, is_case_study } =
+  const { drugs, treatment_context, health_context, notes, isSingleDrugMode, level, is_case_study } =
     body;
 
-  if (!Array.isArray(drugs) || drugs.length < 2) {
+  if (!Array.isArray(drugs) || (isSingleDrugMode ? drugs.length < 1 : drugs.length < 2)) {
     return NextResponse.json(
       { error: "At least 2 drugs required" },
       { status: 400 },
@@ -231,6 +232,12 @@ export async function POST(req: NextRequest) {
     ? `Additional context from user: ${notes.trim()}\n\n`
     : "";
 
+  const drugSection = isSingleDrugMode
+    ? `Check how ${describeDrug(drugs[0]!)} interacts with each of the patient's current medications listed in the health profile. ` +
+      `Treat each current medication as a separate Drug B and analyze pairwise. ` +
+      `If no medications are listed, return an empty combinations array.\n\n`
+    : `Analyze interactions between:\n${drugList}\n\n`;
+
   const userPrompt =
     dataContext +
     `Before analyzing, internalize these calibration examples:\n` +
@@ -243,7 +250,7 @@ export async function POST(req: NextRequest) {
     `- vitamin C + iron supplement = LOW, efficacy (enhances absorption)\n` +
     `- benzoyl peroxide + vitamin C serum = LOW, efficacy (destroys vitamin C on contact)\n` +
     `- tetracycline + dairy/calcium = LOW, efficacy (calcium chelates the antibiotic)\n\n` +
-    `Analyze interactions between:\n${drugList}\n\n` +
+    drugSection +
     contextLine +
     healthLine +
     notesLine +
