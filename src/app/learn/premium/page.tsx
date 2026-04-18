@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { isPrescriptionDrug } from "~/lib/prescribed-detection";
 import { cn } from "~/lib/utils";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -401,6 +402,11 @@ function DrugCard({
         onChange={(e) => onNameChange(e.target.value)}
         placeholder="e.g. ibuprofen"
       />
+      {isPrescriptionDrug(drug.name.trim()) && (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-green-700 bg-green-950/40 px-2.5 py-0.5 text-xs text-green-300">
+          ✓ Prescription drug — covered by Premium
+        </span>
+      )}
 
       <div className="flex flex-col gap-1">
         <Label htmlFor={methodId} className="text-xs font-normal text-muted-foreground">
@@ -522,13 +528,9 @@ const CASE_STUDY_FIELD_DEFS: Array<{
 function CaseStudyPanel({
   profile,
   onChange,
-  isSingleDrugMode,
-  onSetMode,
 }: {
   profile: HealthProfile;
   onChange: (key: HealthFieldKey, patch: Partial<HealthField>) => void;
-  isSingleDrugMode: boolean;
-  onSetMode: (v: boolean) => void;
 }) {
   function clearAll() {
     for (const { key } of CASE_STUDY_FIELD_DEFS)
@@ -537,34 +539,6 @@ function CaseStudyPanel({
 
   return (
     <div className="sticky top-6 flex flex-col gap-4 rounded-xl border border-yellow-800/50 bg-yellow-950/20 p-4">
-      {/* Mode tabs */}
-      <div className="flex overflow-hidden rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
-        <button
-          type="button"
-          onClick={() => onSetMode(false)}
-          className={cn(
-            "flex-1 rounded-md py-1.5 text-center font-medium transition-colors",
-            !isSingleDrugMode
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          My Regimen
-        </button>
-        <button
-          type="button"
-          onClick={() => onSetMode(true)}
-          className={cn(
-            "flex-1 rounded-md py-1.5 text-center font-medium transition-colors",
-            isSingleDrugMode
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Add One Drug
-        </button>
-      </div>
-
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-yellow-300">Patient Profile</h2>
         <button
@@ -577,6 +551,9 @@ function CaseStudyPanel({
       </div>
       <p className="text-xs text-muted-foreground">
         Toggle fields on to include them in the analysis.
+      </p>
+      <p className="rounded-md border border-green-800/40 bg-green-950/20 px-3 py-2 text-xs text-green-400/80">
+        ✓ Prescription medications in your patient profile are fully supported by Premium.
       </p>
 
       {CASE_STUDY_FIELD_DEFS.map(({ key, label, placeholder, type, inputMode, rows }) => {
@@ -807,19 +784,11 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
 export default function LearnPremium() {
   const [selectedLevel, setSelectedLevel] = useState<1 | 2 | 3 | null>(null);
   const [isCaseStudy, setIsCaseStudy] = useState(false);
-  const [isSingleDrugMode, setIsSingleDrugMode] = useState(false);
   const [drugs, setDrugs] = useState<DrugEntry[]>([
     { id: "drug-1", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
     { id: "drug-2", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
   ]);
   const drugCounter = useRef(3);
-  const [singleDrug, setSingleDrug] = useState<DrugEntry>({
-    id: "single-drug",
-    name: "",
-    method: "Oral (swallowed)",
-    amount: "",
-    unit: "mg",
-  });
   const [treatmentContext, setTreatmentContext] = useState("");
   const [notes, setNotes] = useState("");
   const [caseStudyProfile, setCaseStudyProfile] = useState<HealthProfile>(
@@ -835,10 +804,6 @@ export default function LearnPremium() {
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
-  }
-
-  function updateSingleDrug(patch: Partial<Omit<DrugEntry, "id">>) {
-    setSingleDrug((prev) => ({ ...prev, ...patch }));
   }
 
   function updateCaseStudyField(key: HealthFieldKey, patch: Partial<HealthField>) {
@@ -867,17 +832,15 @@ export default function LearnPremium() {
       return;
     }
 
-    if (!isSingleDrugMode) {
-      const filledDrugs = drugs.filter((d) => d.name.trim().length > 0);
-      if (filledDrugs.length === 0) {
-        setValidationError("Please enter at least one substance to analyze.");
+    const filledDrugs = drugs.filter((d) => d.name.trim().length > 0);
+    if (filledDrugs.length === 0) {
+      setValidationError("Please enter at least one substance to analyze.");
+      return;
+    }
+    for (const d of filledDrugs) {
+      if (d.name.trim().length < 2) {
+        setValidationError(`Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
         return;
-      }
-      for (const d of filledDrugs) {
-        if (d.name.trim().length < 2) {
-          setValidationError(`Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
-          return;
-        }
       }
     }
 
@@ -886,24 +849,21 @@ export default function LearnPremium() {
     setAnimFading(false);
     setApiResult(null);
     setApiError(null);
-    setSubmittedCount(isSingleDrugMode ? 1 : drugs.length);
+    setSubmittedCount(drugs.length);
     setSubmittedLevel(selectedLevel);
 
-    const healthContext = (isCaseStudy || isSingleDrugMode) ? buildHealthContext(caseStudyProfile) : "";
-    const drugsPayload = isSingleDrugMode
-      ? [{ name: singleDrug.name, method: singleDrug.method, amount: singleDrug.amount, unit: singleDrug.unit }]
-      : drugs.map(({ name, method, amount, unit }) => ({ name, method, amount, unit }));
+    const healthContext = isCaseStudy ? buildHealthContext(caseStudyProfile) : "";
+    const drugsPayload = drugs.map(({ name, method, amount, unit }) => ({ name, method, amount, unit }));
 
     fetch("/api/arn-interaction-premium", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         drugs: drugsPayload,
-        treatment_context: (isCaseStudy || isSingleDrugMode) ? treatmentContext : "",
+        treatment_context: isCaseStudy ? treatmentContext : "",
         health_context: healthContext,
         level: selectedLevel,
         is_case_study: isCaseStudy,
-        isSingleDrugMode,
         notes,
       }),
     })
@@ -945,13 +905,11 @@ export default function LearnPremium() {
   function handleNewAnalysis() {
     setSelectedLevel(null);
     setIsCaseStudy(false);
-    setIsSingleDrugMode(false);
     setDrugs([
       { id: "drug-1", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
       { id: "drug-2", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
     ]);
     drugCounter.current = 3;
-    setSingleDrug({ id: "single-drug", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" });
     setTreatmentContext("");
     setNotes("");
     setCaseStudyProfile(INITIAL_HEALTH_PROFILE);
@@ -1087,15 +1045,15 @@ export default function LearnPremium() {
           {/* Drug inputs + optional case study panel */}
           <div
             className={cn(
-              (isCaseStudy || isSingleDrugMode)
+              isCaseStudy
                 ? "grid grid-cols-[2fr_1fr] items-start gap-6"
                 : "flex flex-col gap-4",
             )}
           >
             {/* Left / main column */}
             <div className="flex flex-col gap-4">
-              {/* Regimen mode: multiple drug cards */}
-              {!isSingleDrugMode && drugs.map((drug, index) => (
+              {/* Drug cards */}
+              {drugs.map((drug, index) => (
                 <div
                   key={drug.id}
                   style={{ animation: "fade-in 0.3s ease forwards" }}
@@ -1113,7 +1071,7 @@ export default function LearnPremium() {
                 </div>
               ))}
 
-              {!isSingleDrugMode && drugs.length < 5 && (
+              {drugs.length < 5 && (
                 <Button
                   type="button"
                   onClick={addDrug}
@@ -1124,26 +1082,7 @@ export default function LearnPremium() {
                 </Button>
               )}
 
-              {/* Single drug mode: one drug card */}
-              {isSingleDrugMode && (
-                <div style={{ animation: "fade-in 0.3s ease forwards" }}>
-                  <DrugCard
-                    drug={singleDrug}
-                    label="New Drug to Check"
-                    removable={false}
-                    onNameChange={(v) => { updateSingleDrug({ name: v }); if (validationError) setValidationError(null); }}
-                    onMethodChange={(m) => updateSingleDrug({ method: m })}
-                    onAmountChange={(v) => updateSingleDrug({ amount: v })}
-                    onUnitChange={(u) => updateSingleDrug({ unit: u })}
-                    onRemove={() => {}}
-                  />
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    This drug will be checked against your current medications listed in your health profile
-                  </p>
-                </div>
-              )}
-
-              {/* Goal / concern — only shown in case study mode */}
+              {/* Goal / concern — shown in case study mode */}
               {isCaseStudy && (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-3">
@@ -1199,19 +1138,15 @@ export default function LearnPremium() {
                 className="w-full bg-yellow-700 text-white hover:bg-yellow-600 disabled:opacity-50"
                 size="lg"
               >
-                {isSingleDrugMode
-                  ? "Check Against My Medications →"
-                  : `Analyze at ${selectedLevelDef?.title ?? "Selected Level"} →`}
+                {`Analyze at ${selectedLevelDef?.title ?? "Selected Level"} →`}
               </Button>
             </div>
 
-            {/* Right column: case study / health profile panel */}
-            {(isCaseStudy || isSingleDrugMode) && (
+            {/* Right column: case study panel */}
+            {isCaseStudy && (
               <CaseStudyPanel
                 profile={caseStudyProfile}
                 onChange={updateCaseStudyField}
-                isSingleDrugMode={isSingleDrugMode}
-                onSetMode={setIsSingleDrugMode}
               />
             )}
           </div>

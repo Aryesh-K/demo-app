@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { isPrescriptionDrug } from "~/lib/prescribed-detection";
 import { cn } from "~/lib/utils";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -317,6 +318,11 @@ function DrugCard({
         onChange={(e) => onNameChange(e.target.value)}
         placeholder="e.g. ibuprofen"
       />
+      {isPrescriptionDrug(drug.name.trim()) && (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-green-700 bg-green-950/40 px-2.5 py-0.5 text-xs text-green-300">
+          ✓ Prescription drug — covered by Premium
+        </span>
+      )}
 
       {/* Application method */}
       <div className="flex flex-col gap-1">
@@ -434,13 +440,9 @@ const HEALTH_FIELD_DEFS: Array<{
 function HealthProfilePanel({
   profile,
   onChange,
-  isSingleDrugMode,
-  onSetMode,
 }: {
   profile: HealthProfile;
   onChange: (key: HealthFieldKey, patch: Partial<HealthField>) => void;
-  isSingleDrugMode: boolean;
-  onSetMode: (v: boolean) => void;
 }) {
   function sendAll() {
     for (const { key } of HEALTH_FIELD_DEFS) {
@@ -455,34 +457,6 @@ function HealthProfilePanel({
 
   return (
     <div className="sticky top-6 flex flex-col gap-4 rounded-xl border border-yellow-800/50 bg-yellow-950/20 p-4">
-      {/* Mode tabs */}
-      <div className="flex overflow-hidden rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
-        <button
-          type="button"
-          onClick={() => onSetMode(false)}
-          className={cn(
-            "flex-1 rounded-md py-1.5 text-center font-medium transition-colors",
-            !isSingleDrugMode
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          My Regimen
-        </button>
-        <button
-          type="button"
-          onClick={() => onSetMode(true)}
-          className={cn(
-            "flex-1 rounded-md py-1.5 text-center font-medium transition-colors",
-            isSingleDrugMode
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Add One Drug
-        </button>
-      </div>
-
       {/* Panel header */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-yellow-300">
@@ -508,6 +482,9 @@ function HealthProfilePanel({
       </div>
       <p className="text-xs text-muted-foreground">
         Optional — toggle fields on to include them in the AI analysis.
+      </p>
+      <p className="rounded-md border border-green-800/40 bg-green-950/20 px-3 py-2 text-xs text-green-400/80">
+        ✓ Prescription medications in your regimen are fully supported by Premium.
       </p>
 
       {/* Fields */}
@@ -745,14 +722,6 @@ export default function CheckPremium() {
     },
   ]);
   const drugCounter = useRef(3);
-  const [isSingleDrugMode, setIsSingleDrugMode] = useState(false);
-  const [singleDrug, setSingleDrug] = useState<DrugEntry>({
-    id: "single-drug",
-    name: "",
-    method: "Oral (swallowed)",
-    amount: "",
-    unit: "mg",
-  });
   const [treatmentContext, setTreatmentContext] = useState("");
   const [notes, setNotes] = useState("");
   const [healthProfile, setHealthProfile] = useState<HealthProfile>(
@@ -772,10 +741,6 @@ export default function CheckPremium() {
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
-  }
-
-  function updateSingleDrug(patch: Partial<Omit<DrugEntry, "id">>) {
-    setSingleDrug((prev) => ({ ...prev, ...patch }));
   }
 
   function updateHealthField(key: HealthFieldKey, patch: Partial<HealthField>) {
@@ -805,17 +770,15 @@ export default function CheckPremium() {
   }
 
   function handleSubmit() {
-    if (!isSingleDrugMode) {
-      const filledDrugs = drugs.filter((d) => d.name.trim().length > 0);
-      if (filledDrugs.length < 2) {
-        setValidationError("Please add at least 2 substances to analyze interactions. Use the '+ Add Another Drug' button to add more.");
+    const filledDrugs = drugs.filter((d) => d.name.trim().length > 0);
+    if (filledDrugs.length < 2) {
+      setValidationError("Please add at least 2 substances to analyze interactions. Use the '+ Add Another Drug' button to add more.");
+      return;
+    }
+    for (const d of filledDrugs) {
+      if (d.name.trim().length < 2) {
+        setValidationError(`Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
         return;
-      }
-      for (const d of filledDrugs) {
-        if (d.name.trim().length < 2) {
-          setValidationError(`Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
-          return;
-        }
       }
     }
     setValidationError(null);
@@ -823,16 +786,14 @@ export default function CheckPremium() {
     setPhase("animating");
     setApiResult(null);
     setApiError(null);
-    setSubmittedCount(isSingleDrugMode ? 1 : drugs.length);
+    setSubmittedCount(drugs.length);
     animDoneRef.current = false;
     apiResultRef.current = null;
     apiErrorRef.current = null;
     apiValidationErrorRef.current = null;
 
     const healthContext = buildHealthContext(healthProfile);
-    const drugsPayload = isSingleDrugMode
-      ? [{ name: singleDrug.name, method: singleDrug.method, amount: singleDrug.amount, unit: singleDrug.unit }]
-      : drugs.map(({ name, method, amount, unit }) => ({ name, method, amount, unit }));
+    const drugsPayload = drugs.map(({ name, method, amount, unit }) => ({ name, method, amount, unit }));
 
     fetch("/api/check-interaction-premium", {
       method: "POST",
@@ -842,7 +803,6 @@ export default function CheckPremium() {
         treatment_context: treatmentContext,
         health_context: healthContext,
         notes,
-        isSingleDrugMode,
       }),
     })
       .then(async (r) => {
@@ -917,8 +877,6 @@ export default function CheckPremium() {
       },
     ]);
     drugCounter.current = 3;
-    setIsSingleDrugMode(false);
-    setSingleDrug({ id: "single-drug", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" });
     setTreatmentContext("");
     setNotes("");
     setPhase("idle");
@@ -950,8 +908,8 @@ export default function CheckPremium() {
       <div className="grid grid-cols-[2fr_1fr] items-start gap-6">
         {/* Left column: drug cards + optional context + submit */}
         <div className="flex flex-col gap-4">
-          {/* Drug cards — regimen mode */}
-          {!isSingleDrugMode && drugs.map((drug, index) => (
+          {/* Drug cards */}
+          {drugs.map((drug, index) => (
             <div
               key={drug.id}
               style={{ animation: "fade-in 0.3s ease forwards" }}
@@ -969,8 +927,8 @@ export default function CheckPremium() {
             </div>
           ))}
 
-          {/* Add drug button — regimen mode only */}
-          {!isSingleDrugMode && drugs.length < 5 && (
+          {/* Add drug button */}
+          {drugs.length < 5 && (
             <Button
               type="button"
               onClick={addDrug}
@@ -979,25 +937,6 @@ export default function CheckPremium() {
             >
               + Add Another Drug
             </Button>
-          )}
-
-          {/* Single drug card — add one drug mode */}
-          {isSingleDrugMode && (
-            <div style={{ animation: "fade-in 0.3s ease forwards" }}>
-              <DrugCard
-                drug={singleDrug}
-                label="New Drug to Check"
-                removable={false}
-                onNameChange={(v) => { updateSingleDrug({ name: v }); if (validationError) setValidationError(null); }}
-                onMethodChange={(m) => updateSingleDrug({ method: m })}
-                onAmountChange={(v) => updateSingleDrug({ amount: v })}
-                onUnitChange={(u) => updateSingleDrug({ unit: u })}
-                onRemove={() => {}}
-              />
-              <p className="mt-2 text-xs text-muted-foreground">
-                This drug will be checked against your current medications listed in your health profile
-              </p>
-            </div>
           )}
 
           {/* Optional context */}
@@ -1056,7 +995,7 @@ export default function CheckPremium() {
             className="w-full bg-yellow-700 text-white hover:bg-yellow-600 disabled:opacity-50"
             size="lg"
           >
-            {isSingleDrugMode ? "Check Against My Medications →" : "Analyze All Interactions →"}
+            Analyze All Interactions →
           </Button>
         </div>
 
@@ -1064,8 +1003,6 @@ export default function CheckPremium() {
         <HealthProfilePanel
           profile={healthProfile}
           onChange={updateHealthField}
-          isSingleDrugMode={isSingleDrugMode}
-          onSetMode={setIsSingleDrugMode}
         />
       </div>
 

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { isPrescriptionDrug } from "~/lib/prescribed-detection";
 import { cn } from "~/lib/utils";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -399,6 +400,7 @@ export default function CheckFree() {
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [premiumReason, setPremiumReason] = useState<"prescription" | "supplement" | null>(null);
 
   // Refs to coordinate animation completion with async API response
   const animDoneRef = useRef(false);
@@ -420,6 +422,7 @@ export default function CheckFree() {
     setApiResult(null);
     setApiError(null);
     setValidationError(null);
+    setPremiumReason(null);
     setPhase("idle");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -441,7 +444,13 @@ export default function CheckFree() {
     }
     setValidationError(null);
 
+    if (isPrescriptionDrug(trimA) || isPrescriptionDrug(trimB)) {
+      setPremiumReason("prescription");
+      setPhase("premium");
+      return;
+    }
     if (isPremium(drugA, methodA) || isPremium(drugB, methodB)) {
+      setPremiumReason("supplement");
       setPhase("premium");
       return;
     }
@@ -538,13 +547,28 @@ export default function CheckFree() {
         </p>
       </div>
 
+      {/* Free tier info banner */}
+      <div className="flex items-start gap-3 rounded-xl border border-amber-800/50 bg-amber-950/20 px-4 py-3">
+        <span className="mt-0.5 shrink-0 text-sm text-amber-400" aria-hidden="true">ℹ</span>
+        <p className="text-sm text-amber-300/80">
+          Free tier supports OTC medications and alcohol only. Prescription medications require Premium.{" "}
+          <Link href="/signup" className="font-medium text-amber-300 underline underline-offset-2 hover:text-amber-200">
+            Sign Up →
+          </Link>
+        </p>
+      </div>
+
       {/* Drug inputs */}
       <div className="grid grid-cols-2 gap-6">
         <DrugInputGroup
           label="Drug A"
-          placeholder="e.g. fluoxetine"
+          placeholder="e.g. ibuprofen"
           value={drugA}
-          onChange={(v) => { setDrugA(v); if (validationError) setValidationError(null); }}
+          onChange={(v) => {
+            setDrugA(v);
+            if (validationError) setValidationError(null);
+            if (isPrescriptionDrug(v.trim())) { setPremiumReason("prescription"); setPhase("premium"); }
+          }}
           method={methodA}
           onMethodChange={setMethodA}
           amount={amountA}
@@ -554,9 +578,13 @@ export default function CheckFree() {
         />
         <DrugInputGroup
           label="Drug B"
-          placeholder="e.g. dextromethorphan"
+          placeholder="e.g. alcohol"
           value={drugB}
-          onChange={(v) => { setDrugB(v); if (validationError) setValidationError(null); }}
+          onChange={(v) => {
+            setDrugB(v);
+            if (validationError) setValidationError(null);
+            if (isPrescriptionDrug(v.trim())) { setPremiumReason("prescription"); setPhase("premium"); }
+          }}
           method={methodB}
           onMethodChange={setMethodB}
           amount={amountB}
@@ -657,12 +685,20 @@ export default function CheckFree() {
             👑
           </span>
           <h2 className="text-xl font-bold text-purple-200">Premium Feature</h2>
-          <p className="max-w-sm text-sm leading-relaxed text-purple-300/80">
-            Interactions involving supplements, vitamins, or cosmetic products
-            require a premium subscription. Upgrade to unlock full analysis
-            including supplement interactions, skincare compatibility, and
-            personalized recommendations.
-          </p>
+          {premiumReason === "prescription" ? (
+            <p className="max-w-sm text-sm leading-relaxed text-purple-300/80">
+              Prescription medications require a Premium subscription. Upgrade to
+              access full pharmacokinetic analysis, CYP450 enzyme interactions,
+              drug classification details, and personalized health context.
+            </p>
+          ) : (
+            <p className="max-w-sm text-sm leading-relaxed text-purple-300/80">
+              Interactions involving supplements, vitamins, or cosmetic products
+              require a premium subscription. Upgrade to unlock full analysis
+              including supplement interactions, skincare compatibility, and
+              personalized recommendations.
+            </p>
+          )}
           <Button
             asChild
             className="bg-purple-700 text-white hover:bg-purple-600"
@@ -671,7 +707,7 @@ export default function CheckFree() {
             <Link href="/signup">Upgrade to Premium →</Link>
           </Button>
           <p className="text-xs text-muted-foreground">
-            Free tier includes prescription and OTC drug interactions only.
+            Free tier supports OTC medications and alcohol only.
           </p>
         </div>
       )}
