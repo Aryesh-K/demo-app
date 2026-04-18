@@ -404,6 +404,7 @@ export default function CheckFree() {
   const animDoneRef = useRef(false);
   const apiResultRef = useRef<ApiResult | null>(null);
   const apiErrorRef = useRef<string | null>(null);
+  const apiValidationErrorRef = useRef<string | null>(null);
 
   function handleNewCheck() {
     setDrugA("");
@@ -451,6 +452,7 @@ export default function CheckFree() {
     animDoneRef.current = false;
     apiResultRef.current = null;
     apiErrorRef.current = null;
+    apiValidationErrorRef.current = null;
 
     fetch("/api/check-interaction", {
       method: "POST",
@@ -470,8 +472,12 @@ export default function CheckFree() {
     })
       .then(async (r) => {
         if (!r.ok) {
-          const errData = await r.json().catch(() => ({})) as { message?: string };
-          throw new Error(errData.message ?? "Failed to analyze the interaction. Please try again.");
+          const errData = await r.json().catch(() => ({})) as { error?: string; message?: string };
+          const err = new Error(errData.message ?? "Failed to analyze the interaction. Please try again.");
+          if (errData.error === "unrecognized_drug") {
+            (err as Error & { isValidation?: boolean }).isValidation = true;
+          }
+          throw err;
         }
         return r.json() as Promise<ApiResult>;
       })
@@ -483,13 +489,21 @@ export default function CheckFree() {
         }
       })
       .catch((err: unknown) => {
-        apiErrorRef.current =
-          err instanceof Error && err.message
-            ? err.message
-            : "Failed to analyze the interaction. Please try again.";
-        if (animDoneRef.current) {
-          setApiError(apiErrorRef.current);
-          setPhase("error");
+        if (err instanceof Error && (err as Error & { isValidation?: boolean }).isValidation) {
+          apiValidationErrorRef.current = err.message;
+          if (animDoneRef.current) {
+            setValidationError(err.message);
+            setPhase("idle");
+          }
+        } else {
+          apiErrorRef.current =
+            err instanceof Error && err.message
+              ? err.message
+              : "Failed to analyze the interaction. Please try again.";
+          if (animDoneRef.current) {
+            setApiError(apiErrorRef.current);
+            setPhase("error");
+          }
         }
       });
   }
@@ -499,6 +513,9 @@ export default function CheckFree() {
     if (apiResultRef.current) {
       setApiResult(apiResultRef.current);
       setPhase("results");
+    } else if (apiValidationErrorRef.current) {
+      setValidationError(apiValidationErrorRef.current);
+      setPhase("idle");
     } else if (apiErrorRef.current) {
       setApiError(apiErrorRef.current);
       setPhase("error");
@@ -527,7 +544,7 @@ export default function CheckFree() {
           label="Drug A"
           placeholder="e.g. fluoxetine"
           value={drugA}
-          onChange={setDrugA}
+          onChange={(v) => { setDrugA(v); if (validationError) setValidationError(null); }}
           method={methodA}
           onMethodChange={setMethodA}
           amount={amountA}
@@ -539,7 +556,7 @@ export default function CheckFree() {
           label="Drug B"
           placeholder="e.g. dextromethorphan"
           value={drugB}
-          onChange={setDrugB}
+          onChange={(v) => { setDrugB(v); if (validationError) setValidationError(null); }}
           method={methodB}
           onMethodChange={setMethodB}
           amount={amountB}
@@ -595,6 +612,13 @@ export default function CheckFree() {
           className="min-h-[80px] w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground shadow-xs outline-none focus:border-ring dark:bg-input/30 placeholder:text-muted-foreground"
         />
       </div>
+
+      {/* Validation error */}
+      {validationError && (
+        <div className="rounded-xl border border-red-800 bg-red-950/40 p-4 text-sm text-red-300">
+          {validationError}
+        </div>
+      )}
 
       {/* Submit */}
       <Button

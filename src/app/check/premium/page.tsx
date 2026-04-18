@@ -738,11 +738,13 @@ export default function CheckPremium() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [submittedCount, setSubmittedCount] = useState(0);
 
   const animDoneRef = useRef(false);
   const apiResultRef = useRef<ApiResult | null>(null);
   const apiErrorRef = useRef<string | null>(null);
+  const apiValidationErrorRef = useRef<string | null>(null);
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
@@ -779,6 +781,21 @@ export default function CheckPremium() {
   }
 
   function handleSubmit() {
+    if (!isSingleDrugMode) {
+      const filledDrugs = drugs.filter((d) => d.name.trim().length > 0);
+      if (filledDrugs.length < 2) {
+        setValidationError("Please add at least 2 substances to analyze interactions. Use the '+ Add Another Drug' button to add more.");
+        return;
+      }
+      for (const d of filledDrugs) {
+        if (d.name.trim().length < 2) {
+          setValidationError(`Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+          return;
+        }
+      }
+    }
+    setValidationError(null);
+
     setPhase("animating");
     setApiResult(null);
     setApiError(null);
@@ -786,6 +803,7 @@ export default function CheckPremium() {
     animDoneRef.current = false;
     apiResultRef.current = null;
     apiErrorRef.current = null;
+    apiValidationErrorRef.current = null;
 
     const healthContext = buildHealthContext(healthProfile);
     const drugsPayload = isSingleDrugMode
@@ -803,8 +821,15 @@ export default function CheckPremium() {
         isSingleDrugMode,
       }),
     })
-      .then((r) => {
-        if (!r.ok) throw new Error("API error");
+      .then(async (r) => {
+        if (!r.ok) {
+          const errData = await r.json().catch(() => ({})) as { error?: string; message?: string };
+          const err = new Error(errData.message ?? "Failed to analyze the interactions. Please try again.");
+          if (errData.error === "unrecognized_drug") {
+            (err as Error & { isValidation?: boolean }).isValidation = true;
+          }
+          throw err;
+        }
         return r.json() as Promise<ApiResult>;
       })
       .then((data) => {
@@ -814,12 +839,22 @@ export default function CheckPremium() {
           setPhase("results");
         }
       })
-      .catch(() => {
-        apiErrorRef.current =
-          "Failed to analyze the interactions. Please try again.";
-        if (animDoneRef.current) {
-          setApiError(apiErrorRef.current);
-          setPhase("error");
+      .catch((err: unknown) => {
+        if (err instanceof Error && (err as Error & { isValidation?: boolean }).isValidation) {
+          apiValidationErrorRef.current = err.message;
+          if (animDoneRef.current) {
+            setValidationError(err.message);
+            setPhase("idle");
+          }
+        } else {
+          apiErrorRef.current =
+            err instanceof Error && err.message
+              ? err.message
+              : "Failed to analyze the interactions. Please try again.";
+          if (animDoneRef.current) {
+            setApiError(apiErrorRef.current);
+            setPhase("error");
+          }
         }
       });
   }
@@ -829,6 +864,9 @@ export default function CheckPremium() {
     if (apiResultRef.current) {
       setApiResult(apiResultRef.current);
       setPhase("results");
+    } else if (apiValidationErrorRef.current) {
+      setValidationError(apiValidationErrorRef.current);
+      setPhase("idle");
     } else if (apiErrorRef.current) {
       setApiError(apiErrorRef.current);
       setPhase("error");
@@ -862,6 +900,7 @@ export default function CheckPremium() {
     setPhase("idle");
     setApiResult(null);
     setApiError(null);
+    setValidationError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -897,7 +936,7 @@ export default function CheckPremium() {
                 drug={drug}
                 label={getDrugLabel(index)}
                 removable={index >= 2}
-                onNameChange={(v) => updateDrug(drug.id, { name: v })}
+                onNameChange={(v) => { updateDrug(drug.id, { name: v }); if (validationError) setValidationError(null); }}
                 onMethodChange={(m) => updateDrug(drug.id, { method: m })}
                 onAmountChange={(v) => updateDrug(drug.id, { amount: v })}
                 onUnitChange={(u) => updateDrug(drug.id, { unit: u })}
@@ -925,7 +964,7 @@ export default function CheckPremium() {
                 drug={singleDrug}
                 label="New Drug to Check"
                 removable={false}
-                onNameChange={(v) => updateSingleDrug({ name: v })}
+                onNameChange={(v) => { updateSingleDrug({ name: v }); if (validationError) setValidationError(null); }}
                 onMethodChange={(m) => updateSingleDrug({ method: m })}
                 onAmountChange={(v) => updateSingleDrug({ amount: v })}
                 onUnitChange={(u) => updateSingleDrug({ unit: u })}
@@ -978,6 +1017,13 @@ export default function CheckPremium() {
             rows={3}
             className={TEXTAREA_CLS}
           />
+
+          {/* Validation error */}
+          {validationError && (
+            <div className="rounded-xl border border-red-800 bg-red-950/40 p-4 text-sm text-red-300">
+              {validationError}
+            </div>
+          )}
 
           {/* Submit */}
           <Button

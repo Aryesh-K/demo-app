@@ -432,10 +432,12 @@ export default function LearnFree() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const animDoneRef = useRef(false);
   const apiResultRef = useRef<ApiResult | null>(null);
   const apiErrorRef = useRef<string | null>(null);
+  const apiValidationErrorRef = useRef<string | null>(null);
 
   function handleNewCheck() {
     setDrugA("");
@@ -450,11 +452,28 @@ export default function LearnFree() {
     setNotes("");
     setApiResult(null);
     setApiError(null);
+    setValidationError(null);
     setPhase("idle");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleSubmit() {
+    const trimA = drugA.trim();
+    const trimB = drugB.trim();
+    if (!trimA || !trimB) {
+      setValidationError("Please enter both Drug A and Drug B before checking.");
+      return;
+    }
+    if (trimA.length < 2) {
+      setValidationError(`Drug name '${trimA}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+      return;
+    }
+    if (trimB.length < 2) {
+      setValidationError(`Drug name '${trimB}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+      return;
+    }
+    setValidationError(null);
+
     if (isPremium(drugA, methodA) || isPremium(drugB, methodB)) {
       setPhase("premium");
       return;
@@ -466,6 +485,7 @@ export default function LearnFree() {
     animDoneRef.current = false;
     apiResultRef.current = null;
     apiErrorRef.current = null;
+    apiValidationErrorRef.current = null;
 
     fetch("/api/learn-interaction", {
       method: "POST",
@@ -483,8 +503,15 @@ export default function LearnFree() {
         notes,
       }),
     })
-      .then((r) => {
-        if (!r.ok) throw new Error("API error");
+      .then(async (r) => {
+        if (!r.ok) {
+          const errData = await r.json().catch(() => ({})) as { error?: string; message?: string };
+          const err = new Error(errData.message ?? "Failed to analyze the interaction. Please try again.");
+          if (errData.error === "unrecognized_drug") {
+            (err as Error & { isValidation?: boolean }).isValidation = true;
+          }
+          throw err;
+        }
         return r.json() as Promise<ApiResult>;
       })
       .then((data) => {
@@ -494,12 +521,19 @@ export default function LearnFree() {
           setPhase("results");
         }
       })
-      .catch(() => {
-        apiErrorRef.current =
-          "Failed to analyze the interaction. Please try again.";
-        if (animDoneRef.current) {
-          setApiError(apiErrorRef.current);
-          setPhase("error");
+      .catch((err: unknown) => {
+        if (err instanceof Error && (err as Error & { isValidation?: boolean }).isValidation) {
+          apiValidationErrorRef.current = err.message;
+          if (animDoneRef.current) {
+            setValidationError(err.message);
+            setPhase("idle");
+          }
+        } else {
+          apiErrorRef.current = "Failed to analyze the interaction. Please try again.";
+          if (animDoneRef.current) {
+            setApiError(apiErrorRef.current);
+            setPhase("error");
+          }
         }
       });
   }
@@ -509,6 +543,9 @@ export default function LearnFree() {
     if (apiResultRef.current) {
       setApiResult(apiResultRef.current);
       setPhase("results");
+    } else if (apiValidationErrorRef.current) {
+      setValidationError(apiValidationErrorRef.current);
+      setPhase("idle");
     } else if (apiErrorRef.current) {
       setApiError(apiErrorRef.current);
       setPhase("error");
@@ -538,7 +575,7 @@ export default function LearnFree() {
           label="Drug A"
           placeholder="e.g. fluoxetine"
           value={drugA}
-          onChange={setDrugA}
+          onChange={(v) => { setDrugA(v); if (validationError) setValidationError(null); }}
           method={methodA}
           onMethodChange={setMethodA}
           amount={amountA}
@@ -550,7 +587,7 @@ export default function LearnFree() {
           label="Drug B"
           placeholder="e.g. dextromethorphan"
           value={drugB}
-          onChange={setDrugB}
+          onChange={(v) => { setDrugB(v); if (validationError) setValidationError(null); }}
           method={methodB}
           onMethodChange={setMethodB}
           amount={amountB}
@@ -606,6 +643,13 @@ export default function LearnFree() {
           className="min-h-[80px] w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground shadow-xs outline-none focus:border-ring dark:bg-input/30 placeholder:text-muted-foreground"
         />
       </div>
+
+      {/* Validation error */}
+      {validationError && (
+        <div className="rounded-xl border border-red-800 bg-red-950/40 p-4 text-sm text-red-300">
+          {validationError}
+        </div>
+      )}
 
       {/* Submit */}
       <Button

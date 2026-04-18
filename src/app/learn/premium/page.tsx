@@ -804,6 +804,7 @@ export default function LearnPremium() {
   const [animFading, setAnimFading] = useState(false);
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [submittedCount, setSubmittedCount] = useState(0);
   const [submittedLevel, setSubmittedLevel] = useState<1 | 2 | 3 | null>(null);
 
@@ -836,7 +837,26 @@ export default function LearnPremium() {
   }
 
   function handleSubmit() {
-    if (!selectedLevel) return;
+    if (!selectedLevel) {
+      setValidationError("Please select a curriculum level before analyzing.");
+      return;
+    }
+
+    if (!isSingleDrugMode) {
+      const filledDrugs = drugs.filter((d) => d.name.trim().length > 0);
+      if (filledDrugs.length === 0) {
+        setValidationError("Please enter at least one substance to analyze.");
+        return;
+      }
+      for (const d of filledDrugs) {
+        if (d.name.trim().length < 2) {
+          setValidationError(`Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+          return;
+        }
+      }
+    }
+
+    setValidationError(null);
     setPhase("animating");
     setAnimFading(false);
     setApiResult(null);
@@ -862,12 +882,18 @@ export default function LearnPremium() {
         notes,
       }),
     })
-      .then((r) => {
-        if (!r.ok) throw new Error("API error");
+      .then(async (r) => {
+        if (!r.ok) {
+          const errData = await r.json().catch(() => ({})) as { error?: string; message?: string };
+          const err = new Error(errData.message ?? "Failed to analyze the interactions. Please try again.");
+          if (errData.error === "unrecognized_drug") {
+            (err as Error & { isValidation?: boolean }).isValidation = true;
+          }
+          throw err;
+        }
         return r.json() as Promise<ApiResult>;
       })
       .then((data) => {
-        // Fade out animation, then show results
         setAnimFading(true);
         setTimeout(() => {
           setAnimFading(false);
@@ -875,12 +901,18 @@ export default function LearnPremium() {
           setPhase("results");
         }, 300);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        const isValidation = err instanceof Error && (err as Error & { isValidation?: boolean }).isValidation;
         setAnimFading(true);
         setTimeout(() => {
           setAnimFading(false);
-          setApiError("Failed to analyze the interactions. Please try again.");
-          setPhase("error");
+          if (isValidation && err instanceof Error) {
+            setValidationError(err.message);
+            setPhase("idle");
+          } else {
+            setApiError("Failed to analyze the interactions. Please try again.");
+            setPhase("error");
+          }
         }, 300);
       });
   }
@@ -902,6 +934,7 @@ export default function LearnPremium() {
     setAnimFading(false);
     setApiResult(null);
     setApiError(null);
+    setValidationError(null);
     setSubmittedLevel(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -944,7 +977,7 @@ export default function LearnPremium() {
               <button
                 key={level.id}
                 type="button"
-                onClick={() => setSelectedLevel(level.id)}
+                onClick={() => { setSelectedLevel(level.id); if (validationError) setValidationError(null); }}
                 className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-yellow-600 hover:bg-yellow-950/10"
               >
                 <span className="text-3xl">{level.icon}</span>
@@ -1046,7 +1079,7 @@ export default function LearnPremium() {
                     drug={drug}
                     label={getDrugLabel(index)}
                     removable={index >= 2}
-                    onNameChange={(v) => updateDrug(drug.id, { name: v })}
+                    onNameChange={(v) => { updateDrug(drug.id, { name: v }); if (validationError) setValidationError(null); }}
                     onMethodChange={(m) => updateDrug(drug.id, { method: m })}
                     onAmountChange={(v) => updateDrug(drug.id, { amount: v })}
                     onUnitChange={(u) => updateDrug(drug.id, { unit: u })}
@@ -1073,7 +1106,7 @@ export default function LearnPremium() {
                     drug={singleDrug}
                     label="New Drug to Check"
                     removable={false}
-                    onNameChange={(v) => updateSingleDrug({ name: v })}
+                    onNameChange={(v) => { updateSingleDrug({ name: v }); if (validationError) setValidationError(null); }}
                     onMethodChange={(m) => updateSingleDrug({ method: m })}
                     onAmountChange={(v) => updateSingleDrug({ amount: v })}
                     onUnitChange={(u) => updateSingleDrug({ unit: u })}
@@ -1128,6 +1161,13 @@ export default function LearnPremium() {
                 rows={3}
                 className={TEXTAREA_CLS}
               />
+
+              {/* Validation error */}
+              {validationError && (
+                <div className="rounded-xl border border-red-800 bg-red-950/40 p-4 text-sm text-red-300">
+                  {validationError}
+                </div>
+              )}
 
               <Button
                 onClick={handleSubmit}
