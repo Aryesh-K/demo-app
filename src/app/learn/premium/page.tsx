@@ -617,7 +617,7 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
     <div className="flex flex-col gap-6" onClick={closeAll}>
       {/* Level indicator */}
       <div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-800 bg-yellow-950/30 px-3 py-1 text-xs font-medium text-yellow-300">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-700 bg-teal-950/30 px-3 py-1 text-xs font-medium text-teal-300">
           {levelDef.icon} {levelDef.title}
         </span>
       </div>
@@ -625,7 +625,7 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
       {/* Surface Summary */}
       {result.overall_summary && (
         <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-400/70">
             Surface Summary
           </p>
           <p className="text-sm leading-relaxed text-muted-foreground">
@@ -638,7 +638,7 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
       {result.combinations.length > 0 && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-teal-400/70">
               Interaction Breakdown
             </h2>
             {!allLow && lowCombos.length > 0 && (
@@ -931,8 +931,8 @@ export default function LearnPremium() {
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[750px] flex-col gap-8 px-6 py-12">
       {/* Header */}
       <div className="flex flex-col gap-3">
-        <span className="w-fit rounded-full border border-yellow-700 bg-yellow-950/40 px-3 py-1 text-xs font-medium text-yellow-300">
-          👑 Premium
+        <span className="w-fit rounded-full border border-teal-700 bg-teal-950/30 px-3 py-1 text-xs font-medium text-teal-200">
+          👑 Premium Learning
         </span>
         <h1 className="text-3xl font-bold tracking-tight">Premium Learning Mode</h1>
         <p className="text-muted-foreground">
@@ -961,7 +961,7 @@ export default function LearnPremium() {
                 key={level.id}
                 type="button"
                 onClick={() => { setSelectedLevel(level.id); if (validationError) setValidationError(null); }}
-                className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-yellow-600 hover:bg-yellow-950/10"
+                className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-teal-600 hover:bg-teal-950/10"
               >
                 <span className="text-3xl">{level.icon}</span>
                 <div className="flex flex-col gap-0.5">
@@ -996,8 +996,8 @@ export default function LearnPremium() {
                 className={cn(
                   "flex items-center gap-2 rounded-lg border px-3 py-2 transition-all disabled:cursor-not-allowed disabled:opacity-60",
                   selectedLevel === level.id
-                    ? "border-yellow-600 bg-yellow-950/40 text-yellow-300"
-                    : "border-border bg-card text-muted-foreground hover:border-yellow-800 hover:text-foreground",
+                    ? "border-teal-600 bg-teal-950/40 text-teal-300"
+                    : "border-border bg-card text-muted-foreground hover:border-teal-800 hover:text-foreground",
                 )}
               >
                 <span className="text-base">{level.icon}</span>
@@ -1006,7 +1006,7 @@ export default function LearnPremium() {
                   <div className="text-[10px] text-muted-foreground">{level.subtitle}</div>
                 </div>
                 {selectedLevel === level.id && (
-                  <span className="ml-0.5 text-xs text-yellow-400">✓</span>
+                  <span className="ml-0.5 text-xs text-teal-400">✓</span>
                 )}
               </button>
             ))}
@@ -1174,7 +1174,7 @@ export default function LearnPremium() {
             onClick={handleNewAnalysis}
             variant="outline"
             size="lg"
-            className="w-full border-yellow-700 text-yellow-300 hover:bg-yellow-950/40 hover:text-yellow-200"
+            className="w-full border-teal-700 text-teal-300 hover:bg-teal-950/40 hover:text-teal-200"
           >
             Start New Analysis
           </Button>
