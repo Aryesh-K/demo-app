@@ -129,6 +129,7 @@ interface Combination {
   classification: string;
   explanation: string;
   key_terms: (KeyTerm | string)[];
+  risk_level?: "high" | "moderate" | "low";
 }
 
 interface ApiResult {
@@ -622,8 +623,13 @@ function CaseStudyPanel({
 function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
   // Track which term chip is open by its [comboIndex, termIndex] encoded as a string
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [showLow, setShowLow] = useState(false);
 
   const levelDef = LEVELS.find((l) => l.id === level)!;
+
+  const lowCombos = result.combinations.filter((c) => c.risk_level === "low");
+  const nonLowCombos = result.combinations.filter((c) => c.risk_level !== "low");
+  const allLow = nonLowCombos.length === 0 && lowCombos.length > 0;;
 
   function closeAll() {
     setOpenKey(null);
@@ -654,11 +660,26 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
       {/* Combinations */}
       {result.combinations.length > 0 && (
         <div className="flex flex-col gap-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Interaction Breakdown
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Interaction Breakdown
+            </h2>
+            {!allLow && lowCombos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowLow((v) => !v)}
+                className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
+              >
+                {showLow
+                  ? "Hide low-risk interactions"
+                  : `Show low-risk interactions (${lowCombos.length})`}
+              </button>
+            )}
+          </div>
 
           {result.combinations.map((combo, comboIdx) => {
+            const isLow = combo.risk_level === "low";
+            if (!allLow && isLow && !showLow) return null;
             const comboKey = `${comboIdx}`;
             const classEmoji = CLASSIFICATION_EMOJI[combo.classification] ?? "🔍";
 
@@ -690,7 +711,11 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
             return (
               <div
                 key={comboKey}
-                className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5"
+                className={cn(
+                  "flex flex-col gap-3 rounded-xl border bg-card p-5",
+                  !allLow && isLow ? "border-border/50 opacity-60" : "border-border",
+                )}
+                style={!allLow && isLow && showLow ? { animation: "fade-in 0.3s ease forwards" } : undefined}
               >
                 {/* Drug pair header */}
                 <span className="text-sm font-semibold">

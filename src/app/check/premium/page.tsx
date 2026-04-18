@@ -554,6 +554,7 @@ function HealthProfilePanel({
 // ─── Results ──────────────────────────────────────────────────────────────────
 
 function Results({ result }: { result: ApiResult }) {
+  const [showLow, setShowLow] = useState(false);
   const overallCfg = RISK_CONFIG[result.overall_risk];
   const recCfg =
     RECOMMENDATION_CONFIG[result.recommendation] ??
@@ -562,6 +563,10 @@ function Results({ result }: { result: ApiResult }) {
   const sorted = [...result.combinations].sort(
     (a, b) => RISK_ORDER[a.risk_level] - RISK_ORDER[b.risk_level],
   );
+
+  const nonLowCombos = sorted.filter((c) => c.risk_level !== "low");
+  const lowCombos = sorted.filter((c) => c.risk_level === "low");
+  const allLow = nonLowCombos.length === 0 && lowCombos.length > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -610,11 +615,26 @@ function Results({ result }: { result: ApiResult }) {
       {/* Combinations */}
       {sorted.length > 0 && (
         <div className="flex flex-col gap-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Interaction Breakdown
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Interaction Breakdown
+            </h2>
+            {!allLow && lowCombos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowLow((v) => !v)}
+                className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
+              >
+                {showLow
+                  ? "Hide low-risk interactions"
+                  : `Show low-risk interactions (${lowCombos.length})`}
+              </button>
+            )}
+          </div>
 
           {sorted.map((combo) => {
+            const isLow = combo.risk_level === "low";
+            if (!allLow && isLow && !showLow) return null;
             const cfg = RISK_CONFIG[combo.risk_level];
             const ineffective = isCombinationIneffective(combo);
             const classEmoji =
@@ -624,7 +644,11 @@ function Results({ result }: { result: ApiResult }) {
             return (
               <div
                 key={comboKey}
-                className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5"
+                className={cn(
+                  "flex flex-col gap-3 rounded-xl border bg-card p-5",
+                  !allLow && isLow ? "border-border/50 opacity-60" : "border-border",
+                )}
+                style={!allLow && isLow && showLow ? { animation: "fade-in 0.3s ease forwards" } : undefined}
               >
                 {/* Drug pair + risk dot */}
                 <div className="flex items-start gap-2">
