@@ -12,6 +12,7 @@ interface RequestBody {
   drugs: DrugInput[];
   treatment_context?: string;
   health_context?: string;
+  notes?: string;
 }
 
 interface GroqResponse {
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { drugs, treatment_context, health_context } = body;
+  const { drugs, treatment_context, health_context, notes } = body;
   if (!Array.isArray(drugs) || drugs.length < 2) {
     return NextResponse.json(
       { error: "At least 2 drugs required" },
@@ -110,11 +111,16 @@ export async function POST(req: NextRequest) {
     ? `User health profile: ${hp}. Factor this into your analysis and flag any additional risks based on this profile.\n\n`
     : "";
 
+  const notesLine = notes?.trim()
+    ? `Additional context from user: ${notes.trim()}\n\n`
+    : "";
+
   const userPrompt =
     dataContext +
     `Analyze interactions between these substances:\n${drugList}\n\n` +
     contextLine +
     healthLine +
+    notesLine +
     `Identify the most dangerous combinations and rank them.\n` +
     `Return this exact JSON:\n` +
     `{\n` +

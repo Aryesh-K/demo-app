@@ -393,6 +393,7 @@ export default function CheckFree() {
   const [unitA, setUnitA] = useState<Unit>("mg");
   const [unitB, setUnitB] = useState<Unit>("mg");
   const [treatmentContext, setTreatmentContext] = useState("");
+  const [notes, setNotes] = useState("");
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
@@ -413,6 +414,7 @@ export default function CheckFree() {
     setUnitA("mg");
     setUnitB("mg");
     setTreatmentContext("");
+    setNotes("");
     setApiResult(null);
     setApiError(null);
     setPhase("idle");
@@ -445,6 +447,7 @@ export default function CheckFree() {
         amount2: amountB,
         unit2: unitB,
         treatment_context: treatmentContext,
+        notes,
       }),
     })
       .then((r) => {
@@ -523,6 +526,13 @@ export default function CheckFree() {
         />
       </div>
 
+      {/* Notice */}
+      <p className="text-xs text-muted-foreground">
+        Note: At least one of the substances above must be a prescription or OTC
+        medication. If you are checking a medication against two other OTCs,
+        please upgrade to Premium.
+      </p>
+
       {/* Optional context */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
@@ -545,6 +555,21 @@ export default function CheckFree() {
           value={treatmentContext}
           onChange={(e) => setTreatmentContext(e.target.value)}
           placeholder="e.g. anxiety, chronic pain, allergies, high blood pressure"
+        />
+
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="notes">Notes</Label>
+          <p className="text-xs text-muted-foreground">
+            Add any timing or scheduling details that might be relevant
+          </p>
+        </div>
+        <textarea
+          id="notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="e.g. I take Drug A in the morning and Drug B at night, about 8 hours apart"
+          rows={3}
+          className="min-h-[80px] w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground shadow-xs outline-none focus:border-ring dark:bg-input/30 placeholder:text-muted-foreground"
         />
       </div>
 

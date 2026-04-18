@@ -756,6 +756,7 @@ export default function LearnPremium() {
   ]);
   const drugCounter = useRef(3);
   const [treatmentContext, setTreatmentContext] = useState("");
+  const [notes, setNotes] = useState("");
   const [caseStudyProfile, setCaseStudyProfile] = useState<HealthProfile>(
     INITIAL_HEALTH_PROFILE,
   );
@@ -815,6 +816,7 @@ export default function LearnPremium() {
         health_context: healthContext,
         level: selectedLevel,
         is_case_study: isCaseStudy,
+        notes,
       }),
     })
       .then((r) => {
@@ -849,6 +851,7 @@ export default function LearnPremium() {
     ]);
     drugCounter.current = 3;
     setTreatmentContext("");
+    setNotes("");
     setCaseStudyProfile(INITIAL_HEALTH_PROFILE);
     setPhase("idle");
     setAnimFading(false);
@@ -1043,6 +1046,23 @@ export default function LearnPremium() {
                   />
                 </div>
               )}
+
+              {/* Notes */}
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="notes">Notes</Label>
+                <p className="text-xs text-muted-foreground">
+                  Timing, intervals, and scheduling details for more accurate
+                  analysis
+                </p>
+              </div>
+              <textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g. Drug A taken at 8am, Drug B at 2pm, Drug C at bedtime — all with food"
+                rows={3}
+                className={TEXTAREA_CLS}
+              />
 
               <Button
                 onClick={handleSubmit}

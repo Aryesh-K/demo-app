@@ -13,6 +13,7 @@ interface RequestBody {
   drugs: DrugInput[];
   treatment_context?: string;
   health_context?: string;
+  notes?: string;
   level: 1 | 2 | 3;
   is_case_study?: boolean;
 }
@@ -172,7 +173,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { drugs, treatment_context, health_context, level, is_case_study } =
+  const { drugs, treatment_context, health_context, notes, level, is_case_study } =
     body;
 
   if (!Array.isArray(drugs) || drugs.length < 2) {
@@ -226,6 +227,9 @@ export async function POST(req: NextRequest) {
   const contextLine = ctx ? `Goal/concern: ${ctx}\n` : "";
   const hp = health_context?.trim();
   const healthLine = hp ? `Health profile: ${hp}\n` : "";
+  const notesLine = notes?.trim()
+    ? `Additional context from user: ${notes.trim()}\n\n`
+    : "";
 
   const userPrompt =
     dataContext +
@@ -242,6 +246,7 @@ export async function POST(req: NextRequest) {
     `Analyze interactions between:\n${drugList}\n\n` +
     contextLine +
     healthLine +
+    notesLine +
     `\nAnalyze at ${LEVEL_NAMES[validLevel]} understanding level.\n` +
     `Key term definitions: ${KEY_TERM_DEF_GUIDANCE[validLevel]}\n\n` +
     `CRITICAL QUALITY REQUIREMENTS:\n` +

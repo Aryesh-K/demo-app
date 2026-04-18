@@ -11,6 +11,7 @@ interface RequestBody {
   amount2?: string;
   unit2?: string;
   treatment_context?: string;
+  notes?: string;
 }
 
 interface GroqResponse {
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
     amount2,
     unit2,
     treatment_context,
+    notes,
   } = body;
 
   const { drug1Data, drug2Data, knownInteraction } = await fetchDrugPairData(
@@ -102,6 +104,10 @@ export async function POST(req: NextRequest) {
       `Do not write a generic explanation — tailor everything to ${ctx}.\n\n`
     : "";
 
+  const notesLine = notes?.trim()
+    ? `Additional context from user: ${notes.trim()}\n\n`
+    : "";
+
   const userPrompt =
     dataContext +
     `Before analyzing, internalize these calibration examples:\n` +
@@ -118,6 +124,7 @@ export async function POST(req: NextRequest) {
     `Drug A: ${drugADesc}\n` +
     `Drug B: ${drugBDesc}\n\n` +
     contextLine +
+    notesLine +
     `Respond with exactly this JSON structure:\n` +
     `{\n` +
     `  "risk_level": "high" | "moderate" | "low",\n` +
