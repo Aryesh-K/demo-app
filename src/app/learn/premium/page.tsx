@@ -79,7 +79,7 @@ interface DrugEntry {
   unit: Unit;
 }
 
-// ─── Health profile ───────────────────────────────────────────────────────────
+// ─── Case study / health profile ─────────────────────────────────────────────
 
 type HealthFieldKey = "age" | "conditions" | "medications" | "allergies";
 
@@ -97,6 +97,13 @@ const INITIAL_HEALTH_PROFILE: HealthProfile = {
   allergies: { value: "", included: true },
 };
 
+// ─── Key term ─────────────────────────────────────────────────────────────────
+
+interface KeyTerm {
+  term: string;
+  definition: string;
+}
+
 // ─── API types ────────────────────────────────────────────────────────────────
 
 interface Combination {
@@ -106,7 +113,7 @@ interface Combination {
   interaction_type: "safety" | "efficacy" | "both";
   classification: string;
   explanation: string;
-  key_terms: string[];
+  key_terms: KeyTerm[];
 }
 
 interface ApiResult {
@@ -204,14 +211,133 @@ const RISK_ORDER: Record<Risk, number> = { high: 0, moderate: 1, low: 2 };
 function buildHealthContext(profile: HealthProfile): string {
   const parts: string[] = [];
   if (profile.age.included && profile.age.value.trim())
-    parts.push(`Age: ${profile.age.value.trim()}`);
+    parts.push(`Patient age: ${profile.age.value.trim()}`);
   if (profile.conditions.included && profile.conditions.value.trim())
-    parts.push(`Conditions: ${profile.conditions.value.trim()}`);
+    parts.push(`Patient conditions: ${profile.conditions.value.trim()}`);
   if (profile.medications.included && profile.medications.value.trim())
-    parts.push(`Current medications: ${profile.medications.value.trim()}`);
+    parts.push(
+      `Patient current medications: ${profile.medications.value.trim()}`,
+    );
   if (profile.allergies.included && profile.allergies.value.trim())
-    parts.push(`Allergies: ${profile.allergies.value.trim()}`);
+    parts.push(`Patient allergies: ${profile.allergies.value.trim()}`);
   return parts.join(", ");
+}
+
+// ─── Text segment helpers ─────────────────────────────────────────────────────
+
+type Segment =
+  | { type: "text"; content: string }
+  | { type: "term"; content: string; termDef: KeyTerm };
+
+function buildSegments(
+  text: string,
+  terms: KeyTerm[],
+): { segments: Segment[]; matchedTermNames: Set<string> } {
+  const matchedTermNames = new Set<string>();
+
+  if (!terms.length) {
+    return { segments: [{ type: "text", content: text }], matchedTermNames };
+  }
+
+  const sortedTerms = [...terms].sort((a, b) => b.term.length - a.term.length);
+
+  const pattern = sortedTerms
+    .map((t) => t.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:ed|es|ing|s)?")
+    .join("|");
+
+  const parts = text.split(new RegExp(`(${pattern})`, "gi"));
+  const segments: Segment[] = [];
+
+  for (const part of parts) {
+    if (!part) continue;
+    const lp = part.toLowerCase();
+    const matchedTerm = sortedTerms.find((t) => {
+      const lt = t.term.toLowerCase();
+      return (
+        lp === lt ||
+        lp === lt + "s" ||
+        lp === lt + "es" ||
+        lp === lt + "ed" ||
+        lp === lt + "ing"
+      );
+    });
+    if (matchedTerm) {
+      matchedTermNames.add(matchedTerm.term.toLowerCase());
+      segments.push({ type: "term", content: part, termDef: matchedTerm });
+    } else {
+      segments.push({ type: "text", content: part });
+    }
+  }
+
+  return { segments, matchedTermNames };
+}
+
+// ─── Term chip (inline highlight or pill, with popup) ─────────────────────────
+
+function TermChip({
+  displayText,
+  term,
+  definition,
+  termKey,
+  isOpen,
+  onToggle,
+  variant = "pill",
+}: {
+  displayText: string;
+  term: string;
+  definition: string;
+  termKey: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  variant?: "inline" | "pill";
+}) {
+  return (
+    <span className="relative inline">
+      <button
+        type="button"
+        data-termkey={termKey}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        className={
+          variant === "pill"
+            ? cn(
+                "rounded-full border border-teal-800 bg-teal-950/40 px-2.5 py-0.5 text-xs text-teal-300 transition-colors hover:bg-teal-900/40",
+                isOpen && "border-teal-500 bg-teal-900/60",
+              )
+            : "cursor-pointer text-teal-400 underline decoration-teal-400 underline-offset-2 hover:text-teal-300"
+        }
+      >
+        {displayText}
+      </button>
+
+      {isOpen && (
+        <span
+          className="absolute left-0 top-[calc(100%+6px)] z-50 w-60 rounded-xl border border-teal-800 bg-card p-3 shadow-xl"
+          style={{ animation: "fade-in 0.15s ease forwards" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="flex items-start justify-between gap-1.5">
+            <span className="text-xs font-bold text-teal-300">{term}</span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              ✕
+            </button>
+          </span>
+          <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
+            {definition || "No definition available."}
+          </span>
+        </span>
+      )}
+    </span>
+  );
 }
 
 // ─── Molecule animation ───────────────────────────────────────────────────────
@@ -403,9 +529,9 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
-// ─── Health profile panel ─────────────────────────────────────────────────────
+// ─── Case study panel ─────────────────────────────────────────────────────────
 
-const HEALTH_FIELD_DEFS: Array<{
+const CASE_STUDY_FIELD_DEFS: Array<{
   key: HealthFieldKey;
   label: string;
   placeholder: string;
@@ -414,54 +540,54 @@ const HEALTH_FIELD_DEFS: Array<{
 }> = [
   {
     key: "age",
-    label: "Age",
+    label: "Patient Age",
     placeholder: "e.g. 34",
     type: "input",
     inputMode: "numeric",
   },
   {
     key: "conditions",
-    label: "Known conditions",
-    placeholder: "e.g. Type 2 diabetes, hypertension",
+    label: "Patient Conditions",
+    placeholder: "e.g. diabetes, hypertension, asthma",
     type: "textarea",
   },
   {
     key: "medications",
-    label: "Current medications",
+    label: "Patient Current Medications",
     placeholder: "e.g. metformin 500mg, lisinopril",
     type: "textarea",
   },
   {
     key: "allergies",
-    label: "Allergies",
+    label: "Patient Allergies",
     placeholder: "e.g. penicillin, sulfa drugs",
     type: "input",
   },
 ];
 
-function HealthProfilePanel({
+function CaseStudyPanel({
   profile,
   onChange,
 }: {
   profile: HealthProfile;
   onChange: (key: HealthFieldKey, patch: Partial<HealthField>) => void;
 }) {
-  function sendAll() {
-    for (const { key } of HEALTH_FIELD_DEFS) onChange(key, { included: true });
+  function includeAll() {
+    for (const { key } of CASE_STUDY_FIELD_DEFS) onChange(key, { included: true });
   }
   function clearAll() {
-    for (const { key } of HEALTH_FIELD_DEFS)
+    for (const { key } of CASE_STUDY_FIELD_DEFS)
       onChange(key, { value: "", included: true });
   }
 
   return (
     <div className="sticky top-6 flex flex-col gap-4 rounded-xl border border-yellow-800/50 bg-yellow-950/20 p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-yellow-300">Health Profile</h2>
+        <h2 className="text-sm font-semibold text-yellow-300">Patient Profile</h2>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={sendAll}
+            onClick={includeAll}
             className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             Include All
@@ -477,10 +603,10 @@ function HealthProfilePanel({
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Optional — toggle fields on to include them in the AI analysis.
+        Toggle fields on to include them in the analysis.
       </p>
 
-      {HEALTH_FIELD_DEFS.map(({ key, label, placeholder, type, inputMode }) => {
+      {CASE_STUDY_FIELD_DEFS.map(({ key, label, placeholder, type, inputMode }) => {
         const field = profile[key];
         return (
           <div key={key} className="flex flex-col gap-1.5">
@@ -529,6 +655,16 @@ function Results({
   result: ApiResult;
   level: 1 | 2 | 3;
 }) {
+  const [activeTermKey, setActiveTermKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    function handleDocClick() {
+      setActiveTermKey(null);
+    }
+    document.addEventListener("click", handleDocClick);
+    return () => document.removeEventListener("click", handleDocClick);
+  }, []);
+
   const overallCfg = RISK_CONFIG[result.overall_risk];
   const recCfg =
     RECOMMENDATION_CONFIG[result.recommendation] ??
@@ -596,10 +732,19 @@ function Results({
             const cfg = RISK_CONFIG[combo.risk_level];
             const classEmoji =
               CLASSIFICATION_EMOJI[combo.classification] ?? "🔍";
+            const comboKey = `${combo.drug_a}-${combo.drug_b}`;
+
+            const { segments, matchedTermNames } = buildSegments(
+              combo.explanation,
+              combo.key_terms,
+            );
+            const unmatchedTerms = combo.key_terms.filter(
+              (t) => !matchedTermNames.has(t.term.toLowerCase()),
+            );
 
             return (
               <div
-                key={`${combo.drug_a}-${combo.drug_b}`}
+                key={comboKey}
                 className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5"
               >
                 {/* Drug pair + risk dot */}
@@ -639,22 +784,52 @@ function Results({
                   </span>
                 </div>
 
-                {/* Explanation */}
+                {/* Explanation with highlighted terms */}
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {combo.explanation}
+                  {segments.map((seg, i) => {
+                    if (seg.type === "text") return seg.content;
+                    const tKey = `${comboKey}-inline-${seg.termDef.term}-${i}`;
+                    return (
+                      <TermChip
+                        key={tKey}
+                        displayText={seg.content}
+                        term={seg.termDef.term}
+                        definition={seg.termDef.definition}
+                        termKey={tKey}
+                        isOpen={activeTermKey === tKey}
+                        onToggle={() =>
+                          setActiveTermKey(
+                            activeTermKey === tKey ? null : tKey,
+                          )
+                        }
+                        variant="inline"
+                      />
+                    );
+                  })}
                 </p>
 
-                {/* Key terms */}
-                {combo.key_terms.length > 0 && (
+                {/* Unmatched key terms as clickable pills */}
+                {unmatchedTerms.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    {combo.key_terms.map((term) => (
-                      <span
-                        key={term}
-                        className="rounded-full border border-teal-800 bg-teal-950/40 px-2.5 py-0.5 text-xs text-teal-300"
-                      >
-                        {term}
-                      </span>
-                    ))}
+                    {unmatchedTerms.map((termObj) => {
+                      const pillKey = `${comboKey}-pill-${termObj.term}`;
+                      return (
+                        <TermChip
+                          key={pillKey}
+                          displayText={termObj.term}
+                          term={termObj.term}
+                          definition={termObj.definition}
+                          termKey={pillKey}
+                          isOpen={activeTermKey === pillKey}
+                          onToggle={() =>
+                            setActiveTermKey(
+                              activeTermKey === pillKey ? null : pillKey,
+                            )
+                          }
+                          variant="pill"
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -676,6 +851,7 @@ function Results({
 
 export default function LearnPremium() {
   const [selectedLevel, setSelectedLevel] = useState<1 | 2 | 3 | null>(null);
+  const [isCaseStudy, setIsCaseStudy] = useState(false);
   const [drugs, setDrugs] = useState<DrugEntry[]>([
     {
       id: "drug-1",
@@ -694,7 +870,7 @@ export default function LearnPremium() {
   ]);
   const drugCounter = useRef(3);
   const [treatmentContext, setTreatmentContext] = useState("");
-  const [healthProfile, setHealthProfile] = useState<HealthProfile>(
+  const [caseStudyProfile, setCaseStudyProfile] = useState<HealthProfile>(
     INITIAL_HEALTH_PROFILE,
   );
 
@@ -714,11 +890,11 @@ export default function LearnPremium() {
     );
   }
 
-  function updateHealthField(
+  function updateCaseStudyField(
     key: HealthFieldKey,
     patch: Partial<HealthField>,
   ) {
-    setHealthProfile((prev) => ({
+    setCaseStudyProfile((prev) => ({
       ...prev,
       [key]: { ...prev[key], ...patch },
     }));
@@ -729,7 +905,13 @@ export default function LearnPremium() {
     const newId = `drug-${drugCounter.current++}`;
     setDrugs((prev) => [
       ...prev,
-      { id: newId, name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
+      {
+        id: newId,
+        name: "",
+        method: "Oral (swallowed)",
+        amount: "",
+        unit: "mg",
+      },
     ]);
   }
 
@@ -748,7 +930,9 @@ export default function LearnPremium() {
     apiResultRef.current = null;
     apiErrorRef.current = null;
 
-    const healthContext = buildHealthContext(healthProfile);
+    const healthContext = isCaseStudy
+      ? buildHealthContext(caseStudyProfile)
+      : "";
 
     fetch("/api/arn-interaction-premium", {
       method: "POST",
@@ -763,6 +947,7 @@ export default function LearnPremium() {
         treatment_context: treatmentContext,
         health_context: healthContext,
         level: selectedLevel,
+        is_case_study: isCaseStudy,
       }),
     })
       .then((r) => {
@@ -801,6 +986,7 @@ export default function LearnPremium() {
 
   function handleNewAnalysis() {
     setSelectedLevel(null);
+    setIsCaseStudy(false);
     setDrugs([
       {
         id: "drug-1",
@@ -819,7 +1005,7 @@ export default function LearnPremium() {
     ]);
     drugCounter.current = 3;
     setTreatmentContext("");
-    setHealthProfile(INITIAL_HEALTH_PROFILE);
+    setCaseStudyProfile(INITIAL_HEALTH_PROFILE);
     setPhase("idle");
     setApiResult(null);
     setApiError(null);
@@ -939,8 +1125,29 @@ export default function LearnPremium() {
             <hr className="flex-1 border-border" />
           </div>
 
-          <div className="grid grid-cols-[2fr_1fr] items-start gap-6">
-            {/* Left column */}
+          {/* Case study toggle */}
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium">Enable Case Study Mode</span>
+              <span className="text-xs text-muted-foreground">
+                Add a patient profile to contextualize the analysis
+              </span>
+            </div>
+            <Toggle
+              on={isCaseStudy}
+              onToggle={() => setIsCaseStudy((v) => !v)}
+            />
+          </div>
+
+          {/* Drug inputs + optional case study panel */}
+          <div
+            className={cn(
+              isCaseStudy
+                ? "grid grid-cols-[2fr_1fr] items-start gap-6"
+                : "flex flex-col gap-4",
+            )}
+          >
+            {/* Left / main column */}
             <div className="flex flex-col gap-4">
               {drugs.map((drug, index) => (
                 <div
@@ -982,7 +1189,9 @@ export default function LearnPremium() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="treatment-context">
-                    What is your goal or concern? (optional)
+                    {isCaseStudy
+                      ? "What is the patient's goal or concern? (optional)"
+                      : "What is your goal or concern? (optional)"}
                   </Label>
                   <p className="text-xs text-muted-foreground">
                     This helps us give you more relevant information
@@ -992,7 +1201,11 @@ export default function LearnPremium() {
                   id="treatment-context"
                   value={treatmentContext}
                   onChange={(e) => setTreatmentContext(e.target.value)}
-                  placeholder="e.g. managing anxiety, clearing acne, reducing inflammation, improving sleep"
+                  placeholder={
+                    isCaseStudy
+                      ? "e.g. managing the patient's chronic pain, treating patient's anxiety"
+                      : "e.g. managing anxiety, clearing acne, reducing inflammation, improving sleep"
+                  }
                 />
               </div>
 
@@ -1005,11 +1218,13 @@ export default function LearnPremium() {
               </Button>
             </div>
 
-            {/* Right column: health profile */}
-            <HealthProfilePanel
-              profile={healthProfile}
-              onChange={updateHealthField}
-            />
+            {/* Right column: case study panel (only when ON) */}
+            {isCaseStudy && (
+              <CaseStudyPanel
+                profile={caseStudyProfile}
+                onChange={updateCaseStudyField}
+              />
+            )}
           </div>
         </div>
       )}
