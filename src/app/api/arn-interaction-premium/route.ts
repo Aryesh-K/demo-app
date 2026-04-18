@@ -342,22 +342,57 @@ export async function POST(req: NextRequest) {
       overall_summary: string;
     };
 
+    // Aggressively clean before first JSON.parse attempt
+    const preCleaned = cleaned
+      .replace(/[\u2018\u2019]/g, "'")   // curly single quotes → straight
+      .replace(/[\u201C\u201D]/g, '"')   // curly double quotes → straight
+      .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, "") // control chars (keep \n \r)
+      .replace(/,(\s*[}\]])/g, "$1");    // trailing commas before } or ]
+
     let result: ParsedResult;
     try {
-      result = JSON.parse(cleaned) as ParsedResult;
+      result = JSON.parse(preCleaned) as ParsedResult;
     } catch {
-      // Regex fallback
-      const summaryMatch = cleaned.match(
+      // ── Regex fallback ──────────────────────────────────────────────────────
+      const summaryMatch = preCleaned.match(
         /"overall_summary"\s*:\s*"([\s\S]+?)(?=",\s*"|"\s*})/,
       );
 
       let combs: ParsedCombination[] = [];
-      const combsText = cleaned.match(
+
+      // Try to extract the combinations array text and parse it
+      const combsText = preCleaned.match(
         /"combinations"\s*:\s*(\[[\s\S]+?\])(?=\s*[,}])/,
       );
       if (combsText) {
+        // First attempt: parse as-is
         try {
           combs = JSON.parse(combsText[1]) as ParsedCombination[];
+        } catch {
+          // Second attempt: super-clean (unquoted keys, trailing commas)
+          try {
+            const superCleaned = combsText[1]
+              .replace(/[\u2018\u2019]/g, "'")
+              .replace(/[\u201C\u201D]/g, '"')
+              .replace(/,(\s*[}\]])/g, "$1")
+              .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3');
+            combs = JSON.parse(superCleaned) as ParsedCombination[];
+          } catch {
+            /* leave empty */
+          }
+        }
+      }
+
+      // Also try a super-clean of the whole payload as last resort
+      if (combs.length === 0) {
+        try {
+          const superCleaned = preCleaned
+            .replace(/[\u2018\u2019]/g, "'")
+            .replace(/[\u201C\u201D]/g, '"')
+            .replace(/,(\s*[}\]])/g, "$1")
+            .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3');
+          const fallback = JSON.parse(superCleaned) as ParsedResult;
+          if (Array.isArray(fallback.combinations)) combs = fallback.combinations;
         } catch {
           /* leave empty */
         }
