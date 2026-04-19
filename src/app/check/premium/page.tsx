@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { usePremiumProfile } from "~/hooks/usePremiumProfile";
 import { isPrescriptionDrug } from "~/lib/prescribed-detection";
 import { cn } from "~/lib/utils";
 
@@ -472,9 +474,13 @@ const HEALTH_FIELD_DEFS: Array<{
 function HealthProfilePanel({
   profile,
   onChange,
+  profileLoading,
+  autoFilled,
 }: {
   profile: HealthProfile;
   onChange: (key: HealthFieldKey, patch: Partial<HealthField>) => void;
+  profileLoading?: boolean;
+  autoFilled?: boolean;
 }) {
   function sendAll() {
     for (const { key } of HEALTH_FIELD_DEFS) {
@@ -519,6 +525,21 @@ function HealthProfilePanel({
         ✓ Prescription medications in your regimen are fully supported by
         Premium.
       </p>
+
+      {profileLoading && (
+        <p className="text-xs text-muted-foreground">Loading your profile…</p>
+      )}
+      {!profileLoading && autoFilled && (
+        <p className="text-xs text-muted-foreground">
+          Auto-filled from your account profile.{" "}
+          <Link
+            href="/account"
+            className="text-teal-400 underline underline-offset-2 hover:text-teal-300"
+          >
+            Edit in Account →
+          </Link>
+        </p>
+      )}
 
       {/* Fields */}
       {HEALTH_FIELD_DEFS.map(({ key, label, placeholder, type, inputMode }) => {
@@ -747,6 +768,10 @@ function Results({ result }: { result: ApiResult }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CheckPremium() {
+  const { profile: savedProfile, loading: profileLoading } =
+    usePremiumProfile();
+  const [autoFilled, setAutoFilled] = useState(false);
+
   const [drugs, setDrugs] = useState<DrugEntry[]>([
     {
       id: "drug-1",
@@ -769,6 +794,34 @@ export default function CheckPremium() {
   const [healthProfile, setHealthProfile] = useState<HealthProfile>(
     INITIAL_HEALTH_PROFILE,
   );
+
+  useEffect(() => {
+    if (!savedProfile) return;
+    const hasData =
+      savedProfile.age ||
+      savedProfile.conditions ||
+      savedProfile.medications ||
+      savedProfile.allergies ||
+      savedProfile.notes;
+    if (!hasData) return;
+    setHealthProfile((prev) => ({
+      age: { value: savedProfile.age, included: prev.age.included },
+      conditions: {
+        value: savedProfile.conditions,
+        included: prev.conditions.included,
+      },
+      medications: {
+        value: savedProfile.medications,
+        included: prev.medications.included,
+      },
+      allergies: {
+        value: savedProfile.allergies,
+        included: prev.allergies.included,
+      },
+    }));
+    if (savedProfile.notes) setNotes(savedProfile.notes);
+    setAutoFilled(true);
+  }, [savedProfile]);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
@@ -1041,6 +1094,8 @@ export default function CheckPremium() {
         <HealthProfilePanel
           profile={healthProfile}
           onChange={updateHealthField}
+          profileLoading={profileLoading}
+          autoFilled={autoFilled}
         />
       </div>
 
