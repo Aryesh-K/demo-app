@@ -16,14 +16,35 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!email) {
+      setError("Please enter your email address.");
+      return;
+    }
+    if (!email.includes("@") || !email.includes(".")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
+
+    const checkRes = await fetch("/api/check-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const { exists } = (await checkRes.json()) as { exists: boolean };
+
+    if (!exists) {
+      setError("No account found with that email. Please sign up first.");
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
     const { error: authError } = await supabase.auth.resetPasswordForEmail(
       email,
-      {
-        redirectTo: `${window.location.origin}/update-password`,
-      },
+      { redirectTo: `${window.location.origin}/update-password` },
     );
     setLoading(false);
 
@@ -65,7 +86,6 @@ export default function ResetPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
-                  required
                 />
               </div>
 
@@ -77,8 +97,8 @@ export default function ResetPasswordPage() {
 
               <Button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-yellow-700 text-white hover:bg-yellow-600 disabled:opacity-60"
+                disabled={loading || email.length < 5}
+                className="w-full bg-yellow-700 text-white hover:bg-yellow-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Sending…" : "Send Reset Link"}
               </Button>
