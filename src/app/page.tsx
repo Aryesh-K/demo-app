@@ -31,9 +31,11 @@ const premiumPublicFeatures = [
 const premiumStudentsFeatures = [
   "Advanced biochemical pathway explanations",
   "Interaction classification (CYP450, serotonin, CNS depression)",
-  "Immersive 3D interactive models tailored to selected explanation level",
-  "Case study mode — analyze interactions for a specific patient profile",
+  "Immersive 3D interactive models tailored to selected explanation level 🧪 Beta",
   "Curriculum-aligned explanations for middle school/honors biology, AP Biology, and pre-med students",
+  "Chemical substance analysis — explore toxicological interactions involving cyanide, heavy metals, industrial chemicals, and more",
+  "Case study mode — analyze interactions for a specific patient profile",
+  "Organ and biochemical process focus — direct the AI to emphasize specific systems like cardiac function, cellular respiration, or liver metabolism",
   "Clickable term definitions — tap any highlighted word for an instant explanation calibrated to your curriculum level",
 ];
 

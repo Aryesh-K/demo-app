@@ -5,7 +5,6 @@ import BodyMap from "~/components/body-map";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { isPrescriptionDrug } from "~/lib/prescribed-detection";
 import { cn } from "~/lib/utils";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -416,10 +415,11 @@ function DrugCard({
           htmlFor={drugId}
           className="text-xs font-normal text-muted-foreground"
         >
-          Drug / substance name
+          Drug / Chemical Name
         </Label>
         <p className="text-xs text-muted-foreground/60">
-          Brand name (e.g. Tylenol) or generic (e.g. acetaminophen)
+          Enter a medication, OTC product, alcohol, or chemical substance (e.g.
+          cyanide, sulfur dioxide, ethanol, ammonia)
         </p>
       </div>
       <Input
@@ -428,11 +428,6 @@ function DrugCard({
         onChange={(e) => onNameChange(e.target.value)}
         placeholder="e.g. ibuprofen"
       />
-      {isPrescriptionDrug(drug.name.trim()) && (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-green-700 bg-green-950/40 px-2.5 py-0.5 text-xs text-green-300">
-          ✓ Prescription drug — covered by Premium
-        </span>
-      )}
 
       <div className="flex flex-col gap-1">
         <Label
@@ -873,16 +868,10 @@ export default function LearnPremium() {
       amount: "",
       unit: "mg",
     },
-    {
-      id: "drug-2",
-      name: "",
-      method: "Oral (swallowed)",
-      amount: "",
-      unit: "mg",
-    },
   ]);
-  const drugCounter = useRef(3);
+  const drugCounter = useRef(2);
   const [treatmentContext, setTreatmentContext] = useState("");
+  const [focusArea, setFocusArea] = useState("");
   const [notes, setNotes] = useState("");
   const [caseStudyProfile, setCaseStudyProfile] = useState<HealthProfile>(
     INITIAL_HEALTH_PROFILE,
@@ -976,6 +965,7 @@ export default function LearnPremium() {
         level: selectedLevel,
         is_case_study: isCaseStudy,
         notes,
+        focus_area: focusArea.trim() || undefined,
       }),
     })
       .then(async (r) => {
@@ -1034,16 +1024,10 @@ export default function LearnPremium() {
         amount: "",
         unit: "mg",
       },
-      {
-        id: "drug-2",
-        name: "",
-        method: "Oral (swallowed)",
-        amount: "",
-        unit: "mg",
-      },
     ]);
-    drugCounter.current = 3;
+    drugCounter.current = 2;
     setTreatmentContext("");
+    setFocusArea("");
     setNotes("");
     setCaseStudyProfile(INITIAL_HEALTH_PROFILE);
     setPhase("idle");
@@ -1205,7 +1189,7 @@ export default function LearnPremium() {
                   <DrugCard
                     drug={drug}
                     label={getDrugLabel(index)}
-                    removable={index >= 2}
+                    removable={index >= 1}
                     onNameChange={(v) => {
                       updateDrug(drug.id, { name: v });
                       if (validationError) setValidationError(null);
@@ -1229,32 +1213,55 @@ export default function LearnPremium() {
                 </Button>
               )}
 
-              {/* Goal / concern — shown in case study mode */}
-              {isCaseStudy && (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
-                    <hr className="flex-1 border-border" />
-                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Optional Context
-                    </span>
-                    <hr className="flex-1 border-border" />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label htmlFor="treatment-context">
-                      What is the patient&apos;s goal or concern? (optional)
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      This helps tailor the educational analysis
-                    </p>
-                  </div>
-                  <Input
-                    id="treatment-context"
-                    value={treatmentContext}
-                    onChange={(e) => setTreatmentContext(e.target.value)}
-                    placeholder="e.g. managing the patient's chronic pain, treating patient's anxiety"
-                  />
+              {/* Optional context section */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <hr className="flex-1 border-border" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Optional Context
+                  </span>
+                  <hr className="flex-1 border-border" />
                 </div>
-              )}
+
+                {/* Goal / concern — shown in case study mode only */}
+                {isCaseStudy && (
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor="treatment-context">
+                        What is the patient&apos;s goal or concern? (optional)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        This helps tailor the educational analysis
+                      </p>
+                    </div>
+                    <Input
+                      id="treatment-context"
+                      value={treatmentContext}
+                      onChange={(e) => setTreatmentContext(e.target.value)}
+                      placeholder="e.g. managing the patient's chronic pain, treating patient's anxiety"
+                    />
+                  </>
+                )}
+
+                {/* Organ / biochemical focus — always shown */}
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="focus-area">
+                    Organ or Biochemical Focus (optional)
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    The explanation will emphasize these systems or processes
+                    more heavily
+                  </p>
+                </div>
+                <textarea
+                  id="focus-area"
+                  value={focusArea}
+                  onChange={(e) => setFocusArea(e.target.value)}
+                  placeholder="e.g. emphasize the impact on the heart, explain cellular respiration involvement, focus on liver metabolism, highlight the role of mitochondria"
+                  rows={2}
+                  className={TEXTAREA_CLS}
+                />
+              </div>
 
               {/* Notes */}
               <div className="flex flex-col gap-1">

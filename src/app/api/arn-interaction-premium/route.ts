@@ -16,6 +16,7 @@ interface RequestBody {
   notes?: string;
   level: 1 | 2 | 3;
   is_case_study?: boolean;
+  focus_area?: string;
 }
 
 interface GroqResponse {
@@ -131,7 +132,10 @@ const EDUCATOR_PREAMBLE =
   "Your audience is students who want to understand the science. " +
   'NEVER say any of these phrases: "consult a doctor", "seek medical advice", "talk to your healthcare provider", ' +
   '"this is not medical advice", "I recommend you", "you should", "the patient should". ' +
-  "ALWAYS frame everything as educational biology/pharmacology explanation. You are a science teacher, not a clinician.\n\n";
+  "ALWAYS frame everything as educational biology/pharmacology explanation. You are a science teacher, not a clinician.\n\n" +
+  "Users may enter chemical substances (e.g. cyanide, sulfur dioxide, ammonia, heavy metals) in addition to medications. " +
+  "When a chemical substance is entered, explain its toxicological mechanism and how it interacts with any drugs or other substances listed. " +
+  "Treat it with the same depth and curriculum-level accuracy as you would a pharmaceutical drug interaction.\n\n";
 
 const LEVEL_SYSTEM_PROMPTS: Record<1 | 2 | 3, string> = {
   1:
@@ -260,11 +264,12 @@ export async function POST(req: NextRequest) {
     notes,
     level,
     is_case_study,
+    focus_area,
   } = body;
 
-  if (!Array.isArray(drugs) || drugs.length < 2) {
+  if (!Array.isArray(drugs) || drugs.length < 1) {
     return NextResponse.json(
-      { error: "At least 2 drugs required" },
+      { error: "At least 1 drug required" },
       { status: 400 },
     );
   }
@@ -319,8 +324,15 @@ export async function POST(req: NextRequest) {
 
   const drugSection = `Analyze interactions between:\n${drugList}\n\n`;
 
+  const focusInstruction = focus_area?.trim()
+    ? `\nEMPHASIS INSTRUCTION: The user wants the explanation to specifically emphasize: ${focus_area.trim()}.\n` +
+      `Make sure all explanations — regardless of curriculum level — give extra detail and depth to these specific organs, systems, or biochemical processes. ` +
+      `Reference them explicitly and repeatedly throughout the explanation.\n`
+    : "";
+
   const userPrompt =
     dataContext +
+    focusInstruction +
     `Before analyzing, internalize these calibration examples:\n` +
     `- aspirin + ibuprofen = HIGH (two NSAIDs, GI bleed risk)\n` +
     `- acetaminophen + NyQuil = HIGH (duplicate acetaminophen, liver damage risk)\n` +
