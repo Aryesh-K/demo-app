@@ -87,6 +87,12 @@ function AccountInfoTab({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [accessCode, setAccessCode] = useState("");
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemResult, setRedeemResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
   const router = useRouter();
 
   async function handleSave(e: React.FormEvent) {
@@ -107,6 +113,32 @@ function AccountInfoTab({
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/");
+  }
+
+  async function handleRedeem() {
+    if (!accessCode.trim()) return;
+    setRedeeming(true);
+    setRedeemResult(null);
+    try {
+      const res = await fetch("/api/redeem-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: accessCode.trim(), userId: user.id }),
+      });
+      const data = (await res.json()) as { success: boolean; message: string };
+      setRedeemResult(data);
+      if (data.success) {
+        onSaved({ is_premium: true });
+        setAccessCode("");
+      }
+    } catch {
+      setRedeemResult({
+        success: false,
+        message: "Network error. Please try again.",
+      });
+    } finally {
+      setRedeeming(false);
+    }
   }
 
   const isPremium = profile.is_premium ?? false;
@@ -183,6 +215,48 @@ function AccountInfoTab({
           {saving ? "Saving…" : "Save Changes"}
         </Button>
       </form>
+
+      {/* Access code redemption — hidden once premium */}
+      {!isPremium && (
+        <div className="mt-6 flex flex-col gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Access Code
+          </p>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="Enter access code"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRedeem();
+              }}
+            />
+            <Button
+              type="button"
+              disabled={redeeming || !accessCode.trim()}
+              className="shrink-0 bg-teal-600 text-white hover:bg-teal-500 disabled:opacity-60"
+              onClick={handleRedeem}
+            >
+              {redeeming ? "…" : "Redeem"}
+            </Button>
+          </div>
+          {redeemResult && (
+            <div
+              className={cn(
+                "rounded-xl border p-3 text-sm",
+                redeemResult.success
+                  ? "border-green-700/50 bg-green-950/30 text-green-300"
+                  : "border-red-700/50 bg-red-950/30 text-red-300",
+              )}
+            >
+              {redeemResult.success
+                ? `🎉 ${redeemResult.message} Refresh the page to see your premium features.`
+                : redeemResult.message}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Account status */}
       <div className="mt-6 flex flex-col gap-2 rounded-xl border border-border bg-card/50 p-4">
