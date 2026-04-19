@@ -74,16 +74,29 @@ function DeleteDialog({ onClose }: { onClose: () => void }) {
 
 function AccountInfoTab({
   user,
-  profile,
+  profile: _profile,
+  firstName,
+  setFirstName,
+  lastName,
+  setLastName,
+  phone,
+  setPhone,
+  isPremium,
+  setIsPremium,
   onSaved,
 }: {
   user: User;
   profile: Profile;
+  firstName: string;
+  setFirstName: (v: string) => void;
+  lastName: string;
+  setLastName: (v: string) => void;
+  phone: string;
+  setPhone: (v: string) => void;
+  isPremium: boolean;
+  setIsPremium: (v: boolean) => void;
   onSaved: (updated: Partial<Profile>) => void;
 }) {
-  const [firstName, setFirstName] = useState(profile.first_name ?? "");
-  const [lastName, setLastName] = useState(profile.last_name ?? "");
-  const [phone, setPhone] = useState(profile.phone ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -128,6 +141,7 @@ function AccountInfoTab({
       const data = (await res.json()) as { success: boolean; message: string };
       setRedeemResult(data);
       if (data.success) {
+        setIsPremium(true);
         onSaved({ is_premium: true });
         setAccessCode("");
       }
@@ -141,7 +155,6 @@ function AccountInfoTab({
     }
   }
 
-  const isPremium = profile.is_premium ?? false;
   const joinedDate = formatJoinDate(user.created_at);
 
   return (
@@ -361,7 +374,7 @@ function PremiumInfoTab({
           onChange={(e) => setConditions(e.target.value)}
           rows={3}
           placeholder="e.g. Type 2 diabetes, hypertension"
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-ring resize-none dark:bg-input/30"
+          className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30"
         />
       </div>
 
@@ -373,7 +386,7 @@ function PremiumInfoTab({
           onChange={(e) => setMedications(e.target.value)}
           rows={3}
           placeholder="e.g. Metformin 500mg, Lisinopril 10mg"
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-ring resize-none dark:bg-input/30"
+          className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30"
         />
       </div>
 
@@ -396,7 +409,7 @@ function PremiumInfoTab({
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="Anything else relevant to your health profile"
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-ring resize-none dark:bg-input/30"
+          className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30"
         />
       </div>
 
@@ -431,6 +444,12 @@ export default function AccountPage() {
   const [tab, setTab] = useState<Tab>("account");
   const [loading, setLoading] = useState(true);
 
+  // Lifted field state so useEffect can pre-fill after getProfile resolves
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isPremium, setIsPremium] = useState(false);
+
   useEffect(() => {
     const supabase = createClient();
 
@@ -447,6 +466,12 @@ export default function AccountPage() {
       setUser(authUser);
       const profileData = await getProfile(authUser.id);
       setProfile(profileData ?? {});
+      if (profileData) {
+        setFirstName(profileData.first_name ?? "");
+        setLastName(profileData.last_name ?? "");
+        setPhone(profileData.phone ?? "");
+        setIsPremium(profileData.is_premium ?? false);
+      }
       setLoading(false);
     }
 
@@ -463,10 +488,11 @@ export default function AccountPage() {
 
   if (!user) return null;
 
-  const isPremium = profile.is_premium ?? false;
-
   function mergeProfile(updated: Partial<Profile>) {
     setProfile((prev) => ({ ...prev, ...updated }));
+    if (updated.is_premium !== undefined) {
+      setIsPremium(updated.is_premium ?? false);
+    }
   }
 
   return (
@@ -521,6 +547,14 @@ export default function AccountPage() {
           <AccountInfoTab
             user={user}
             profile={profile}
+            firstName={firstName}
+            setFirstName={setFirstName}
+            lastName={lastName}
+            setLastName={setLastName}
+            phone={phone}
+            setPhone={setPhone}
+            isPremium={isPremium}
+            setIsPremium={setIsPremium}
             onSaved={mergeProfile}
           />
         )}
