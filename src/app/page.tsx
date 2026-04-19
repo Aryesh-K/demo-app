@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AccordionCards } from "~/components/accordion-cards";
 import { DidYouKnow } from "~/components/did-you-know";
 import { GridReveal } from "~/components/grid-reveal";
 import { HeroCanvas } from "~/components/hero-canvas";
@@ -57,11 +58,13 @@ export default function Home() {
   return (
     <main className="flex flex-col">
       {/* ── Hero — full viewport width ── */}
-      <section className="relative flex min-h-[90vh] w-full flex-col items-center justify-center gap-6 overflow-hidden bg-gradient-to-b from-blue-950/60 via-blue-900/20 to-transparent py-[120px] text-center">
-        <HeroCanvas />
+      <section className="relative w-full bg-gradient-to-b from-blue-950/60 via-blue-900/20 to-transparent">
+        {/* Canvas stays clipped to the section without clipping the cards */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <HeroCanvas />
+        </div>
 
-        {/* content sits above canvas */}
-        <div className="relative z-10 flex flex-col items-center gap-6 px-8">
+        <AccordionCards>
           {/* Molecule icon — two atoms joined by a single bond */}
           <svg
             viewBox="0 0 56 28"
@@ -98,7 +101,8 @@ export default function Home() {
           >
             <Link href="/check/free">Check an Interaction →</Link>
           </Button>
-        </div>
+        </AccordionCards>
+
         <ScrollIndicator />
       </section>
 
