@@ -47,11 +47,15 @@ function SignUpForm() {
 
     setLoading(true);
     const supabase = createClient();
-    const { data: signUpData, error: authError } = await supabase.auth.signUp({
+    const { error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { first_name: firstName, last_name: lastName, phone },
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone || null,
+        },
       },
     });
 
@@ -59,16 +63,6 @@ function SignUpForm() {
       setLoading(false);
       setError(authError.message);
       return;
-    }
-
-    if (signUpData.user) {
-      await supabase.from("profiles").insert({
-        id: signUpData.user.id,
-        first_name: firstName,
-        last_name: lastName,
-        phone: phone || null,
-        is_premium: false,
-      });
     }
 
     setLoading(false);
