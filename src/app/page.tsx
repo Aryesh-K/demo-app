@@ -64,46 +64,77 @@ export default function Home() {
           <HeroCanvas />
         </div>
 
-        <AccordionCards>
-          {/* Molecule icon — two atoms joined by a single bond */}
-          <svg
-            viewBox="0 0 56 28"
-            className="h-8 w-16 text-blue-400"
-            aria-hidden="true"
-          >
-            <circle cx="13" cy="14" r="10" fill="currentColor" />
-            <line
-              x1="23"
-              y1="14"
-              x2="33"
-              y2="14"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-            <circle cx="43" cy="14" r="10" fill="currentColor" />
-          </svg>
+        {/* Change 4 — centering wrapper */}
+        <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center">
+          <AccordionCards>
+            {/* Molecule icon — two atoms joined by a single bond */}
+            <svg
+              viewBox="0 0 56 28"
+              className="h-8 w-16 text-blue-400"
+              aria-hidden="true"
+            >
+              <circle cx="13" cy="14" r="10" fill="currentColor" />
+              <line
+                x1="23"
+                y1="14"
+                x2="33"
+                y2="14"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+              <circle cx="43" cy="14" r="10" fill="currentColor" />
+            </svg>
 
-          <div className="flex flex-col gap-3">
-            <h1 className="text-5xl font-bold tracking-tight md:text-7xl">
-              ToxiClear AI
-            </h1>
-            <p className="max-w-md text-xl text-slate-200 md:text-2xl">
-              Know before you take. Understand the science behind your
-              medications.
-            </p>
-          </div>
+            <div className="flex flex-col gap-3">
+              {/* Change 3 — animated wave gradient on title */}
+              <h1
+                className="text-5xl font-bold tracking-tight md:text-7xl"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #9333ea, #2dd4bf, #f59e0b, #9333ea, #2dd4bf, #f59e0b, #9333ea)",
+                  backgroundSize: "200% 100%",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  animation: "wave-gradient 6s linear infinite",
+                }}
+              >
+                ToxiClear AI
+              </h1>
+              <p className="max-w-md text-xl text-slate-200 md:text-2xl">
+                Know before you take. Understand the science behind your
+                medications.
+              </p>
+            </div>
 
-          <Button
-            asChild
-            className="bg-blue-900 text-white hover:bg-blue-800"
-            size="lg"
-          >
-            <Link href="/check/free">Check an Interaction →</Link>
-          </Button>
-        </AccordionCards>
+            {/* Change 1 — two CTA buttons */}
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Button
+                asChild
+                className="bg-blue-900 text-white hover:bg-blue-800"
+                size="lg"
+              >
+                <Link href="/check/free">Check an Interaction →</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="border-teal-600 text-teal-400 hover:bg-teal-950/30 hover:text-teal-300"
+                size="lg"
+              >
+                <Link href="/learn/free">Learn the Biology →</Link>
+              </Button>
+            </div>
+          </AccordionCards>
 
-        <ScrollIndicator />
+          {/* Change 2 — social proof strip */}
+          <p className="py-3 text-center text-xs text-slate-400">
+            Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for students and patients
+          </p>
+
+          <ScrollIndicator />
+        </div>
       </section>
 
       {/* ── Did You Know ── */}

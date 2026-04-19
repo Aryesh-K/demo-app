@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ─── Card definitions ─────────────────────────────────────────────────────────
 
@@ -191,25 +191,29 @@ function AccordionCard({
   card,
   openCard,
   onToggle,
+  mounted,
 }: {
   card: CardDef;
   openCard: number | null;
   onToggle: (id: number) => void;
+  mounted: boolean;
 }) {
   const isOpen = openCard === card.id;
 
-  return (
-    <div
-      className="info-card flex flex-col rounded-xl"
-      style={{
+  // Animation applied only after client mount to avoid hydration mismatch
+  const animStyle = mounted
+    ? {
         animationName: "card-bob",
         animationDuration: card.animDuration,
         animationDelay: card.animDelay,
         animationTimingFunction: "ease-in-out",
         animationIterationCount: "infinite",
         animationPlayState: isOpen ? "paused" : "running",
-      }}
-    >
+      }
+    : {};
+
+  return (
+    <div className="info-card flex flex-col rounded-xl" style={animStyle}>
       {/* Banner — always visible */}
       <button
         type="button"
@@ -252,6 +256,9 @@ function AccordionCard({
 
 export function AccordionCards({ children }: { children: React.ReactNode }) {
   const [openCard, setOpenCard] = useState<number | null>(null);
+  const [mounted,  setMounted]  = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   function toggle(id: number) {
     setOpenCard((prev) => (prev === id ? null : id));
@@ -286,13 +293,14 @@ export function AccordionCards({ children }: { children: React.ReactNode }) {
         }
       `}</style>
 
-      {/* Outer: flex-col on mobile, flex-row on md+ */}
-      <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col md:min-h-screen md:flex-row md:gap-4">
+      {/* Outer: flex-col on mobile, flex-row on md+
+          md:items-start prevents side columns from stretching to center-column height */}
+      <div className="mx-auto flex w-full max-w-6xl flex-col md:flex-row md:items-start md:gap-4">
 
-        {/* Left column — desktop only */}
-        <div className="hidden w-72 flex-shrink-0 flex-col justify-center gap-4 p-5 md:flex">
+        {/* Left column — desktop only, cards stack from top */}
+        <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
           {leftCards.map((card) => (
-            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
+            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} mounted={mounted} />
           ))}
         </div>
 
@@ -301,17 +309,17 @@ export function AccordionCards({ children }: { children: React.ReactNode }) {
           {children}
         </div>
 
-        {/* Right column — desktop only */}
-        <div className="hidden w-72 flex-shrink-0 flex-col justify-center gap-4 p-5 md:flex">
+        {/* Right column — desktop only, cards stack from top */}
+        <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
           {rightCards.map((card) => (
-            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
+            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} mounted={mounted} />
           ))}
         </div>
 
         {/* Mobile cards — 2×2 grid below center */}
         <div className="grid grid-cols-2 gap-3 p-4 md:hidden">
           {CARDS.map((card) => (
-            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
+            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} mounted={mounted} />
           ))}
         </div>
 
