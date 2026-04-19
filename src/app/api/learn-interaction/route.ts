@@ -52,7 +52,10 @@ function findBadDrug(text: string, candidates: string[]): string | null {
       if (c.trim() && win.includes(c.toLowerCase().trim())) return c;
     }
   }
-  return candidates.filter((c) => c.trim()).join(" or ") || "one of the entered substances";
+  return (
+    candidates.filter((c) => c.trim()).join(" or ") ||
+    "one of the entered substances"
+  );
 }
 
 export async function POST(req: NextRequest) {

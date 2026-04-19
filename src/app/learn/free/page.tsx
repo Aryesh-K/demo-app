@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { isPrescriptionDrug } from "~/lib/prescribed-detection";
+import { createClient } from "~/lib/supabase/client";
 import { cn } from "~/lib/utils";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -130,7 +131,10 @@ function isPremium(drugName: string, method: ApplicationMethod): boolean {
 
 function MoleculeAnimation({ fading }: { fading: boolean }) {
   const [animPhase, setAnimPhase] = useState(0);
-  const stateRef = useRef({ cancelled: false, timers: [] as ReturnType<typeof setTimeout>[] });
+  const stateRef = useRef({
+    cancelled: false,
+    timers: [] as ReturnType<typeof setTimeout>[],
+  });
 
   useEffect(() => {
     const s = stateRef.current;
@@ -142,9 +146,15 @@ function MoleculeAnimation({ fading }: { fading: boolean }) {
       s.timers = [];
       setAnimPhase(0);
       s.timers.push(
-        setTimeout(() => { if (!s.cancelled) setAnimPhase(1); }, 50),
-        setTimeout(() => { if (!s.cancelled) setAnimPhase(2); }, 600),
-        setTimeout(() => { if (!s.cancelled) setAnimPhase(3); }, 850),
+        setTimeout(() => {
+          if (!s.cancelled) setAnimPhase(1);
+        }, 50),
+        setTimeout(() => {
+          if (!s.cancelled) setAnimPhase(2);
+        }, 600),
+        setTimeout(() => {
+          if (!s.cancelled) setAnimPhase(3);
+        }, 850),
         setTimeout(() => runCycle(), 2200),
       );
     }
@@ -171,20 +181,26 @@ function MoleculeAnimation({ fading }: { fading: boolean }) {
           style={{
             opacity: sliding ? 1 : 0,
             transform: sliding ? "translateX(0)" : "translateX(-52px)",
-            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            transition:
+              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
             boxShadow: pulsing ? "0 0 28px 10px rgba(20,184,166,0.4)" : "none",
           }}
         />
         <div
           className="h-[3px] rounded-full bg-teal-400"
-          style={{ width: "2.25rem", opacity: bonded ? 1 : 0, transition: "opacity 0.25s ease" }}
+          style={{
+            width: "2.25rem",
+            opacity: bonded ? 1 : 0,
+            transition: "opacity 0.25s ease",
+          }}
         />
         <div
           className="size-11 rounded-full bg-cyan-500/75"
           style={{
             opacity: sliding ? 1 : 0,
             transform: sliding ? "translateX(0)" : "translateX(52px)",
-            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            transition:
+              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
             boxShadow: pulsing ? "0 0 28px 10px rgba(6,182,212,0.4)" : "none",
           }}
         />
@@ -436,6 +452,22 @@ function Results({ result }: { result: ApiResult }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LearnFree() {
+  const router = useRouter();
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        router.push(
+          "/signup?message=Please create a free account to access this feature.",
+        );
+      } else {
+        setAuthChecked(true);
+      }
+    });
+  }, [router]);
+
   const [drugA, setDrugA] = useState("");
   const [drugB, setDrugB] = useState("");
   const [methodA, setMethodA] = useState<ApplicationMethod>("Oral (swallowed)");
@@ -451,7 +483,9 @@ export default function LearnFree() {
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [premiumReason, setPremiumReason] = useState<"prescription" | "supplement" | null>(null);
+  const [premiumReason, setPremiumReason] = useState<
+    "prescription" | "supplement" | null
+  >(null);
   const [animFading, setAnimFading] = useState(false);
 
   function handleNewCheck() {
@@ -477,15 +511,21 @@ export default function LearnFree() {
     const trimA = drugA.trim();
     const trimB = drugB.trim();
     if (!trimA || !trimB) {
-      setValidationError("Please enter both Drug A and Drug B before checking.");
+      setValidationError(
+        "Please enter both Drug A and Drug B before checking.",
+      );
       return;
     }
     if (trimA.length < 2) {
-      setValidationError(`Drug name '${trimA}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+      setValidationError(
+        `Drug name '${trimA}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`,
+      );
       return;
     }
     if (trimB.length < 2) {
-      setValidationError(`Drug name '${trimB}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+      setValidationError(
+        `Drug name '${trimB}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`,
+      );
       return;
     }
     setValidationError(null);
@@ -524,8 +564,14 @@ export default function LearnFree() {
     })
       .then(async (r) => {
         if (!r.ok) {
-          const errData = await r.json().catch(() => ({})) as { error?: string; message?: string };
-          const err = new Error(errData.message ?? "Failed to analyze the interaction. Please try again.");
+          const errData = (await r.json().catch(() => ({}))) as {
+            error?: string;
+            message?: string;
+          };
+          const err = new Error(
+            errData.message ??
+              "Failed to analyze the interaction. Please try again.",
+          );
           if (errData.error === "unrecognized_drug") {
             (err as Error & { isValidation?: boolean }).isValidation = true;
           }
@@ -542,7 +588,9 @@ export default function LearnFree() {
         }, 300);
       })
       .catch((err: unknown) => {
-        const isValidation = err instanceof Error && (err as Error & { isValidation?: boolean }).isValidation;
+        const isValidation =
+          err instanceof Error &&
+          (err as Error & { isValidation?: boolean }).isValidation;
         setAnimFading(true);
         setTimeout(() => {
           setAnimFading(false);
@@ -556,6 +604,13 @@ export default function LearnFree() {
         }, 300);
       });
   }
+
+  if (!authChecked)
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-slate-400">Loading...</p>
+      </div>
+    );
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[700px] flex-col gap-8 px-6 py-12">
@@ -574,9 +629,15 @@ export default function LearnFree() {
 
       {/* Free tier info banner */}
       <div className="flex items-start gap-3 rounded-xl border border-amber-800/50 bg-amber-950/20 px-4 py-3">
-        <span className="mt-0.5 shrink-0 text-sm text-amber-400" aria-hidden="true">ℹ</span>
+        <span
+          className="mt-0.5 shrink-0 text-sm text-amber-400"
+          aria-hidden="true"
+        >
+          ℹ
+        </span>
         <p className="text-sm text-amber-300/80">
-          Free tier supports OTC medications and alcohol only. Prescription medications require Premium.
+          Free tier supports OTC medications and alcohol only. Prescription
+          medications require Premium.
         </p>
       </div>
 
@@ -589,7 +650,10 @@ export default function LearnFree() {
           onChange={(v) => {
             setDrugA(v);
             if (validationError) setValidationError(null);
-            if (isPrescriptionDrug(v.trim())) { setPremiumReason("prescription"); setPhase("premium"); }
+            if (isPrescriptionDrug(v.trim())) {
+              setPremiumReason("prescription");
+              setPhase("premium");
+            }
           }}
           method={methodA}
           onMethodChange={setMethodA}
@@ -605,7 +669,10 @@ export default function LearnFree() {
           onChange={(v) => {
             setDrugB(v);
             if (validationError) setValidationError(null);
-            if (isPrescriptionDrug(v.trim())) { setPremiumReason("prescription"); setPhase("premium"); }
+            if (isPrescriptionDrug(v.trim())) {
+              setPremiumReason("prescription");
+              setPhase("premium");
+            }
           }}
           method={methodB}
           onMethodChange={setMethodB}
@@ -681,9 +748,7 @@ export default function LearnFree() {
       </Button>
 
       {/* Molecule animation — loops until API responds */}
-      {phase === "animating" && (
-        <MoleculeAnimation fading={animFading} />
-      )}
+      {phase === "animating" && <MoleculeAnimation fading={animFading} />}
 
       {/* Premium upgrade wall */}
       {phase === "premium" && (
@@ -701,9 +766,10 @@ export default function LearnFree() {
           <h2 className="text-xl font-bold text-purple-200">Premium Feature</h2>
           {premiumReason === "prescription" ? (
             <p className="max-w-sm text-sm leading-relaxed text-purple-300/80">
-              Prescription medications require a Premium subscription. Upgrade to
-              access full pharmacokinetic analysis, CYP450 enzyme interactions,
-              drug classification details, and personalized health context.
+              Prescription medications require a Premium subscription. Upgrade
+              to access full pharmacokinetic analysis, CYP450 enzyme
+              interactions, drug classification details, and personalized health
+              context.
             </p>
           ) : (
             <p className="max-w-sm text-sm leading-relaxed text-purple-300/80">
@@ -714,7 +780,8 @@ export default function LearnFree() {
             </p>
           )}
           <p className="text-sm text-muted-foreground">
-            Sign up or log in using the button in the top right to unlock premium features.
+            Sign up or log in using the button in the top right to unlock
+            premium features.
           </p>
           <p className="text-xs text-muted-foreground">
             Free tier supports OTC medications and alcohol only.

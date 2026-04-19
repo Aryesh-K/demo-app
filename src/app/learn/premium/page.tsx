@@ -48,21 +48,24 @@ const LEVELS: LevelDef[] = [
     id: 1,
     title: "Honors Biology",
     subtitle: "Middle & High School",
-    description: "Cell basics, organ systems, simple cause and effect. No jargon.",
+    description:
+      "Cell basics, organ systems, simple cause and effect. No jargon.",
     icon: "🔬",
   },
   {
     id: 2,
     title: "AP Biology",
     subtitle: "Advanced High School",
-    description: "Enzyme kinetics, cell signaling, neurotransmitter systems, molecular mechanisms.",
+    description:
+      "Enzyme kinetics, cell signaling, neurotransmitter systems, molecular mechanisms.",
     icon: "🧬",
   },
   {
     id: 3,
     title: "Pre-Med",
     subtitle: "College Level",
-    description: "Pharmacokinetics, CYP450 system, receptor pharmacology, clinical pathophysiology.",
+    description:
+      "Pharmacokinetics, CYP450 system, receptor pharmacology, clinical pathophysiology.",
     icon: "🏥",
   },
 ];
@@ -108,7 +111,9 @@ function buildHealthContext(profile: HealthProfile): string {
   if (profile.conditions.included && profile.conditions.value.trim())
     parts.push(`Patient conditions: ${profile.conditions.value.trim()}`);
   if (profile.medications.included && profile.medications.value.trim())
-    parts.push(`Patient current medications: ${profile.medications.value.trim()}`);
+    parts.push(
+      `Patient current medications: ${profile.medications.value.trim()}`,
+    );
   if (profile.allergies.included && profile.allergies.value.trim())
     parts.push(`Patient allergies: ${profile.allergies.value.trim()}`);
   if (profile.extraNotes.included && profile.extraNotes.value.trim())
@@ -169,7 +174,9 @@ function buildSegments(text: string, terms: KeyTerm[]): Segment[] {
   const sorted = [...indexed].sort((a, b) => b.term.length - a.term.length);
 
   const pattern = sorted
-    .map((t) => t.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:ed|es|ing|s)?")
+    .map(
+      (t) => `${t.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:ed|es|ing|s)?`,
+    )
     .join("|");
 
   const parts = text.split(new RegExp(`(${pattern})`, "gi"));
@@ -183,10 +190,10 @@ function buildSegments(text: string, terms: KeyTerm[]): Segment[] {
       const lt = t.term.toLowerCase();
       return (
         lp === lt ||
-        lp === lt + "s" ||
-        lp === lt + "es" ||
-        lp === lt + "ed" ||
-        lp === lt + "ing"
+        lp === `${lt}s` ||
+        lp === `${lt}es` ||
+        lp === `${lt}ed` ||
+        lp === `${lt}ing`
       );
     });
 
@@ -244,10 +251,12 @@ function TermChip({
       </button>
 
       {isOpen && (
-        <span
+        <div
           className="absolute left-0 top-[calc(100%+6px)] z-50 w-64 rounded-xl border border-teal-800 bg-card p-3 shadow-xl"
           style={{ animation: "fade-in 0.2s ease forwards" }}
+          role="dialog"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         >
           <span className="flex items-start justify-between gap-1.5">
             <span className="text-xs font-bold text-teal-300">{term}</span>
@@ -265,7 +274,7 @@ function TermChip({
           <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
             {definition || "No definition available."}
           </span>
-        </span>
+        </div>
       )}
     </span>
   );
@@ -275,7 +284,10 @@ function TermChip({
 
 function MoleculeAnimation({ fading }: { fading: boolean }) {
   const [animPhase, setAnimPhase] = useState(0);
-  const stateRef = useRef({ cancelled: false, timers: [] as ReturnType<typeof setTimeout>[] });
+  const stateRef = useRef({
+    cancelled: false,
+    timers: [] as ReturnType<typeof setTimeout>[],
+  });
 
   useEffect(() => {
     const s = stateRef.current;
@@ -287,9 +299,15 @@ function MoleculeAnimation({ fading }: { fading: boolean }) {
       s.timers = [];
       setAnimPhase(0);
       s.timers.push(
-        setTimeout(() => { if (!s.cancelled) setAnimPhase(1); }, 50),
-        setTimeout(() => { if (!s.cancelled) setAnimPhase(2); }, 600),
-        setTimeout(() => { if (!s.cancelled) setAnimPhase(3); }, 850),
+        setTimeout(() => {
+          if (!s.cancelled) setAnimPhase(1);
+        }, 50),
+        setTimeout(() => {
+          if (!s.cancelled) setAnimPhase(2);
+        }, 600),
+        setTimeout(() => {
+          if (!s.cancelled) setAnimPhase(3);
+        }, 850),
         setTimeout(() => runCycle(), 2200),
       );
     }
@@ -319,7 +337,8 @@ function MoleculeAnimation({ fading }: { fading: boolean }) {
           style={{
             opacity: sliding ? 1 : 0,
             transform: sliding ? "translateX(0)" : "translateX(-52px)",
-            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            transition:
+              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
             boxShadow: pulsing ? "0 0 28px 10px rgba(202,138,4,0.4)" : "none",
           }}
         />
@@ -336,7 +355,8 @@ function MoleculeAnimation({ fading }: { fading: boolean }) {
           style={{
             opacity: sliding ? 1 : 0,
             transform: sliding ? "translateX(0)" : "translateX(52px)",
-            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            transition:
+              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
             boxShadow: pulsing ? "0 0 28px 10px rgba(245,158,11,0.4)" : "none",
           }}
         />
@@ -392,7 +412,10 @@ function DrugCard({
       </div>
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor={drugId} className="text-xs font-normal text-muted-foreground">
+        <Label
+          htmlFor={drugId}
+          className="text-xs font-normal text-muted-foreground"
+        >
           Drug / substance name
         </Label>
         <p className="text-xs text-muted-foreground/60">
@@ -412,7 +435,10 @@ function DrugCard({
       )}
 
       <div className="flex flex-col gap-1">
-        <Label htmlFor={methodId} className="text-xs font-normal text-muted-foreground">
+        <Label
+          htmlFor={methodId}
+          className="text-xs font-normal text-muted-foreground"
+        >
           How is it used?
         </Label>
         <select
@@ -543,7 +569,9 @@ function CaseStudyPanel({
   return (
     <div className="sticky top-6 flex flex-col gap-4 rounded-xl border border-yellow-800/50 bg-yellow-950/20 p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-yellow-300">Patient Profile</h2>
+        <h2 className="text-sm font-semibold text-yellow-300">
+          Patient Profile
+        </h2>
         <button
           type="button"
           onClick={clearAll}
@@ -556,44 +584,51 @@ function CaseStudyPanel({
         Toggle fields on to include them in the analysis.
       </p>
       <p className="rounded-md border border-green-800/40 bg-green-950/20 px-3 py-2 text-xs text-green-400/80">
-        ✓ Prescription medications in your patient profile are fully supported by Premium.
+        ✓ Prescription medications in your patient profile are fully supported
+        by Premium.
       </p>
 
-      {CASE_STUDY_FIELD_DEFS.map(({ key, label, placeholder, type, inputMode, rows }) => {
-        const field = profile[key];
-        return (
-          <div key={key} className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">{label}</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">
-                  {field.included ? "On" : "Off"}
+      {CASE_STUDY_FIELD_DEFS.map(
+        ({ key, label, placeholder, type, inputMode, rows }) => {
+          const field = profile[key];
+          return (
+            <div key={key} className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {label}
                 </span>
-                <Toggle
-                  on={field.included}
-                  onToggle={() => onChange(key, { included: !field.included })}
-                />
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">
+                    {field.included ? "On" : "Off"}
+                  </span>
+                  <Toggle
+                    on={field.included}
+                    onToggle={() =>
+                      onChange(key, { included: !field.included })
+                    }
+                  />
+                </div>
               </div>
+              {type === "textarea" ? (
+                <textarea
+                  value={field.value}
+                  onChange={(e) => onChange(key, { value: e.target.value })}
+                  placeholder={placeholder}
+                  rows={rows ?? 2}
+                  className={TEXTAREA_CLS}
+                />
+              ) : (
+                <Input
+                  value={field.value}
+                  onChange={(e) => onChange(key, { value: e.target.value })}
+                  placeholder={placeholder}
+                  inputMode={inputMode}
+                />
+              )}
             </div>
-            {type === "textarea" ? (
-              <textarea
-                value={field.value}
-                onChange={(e) => onChange(key, { value: e.target.value })}
-                placeholder={placeholder}
-                rows={rows ?? 2}
-                className={TEXTAREA_CLS}
-              />
-            ) : (
-              <Input
-                value={field.value}
-                onChange={(e) => onChange(key, { value: e.target.value })}
-                placeholder={placeholder}
-                inputMode={inputMode}
-              />
-            )}
-          </div>
-        );
-      })}
+          );
+        },
+      )}
     </div>
   );
 }
@@ -605,19 +640,38 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [showLow, setShowLow] = useState(false);
 
+  // biome-ignore lint/style/noNonNullAssertion: level is always a valid LEVELS id (1 | 2 | 3)
   const levelDef = LEVELS.find((l) => l.id === level)!;
 
   const lowCombos = result.combinations.filter((c) => c.risk_level === "low");
-  const nonLowCombos = result.combinations.filter((c) => c.risk_level !== "low");
-  const allLow = nonLowCombos.length === 0 && lowCombos.length > 0;;
+  const nonLowCombos = result.combinations.filter(
+    (c) => c.risk_level !== "low",
+  );
+  const allLow = nonLowCombos.length === 0 && lowCombos.length > 0;
 
   function closeAll() {
     setOpenKey(null);
   }
 
+  // Close open popup when clicking outside or pressing Escape
+  useEffect(() => {
+    function handleDoc(e: MouseEvent | KeyboardEvent) {
+      if (e instanceof KeyboardEvent) {
+        if (e.key === "Escape") closeAll();
+      } else {
+        closeAll();
+      }
+    }
+    document.addEventListener("mousedown", handleDoc);
+    document.addEventListener("keydown", handleDoc);
+    return () => {
+      document.removeEventListener("mousedown", handleDoc);
+      document.removeEventListener("keydown", handleDoc);
+    };
+  });
+
   return (
-    // Clicking anywhere in results that isn't a chip closes the open popup
-    <div className="flex flex-col gap-6" onClick={closeAll}>
+    <div className="flex flex-col gap-6">
       {/* Level indicator */}
       <div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-700 bg-teal-950/30 px-3 py-1 text-xs font-medium text-teal-300">
@@ -664,7 +718,8 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
             const isLow = combo.risk_level === "low";
             if (!allLow && isLow && !showLow) return null;
             const comboKey = `${comboIdx}`;
-            const classEmoji = CLASSIFICATION_EMOJI[combo.classification] ?? "🔍";
+            const classEmoji =
+              CLASSIFICATION_EMOJI[combo.classification] ?? "🔍";
 
             // Normalize terms to KeyTerm objects
             const normalizedTerms: KeyTerm[] = combo.key_terms.map((t) =>
@@ -684,7 +739,10 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
             // Terms not already highlighted in text → show as pills
             const highlightedIndices = new Set(
               segments
-                .filter((s): s is Extract<typeof s, { type: "term" }> => s.type === "term")
+                .filter(
+                  (s): s is Extract<typeof s, { type: "term" }> =>
+                    s.type === "term",
+                )
                 .map((s) => s.termIndex),
             );
             const pillTerms = hasDefinitions
@@ -696,9 +754,15 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
                 key={comboKey}
                 className={cn(
                   "flex flex-col gap-3 rounded-xl border bg-card p-5",
-                  !allLow && isLow ? "border-border/50 opacity-60" : "border-border",
+                  !allLow && isLow
+                    ? "border-border/50 opacity-60"
+                    : "border-border",
                 )}
-                style={!allLow && isLow && showLow ? { animation: "fade-in 0.3s ease forwards" } : undefined}
+                style={
+                  !allLow && isLow && showLow
+                    ? { animation: "fade-in 0.3s ease forwards" }
+                    : undefined
+                }
               >
                 {/* Drug pair header */}
                 <span className="text-sm font-semibold">
@@ -717,12 +781,12 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
 
                 {/* Explanation — with first-occurrence term highlighting */}
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {segments.map((seg, segIdx) => {
+                  {segments.map((seg) => {
                     if (seg.type === "text") return seg.content;
                     const chipKey = `${comboKey}-${seg.termIndex}`;
                     return (
                       <TermChip
-                        key={segIdx}
+                        key={chipKey}
                         displayText={seg.content}
                         term={seg.termDef.term}
                         definition={seg.termDef.definition}
@@ -750,11 +814,11 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
                 {/* Key term pills — terms not already highlighted in text */}
                 {pillTerms.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    {pillTerms.map((termObj, pillIdx) => {
+                    {pillTerms.map((termObj) => {
                       if (!hasDefinitions || !termObj.definition) {
                         return (
                           <span
-                            key={pillIdx}
+                            key={termObj.term}
                             className="rounded-full border border-teal-800 bg-teal-950/40 px-2.5 py-0.5 text-xs text-teal-300"
                           >
                             {termObj.term}
@@ -766,7 +830,7 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
                       const pillKey = `${comboKey}-pill-${actualIdx}`;
                       return (
                         <TermChip
-                          key={pillIdx}
+                          key={pillKey}
                           displayText={termObj.term}
                           term={termObj.term}
                           definition={termObj.definition}
@@ -789,7 +853,8 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
 
       {/* Disclaimer */}
       <p className="border-t pt-4 text-xs text-muted-foreground">
-        This information is for educational purposes only and is not medical advice.
+        This information is for educational purposes only and is not medical
+        advice.
       </p>
     </div>
   );
@@ -801,8 +866,20 @@ export default function LearnPremium() {
   const [selectedLevel, setSelectedLevel] = useState<1 | 2 | 3 | null>(null);
   const [isCaseStudy, setIsCaseStudy] = useState(false);
   const [drugs, setDrugs] = useState<DrugEntry[]>([
-    { id: "drug-1", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
-    { id: "drug-2", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
+    {
+      id: "drug-1",
+      name: "",
+      method: "Oral (swallowed)",
+      amount: "",
+      unit: "mg",
+    },
+    {
+      id: "drug-2",
+      name: "",
+      method: "Oral (swallowed)",
+      amount: "",
+      unit: "mg",
+    },
   ]);
   const drugCounter = useRef(3);
   const [treatmentContext, setTreatmentContext] = useState("");
@@ -815,14 +892,17 @@ export default function LearnPremium() {
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [submittedCount, setSubmittedCount] = useState(0);
+  const [_submittedCount, setSubmittedCount] = useState(0);
   const [submittedLevel, setSubmittedLevel] = useState<1 | 2 | 3 | null>(null);
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
   }
 
-  function updateCaseStudyField(key: HealthFieldKey, patch: Partial<HealthField>) {
+  function updateCaseStudyField(
+    key: HealthFieldKey,
+    patch: Partial<HealthField>,
+  ) {
     setCaseStudyProfile((prev) => ({
       ...prev,
       [key]: { ...prev[key], ...patch },
@@ -834,7 +914,13 @@ export default function LearnPremium() {
     const newId = `drug-${drugCounter.current++}`;
     setDrugs((prev) => [
       ...prev,
-      { id: newId, name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
+      {
+        id: newId,
+        name: "",
+        method: "Oral (swallowed)",
+        amount: "",
+        unit: "mg",
+      },
     ]);
   }
 
@@ -855,7 +941,9 @@ export default function LearnPremium() {
     }
     for (const d of filledDrugs) {
       if (d.name.trim().length < 2) {
-        setValidationError(`Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+        setValidationError(
+          `Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`,
+        );
         return;
       }
     }
@@ -868,8 +956,15 @@ export default function LearnPremium() {
     setSubmittedCount(drugs.length);
     setSubmittedLevel(selectedLevel);
 
-    const healthContext = isCaseStudy ? buildHealthContext(caseStudyProfile) : "";
-    const drugsPayload = drugs.map(({ name, method, amount, unit }) => ({ name, method, amount, unit }));
+    const healthContext = isCaseStudy
+      ? buildHealthContext(caseStudyProfile)
+      : "";
+    const drugsPayload = drugs.map(({ name, method, amount, unit }) => ({
+      name,
+      method,
+      amount,
+      unit,
+    }));
 
     fetch("/api/arn-interaction-premium", {
       method: "POST",
@@ -885,8 +980,14 @@ export default function LearnPremium() {
     })
       .then(async (r) => {
         if (!r.ok) {
-          const errData = await r.json().catch(() => ({})) as { error?: string; message?: string };
-          const err = new Error(errData.message ?? "Failed to analyze the interactions. Please try again.");
+          const errData = (await r.json().catch(() => ({}))) as {
+            error?: string;
+            message?: string;
+          };
+          const err = new Error(
+            errData.message ??
+              "Failed to analyze the interactions. Please try again.",
+          );
           if (errData.error === "unrecognized_drug") {
             (err as Error & { isValidation?: boolean }).isValidation = true;
           }
@@ -903,7 +1004,9 @@ export default function LearnPremium() {
         }, 300);
       })
       .catch((err: unknown) => {
-        const isValidation = err instanceof Error && (err as Error & { isValidation?: boolean }).isValidation;
+        const isValidation =
+          err instanceof Error &&
+          (err as Error & { isValidation?: boolean }).isValidation;
         setAnimFading(true);
         setTimeout(() => {
           setAnimFading(false);
@@ -911,7 +1014,9 @@ export default function LearnPremium() {
             setValidationError(err.message);
             setPhase("idle");
           } else {
-            setApiError("Failed to analyze the interactions. Please try again.");
+            setApiError(
+              "Failed to analyze the interactions. Please try again.",
+            );
             setPhase("error");
           }
         }, 300);
@@ -922,8 +1027,20 @@ export default function LearnPremium() {
     setSelectedLevel(null);
     setIsCaseStudy(false);
     setDrugs([
-      { id: "drug-1", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
-      { id: "drug-2", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
+      {
+        id: "drug-1",
+        name: "",
+        method: "Oral (swallowed)",
+        amount: "",
+        unit: "mg",
+      },
+      {
+        id: "drug-2",
+        name: "",
+        method: "Oral (swallowed)",
+        amount: "",
+        unit: "mg",
+      },
     ]);
     drugCounter.current = 3;
     setTreatmentContext("");
@@ -950,7 +1067,9 @@ export default function LearnPremium() {
         <span className="w-fit rounded-full border border-teal-700 bg-teal-950/30 px-3 py-1 text-xs font-medium text-teal-200">
           👑 Premium Learning
         </span>
-        <h1 className="text-3xl font-bold tracking-tight">Premium Learning Mode</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Premium Learning Mode
+        </h1>
         <p className="text-muted-foreground">
           Deep-dive into the biology of drug interactions at your level
         </p>
@@ -976,7 +1095,10 @@ export default function LearnPremium() {
               <button
                 key={level.id}
                 type="button"
-                onClick={() => { setSelectedLevel(level.id); if (validationError) setValidationError(null); }}
+                onClick={() => {
+                  setSelectedLevel(level.id);
+                  if (validationError) setValidationError(null);
+                }}
                 className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-teal-600 hover:bg-teal-950/10"
               >
                 <span className="text-3xl">{level.icon}</span>
@@ -985,7 +1107,9 @@ export default function LearnPremium() {
                     Level {level.id}
                   </p>
                   <p className="font-semibold">{level.title}</p>
-                  <p className="text-xs text-muted-foreground">{level.subtitle}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {level.subtitle}
+                  </p>
                 </div>
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   {level.description}
@@ -1019,7 +1143,9 @@ export default function LearnPremium() {
                 <span className="text-base">{level.icon}</span>
                 <div className="text-left">
                   <div className="text-xs font-semibold">{level.title}</div>
-                  <div className="text-[10px] text-muted-foreground">{level.subtitle}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {level.subtitle}
+                  </div>
                 </div>
                 {selectedLevel === level.id && (
                   <span className="ml-0.5 text-xs text-teal-400">✓</span>
@@ -1047,7 +1173,9 @@ export default function LearnPremium() {
           {/* Case study toggle */}
           <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium">Enable Case Study Mode</span>
+              <span className="text-sm font-medium">
+                Enable Case Study Mode
+              </span>
               <span className="text-xs text-muted-foreground">
                 Add a patient profile to contextualize the analysis
               </span>
@@ -1078,7 +1206,10 @@ export default function LearnPremium() {
                     drug={drug}
                     label={getDrugLabel(index)}
                     removable={index >= 2}
-                    onNameChange={(v) => { updateDrug(drug.id, { name: v }); if (validationError) setValidationError(null); }}
+                    onNameChange={(v) => {
+                      updateDrug(drug.id, { name: v });
+                      if (validationError) setValidationError(null);
+                    }}
                     onMethodChange={(m) => updateDrug(drug.id, { method: m })}
                     onAmountChange={(v) => updateDrug(drug.id, { amount: v })}
                     onUnitChange={(u) => updateDrug(drug.id, { unit: u })}
@@ -1170,9 +1301,7 @@ export default function LearnPremium() {
       )}
 
       {/* Molecule animation — loops until API responds */}
-      {phase === "animating" && (
-        <MoleculeAnimation fading={animFading} />
-      )}
+      {phase === "animating" && <MoleculeAnimation fading={animFading} />}
 
       {/* Error */}
       {phase === "error" && (

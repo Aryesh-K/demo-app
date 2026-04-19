@@ -3,26 +3,62 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "~/lib/supabase/client";
 import { cn } from "~/lib/utils";
 
-const dropdowns = [
-  {
-    label: "Check Mode",
-    basePath: "/check",
-    items: [
-      { href: "/check/free", label: "Free" },
-      { href: "/check/premium", label: "Premium (Log In)" },
-    ],
-  },
-  {
-    label: "Learn Mode",
-    basePath: "/learn",
-    items: [
-      { href: "/learn/free", label: "Free" },
-      { href: "/learn/premium", label: "Premium (Log In)" },
-    ],
-  },
-];
+type AuthState =
+  | { status: "loading" }
+  | { status: "unauthenticated" }
+  | { status: "free" }
+  | { status: "premium" };
+
+type DropdownItem = {
+  href: string;
+  label: string;
+  locked: boolean;
+  premiumColor?: "gold" | "teal";
+};
+
+function buildDropdownItems(
+  mode: "check" | "learn",
+  auth: AuthState,
+  premiumColor: "gold" | "teal",
+): DropdownItem[] {
+  const base = mode === "check" ? "/check" : "/learn";
+
+  if (auth.status === "loading" || auth.status === "unauthenticated") {
+    return [
+      {
+        href: "/signup",
+        label: "🔒 Free - create a free account or log in",
+        locked: true,
+      },
+      {
+        href: "/signup",
+        label: "🔒 Premium - create a free account or log in",
+        locked: true,
+      },
+    ];
+  }
+
+  if (auth.status === "free") {
+    return [
+      { href: `${base}/free`, label: "✓ Free", locked: false },
+      { href: "/account", label: "🔒 Premium", locked: true },
+    ];
+  }
+
+  // premium
+  return [
+    { href: `${base}/free`, label: "✓ Free", locked: false },
+    {
+      href: `${base}/premium`,
+      label: "✓ Premium",
+      locked: false,
+      premiumColor,
+    },
+  ];
+}
 
 function NavDropdown({
   label,
@@ -30,7 +66,7 @@ function NavDropdown({
   isActive,
 }: {
   label: string;
-  items: { href: string; label: string }[];
+  items: DropdownItem[];
   isActive: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -67,14 +103,27 @@ function NavDropdown({
         </span>
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1.5 min-w-44 overflow-hidden rounded-md border bg-background shadow-md">
+        <div className="absolute left-0 top-full z-50 mt-1.5 min-w-56 overflow-hidden rounded-md border bg-background shadow-md">
           {items.map((item) => (
             <Link
-              key={item.href}
+              key={item.href + item.label}
               href={item.href}
               onClick={() => setOpen(false)}
-              className="block px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+                item.locked ? "text-muted-foreground" : "text-foreground",
+              )}
             >
+              {item.premiumColor && (
+                <span
+                  className={cn(
+                    "inline-block h-2 w-2 rounded-full border",
+                    item.premiumColor === "gold"
+                      ? "border-yellow-500 bg-yellow-500/20"
+                      : "border-teal-500 bg-teal-500/20",
+                  )}
+                />
+              )}
               {item.label}
             </Link>
           ))}
@@ -84,8 +133,80 @@ function NavDropdown({
   );
 }
 
+function AvatarButton() {
+  return (
+    <Link
+      href="/account"
+      className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#0d1b2a] ring-2 ring-teal-500"
+      aria-label="Account"
+    >
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
+        aria-hidden="true"
+      >
+        <circle cx="10" cy="7" r="4" fill="#9ca3af" />
+        <path
+          d="M2 18c0-4 3.582-7 8-7s8 3 8 7"
+          stroke="#9ca3af"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </svg>
+    </Link>
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
+  const [auth, setAuth] = useState<AuthState>({ status: "loading" });
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function loadAuth() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setAuth({ status: "unauthenticated" });
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_premium")
+        .eq("id", user.id)
+        .single();
+
+      const isPremium = profile?.is_premium ?? false;
+      setAuth({ status: isPremium ? "premium" : "free" });
+    }
+
+    loadAuth();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      loadAuth();
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const dropdowns = [
+    {
+      label: "Check Mode",
+      basePath: "/check",
+      items: buildDropdownItems("check", auth, "gold"),
+    },
+    {
+      label: "Learn Mode",
+      basePath: "/learn",
+      items: buildDropdownItems("learn", auth, "teal"),
+    },
+  ];
 
   return (
     <nav className="border-b border-border bg-background">
@@ -112,12 +233,21 @@ export function Navbar() {
             />
           ))}
         </div>
-        <Link
-          href="/signup"
-          className="rounded-md bg-yellow-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-yellow-600"
-        >
-          Sign Up / Log In
-        </Link>
+        {auth.status === "unauthenticated" || auth.status === "loading" ? (
+          auth.status === "unauthenticated" ? (
+            <Link
+              href="/signup"
+              className="rounded-md bg-yellow-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-yellow-600"
+            >
+              Sign Up / Log In
+            </Link>
+          ) : (
+            // loading — reserve space to avoid layout shift
+            <div className="h-[38px] w-[38px]" />
+          )
+        ) : (
+          <AvatarButton />
+        )}
       </div>
     </nav>
   );

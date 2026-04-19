@@ -52,7 +52,10 @@ function findBadDrug(text: string, candidates: string[]): string | null {
       if (c.trim() && win.includes(c.toLowerCase().trim())) return c;
     }
   }
-  return candidates.filter((c) => c.trim()).join(" or ") || "one of the entered substances";
+  return (
+    candidates.filter((c) => c.trim()).join(" or ") ||
+    "one of the entered substances"
+  );
 }
 
 // ─── Normalize key terms (backwards compat: string[] or object[]) ─────────────
@@ -72,8 +75,16 @@ function normalizeKeyTerm(raw: unknown): { term: string; definition: string } {
 // ─── Normalize affected_systems entries ───────────────────────────────────────
 
 const VALID_ORGANS = new Set([
-  "brain", "liver", "heart", "kidney", "stomach",
-  "lungs", "spinal_cord", "bloodstream", "intestines", "skin",
+  "brain",
+  "liver",
+  "heart",
+  "kidney",
+  "stomach",
+  "lungs",
+  "spinal_cord",
+  "bloodstream",
+  "intestines",
+  "skin",
 ]);
 
 function normalizeAffectedSystem(
@@ -89,7 +100,12 @@ function normalizeAffectedSystem(
 // ─── Normalize steps entries ──────────────────────────────────────────────────
 
 const VALID_ICONS = new Set([
-  "pill", "blood", "brain", "enzyme", "warning", "check",
+  "pill",
+  "blood",
+  "brain",
+  "enzyme",
+  "warning",
+  "check",
 ]);
 
 function normalizeStep(
@@ -113,8 +129,8 @@ function normalizeStep(
 const EDUCATOR_PREAMBLE =
   "IMPORTANT: You are writing educational content for a biology/pharmacology learning platform, NOT giving medical advice. " +
   "Your audience is students who want to understand the science. " +
-  "NEVER say any of these phrases: \"consult a doctor\", \"seek medical advice\", \"talk to your healthcare provider\", " +
-  "\"this is not medical advice\", \"I recommend you\", \"you should\", \"the patient should\". " +
+  'NEVER say any of these phrases: "consult a doctor", "seek medical advice", "talk to your healthcare provider", ' +
+  '"this is not medical advice", "I recommend you", "you should", "the patient should". ' +
   "ALWAYS frame everything as educational biology/pharmacology explanation. You are a science teacher, not a clinician.\n\n";
 
 const LEVEL_SYSTEM_PROMPTS: Record<1 | 2 | 3, string> = {
@@ -237,7 +253,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { drugs, treatment_context, health_context, notes, level, is_case_study } = body;
+  const {
+    drugs,
+    treatment_context,
+    health_context,
+    notes,
+    level,
+    is_case_study,
+  } = body;
 
   if (!Array.isArray(drugs) || drugs.length < 2) {
     return NextResponse.json(
@@ -424,10 +447,11 @@ export async function POST(req: NextRequest) {
 
     // Aggressively clean before first JSON.parse attempt
     const preCleaned = cleaned
-      .replace(/[\u2018\u2019]/g, "'")   // curly single quotes → straight
-      .replace(/[\u201C\u201D]/g, '"')   // curly double quotes → straight
+      .replace(/[\u2018\u2019]/g, "'") // curly single quotes → straight
+      .replace(/[\u201C\u201D]/g, '"') // curly double quotes → straight
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control-char stripping from AI response
       .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, "") // control chars (keep \n \r)
-      .replace(/,(\s*[}\]])/g, "$1");    // trailing commas before } or ]
+      .replace(/,(\s*[}\]])/g, "$1"); // trailing commas before } or ]
 
     let result: ParsedResult;
     try {
@@ -472,7 +496,8 @@ export async function POST(req: NextRequest) {
             .replace(/,(\s*[}\]])/g, "$1")
             .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3');
           const fallback = JSON.parse(superCleaned) as ParsedResult;
-          if (Array.isArray(fallback.combinations)) combs = fallback.combinations;
+          if (Array.isArray(fallback.combinations))
+            combs = fallback.combinations;
         } catch {
           /* leave empty */
         }
@@ -498,14 +523,17 @@ export async function POST(req: NextRequest) {
         ? c.key_terms.map(normalizeKeyTerm).filter((t) => t.term.length > 0)
         : [],
       affected_systems: Array.isArray(c.affected_systems)
-        ? (c.affected_systems
+        ? c.affected_systems
             .map(normalizeAffectedSystem)
-            .filter((s): s is { organ: string; reason: string } => s !== null))
+            .filter((s): s is { organ: string; reason: string } => s !== null)
         : [],
       steps: Array.isArray(c.steps)
-        ? (c.steps
+        ? c.steps
             .map(normalizeStep)
-            .filter((s): s is { title: string; caption: string; icon: string } => s !== null))
+            .filter(
+              (s): s is { title: string; caption: string; icon: string } =>
+                s !== null,
+            )
         : [],
     }));
 
@@ -513,7 +541,10 @@ export async function POST(req: NextRequest) {
       result.overall_summary ?? "",
       ...combinations.map((c) => c.explanation),
     ].join(" ");
-    const badDrug = findBadDrug(checkText, drugs.map((d) => d.name));
+    const badDrug = findBadDrug(
+      checkText,
+      drugs.map((d) => d.name),
+    );
     if (badDrug) {
       return NextResponse.json(
         {

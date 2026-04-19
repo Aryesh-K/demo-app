@@ -19,9 +19,12 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + "/update-password",
-    });
+    const { error: authError } = await supabase.auth.resetPasswordForEmail(
+      email,
+      {
+        redirectTo: `${window.location.origin}/update-password`,
+      },
+    );
     setLoading(false);
 
     if (authError) {
@@ -36,7 +39,9 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md">
         <div className="rounded-xl border border-border bg-card p-6">
           <div className="mb-6 flex flex-col gap-1">
-            <h1 className="text-2xl font-bold tracking-tight">Reset Your Password</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Reset Your Password
+            </h1>
             <p className="text-sm text-muted-foreground">
               Enter your email and we&apos;ll send you a reset link
             </p>
@@ -44,9 +49,11 @@ export default function ResetPasswordPage() {
 
           {success ? (
             <div className="rounded-xl border border-green-700/50 bg-green-950/30 p-5 text-sm leading-relaxed text-green-300">
-              <p className="mb-1 font-semibold text-green-200">Reset link sent!</p>
-              Check your email inbox and click the link to set a new password. It may take a
-              few minutes to arrive.
+              <p className="mb-1 font-semibold text-green-200">
+                Reset link sent!
+              </p>
+              Check your email inbox and click the link to set a new password.
+              It may take a few minutes to arrive.
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">

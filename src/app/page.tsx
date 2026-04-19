@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { AccordionCards } from "~/components/accordion-cards";
 import { DidYouKnow } from "~/components/did-you-know";
 import { GridReveal } from "~/components/grid-reveal";
 import { HeroCanvas } from "~/components/hero-canvas";
+import { HeroCtaButtons } from "~/components/hero-cta-buttons";
 import { ScrollIndicator } from "~/components/scroll-indicator";
-import { Button } from "~/components/ui/button";
 
 const freePublicFeatures = [
   "Check interactions between 2 drugs, OTC medications, or alcohol",
@@ -98,40 +97,24 @@ export default function Home() {
             </div>
 
             {/* Change 1 — two CTA buttons */}
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Button
-                asChild
-                className="bg-blue-900 text-white hover:bg-blue-800"
-                size="lg"
-              >
-                <Link href="/check/free">Check an Interaction →</Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="border-teal-600 text-teal-400 hover:bg-teal-950/30 hover:text-teal-300"
-                size="lg"
-              >
-                <Link href="/learn/free">Learn the Biology →</Link>
-              </Button>
-            </div>
-          </AccordionCards>
+            <HeroCtaButtons />
 
-          {/* Change 2 — social proof strip + scroll indicator */}
-          <div className="flex flex-col items-center">
             <div
-              className="mx-auto mb-6 inline-flex rounded-full px-6 py-2"
+              className="mt-4 inline-flex rounded-full px-6 py-2"
               style={{
                 background: "rgba(255, 255, 255, 0.05)",
                 border: "1px solid rgba(255, 255, 255, 0.15)",
               }}
             >
               <p className="text-sm text-slate-400">
-                Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for students and patients
+                Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm
+                &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for
+                students and patients
               </p>
             </div>
-            <ScrollIndicator />
-          </div>
+          </AccordionCards>
+
+          <ScrollIndicator />
         </div>
       </section>
 
@@ -206,7 +189,8 @@ export default function Home() {
           </a>
         </p>
         <p className="mt-1 text-xs text-slate-600">
-          &copy; 2026 ToxiClear AI. For educational purposes only. Not medical advice.
+          &copy; 2026 ToxiClear AI. For educational purposes only. Not medical
+          advice.
         </p>
       </footer>
     </main>

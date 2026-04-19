@@ -50,7 +50,10 @@ function findBadDrug(text: string, candidates: string[]): string | null {
       if (c.trim() && win.includes(c.toLowerCase().trim())) return c;
     }
   }
-  return candidates.filter((c) => c.trim()).join(" or ") || "one of the entered substances";
+  return (
+    candidates.filter((c) => c.trim()).join(" or ") ||
+    "one of the entered substances"
+  );
 }
 
 // ─── Forbidden phrases injected into every system prompt ─────────────────────
@@ -169,21 +172,17 @@ export async function POST(req: NextRequest) {
     const lines = [
       "CASE STUDY PATIENT PROFILE:",
       caseStudyData.age ? `Age: ${caseStudyData.age}` : "",
-      caseStudyData.conditions
-        ? `Conditions: ${caseStudyData.conditions}`
-        : "",
+      caseStudyData.conditions ? `Conditions: ${caseStudyData.conditions}` : "",
       caseStudyData.medications
         ? `Medications: ${caseStudyData.medications}`
         : "",
-      caseStudyData.allergies
-        ? `Allergies: ${caseStudyData.allergies}`
-        : "",
+      caseStudyData.allergies ? `Allergies: ${caseStudyData.allergies}` : "",
       caseStudyData.extraNotes
         ? `Additional notes: ${caseStudyData.extraNotes}`
         : "",
       "Reference this patient profile in your explanation using 'the patient' not 'you'",
     ].filter(Boolean);
-    caseStudyBlock = "\n" + lines.join("\n") + "\n";
+    caseStudyBlock = `\n${lines.join("\n")}\n`;
   }
 
   const userPrompt =
@@ -337,8 +336,7 @@ export async function POST(req: NextRequest) {
             const r = raw as { term?: unknown; definition?: unknown };
             return {
               term: typeof r.term === "string" ? r.term : "",
-              definition:
-                typeof r.definition === "string" ? r.definition : "",
+              definition: typeof r.definition === "string" ? r.definition : "",
             };
           }
           return { term: "", definition: "" };
@@ -358,7 +356,10 @@ export async function POST(req: NextRequest) {
       result.overall_summary ?? "",
       ...combinations.map((c) => c.explanation),
     ].join(" ");
-    const badDrug = findBadDrug(checkText, drugs.map((d) => d.name));
+    const badDrug = findBadDrug(
+      checkText,
+      drugs.map((d) => d.name),
+    );
     if (badDrug) {
       return NextResponse.json(
         {

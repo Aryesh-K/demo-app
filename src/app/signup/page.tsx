@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { updateProfile } from "~/lib/profile";
 import { createClient } from "~/lib/supabase/client";
 
 type Tab = "signup" | "login";
@@ -47,20 +48,30 @@ function SignUpForm() {
 
     setLoading(true);
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signUp({
+    const { data: signUpData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { first_name: firstName, last_name: lastName, phone },
       },
     });
-    setLoading(false);
 
     if (authError) {
+      setLoading(false);
       setError(authError.message);
-    } else {
-      setSuccess(true);
+      return;
     }
+
+    if (signUpData.user) {
+      await updateProfile(signUpData.user.id, {
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone || undefined,
+      });
+    }
+
+    setLoading(false);
+    setSuccess(true);
   }
 
   if (success) {
@@ -160,11 +171,17 @@ function SignUpForm() {
         />
         <span>
           I agree to the{" "}
-          <Link href="/privacy" className="text-teal-400 hover:text-teal-300 underline underline-offset-2">
+          <Link
+            href="/privacy"
+            className="text-teal-400 hover:text-teal-300 underline underline-offset-2"
+          >
             Privacy Policy
           </Link>{" "}
           and{" "}
-          <Link href="/terms" className="text-teal-400 hover:text-teal-300 underline underline-offset-2">
+          <Link
+            href="/terms"
+            className="text-teal-400 hover:text-teal-300 underline underline-offset-2"
+          >
             Terms of Service
           </Link>
         </span>
@@ -276,10 +293,19 @@ function LogInForm() {
 
 export default function SignUpPage() {
   const [tab, setTab] = useState<Tab>("signup");
+  const searchParams = useSearchParams();
+  const message = searchParams.get("message");
 
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
+        {/* Amber info banner for redirect messages */}
+        {message && (
+          <div className="mb-4 rounded-xl border border-amber-700/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-300">
+            {message}
+          </div>
+        )}
+
         {/* Tab bar */}
         <div className="mb-6 flex border-b border-border">
           {(["signup", "login"] as const).map((t) => (
@@ -318,10 +344,7 @@ export default function SignUpPage() {
           </div>
 
           {/* Form — fades on tab switch */}
-          <div
-            key={tab + "-form"}
-            style={{ animation: "fade-in 0.2s ease" }}
-          >
+          <div key={`${tab}-form`} style={{ animation: "fade-in 0.2s ease" }}>
             {tab === "signup" ? <SignUpForm /> : <LogInForm />}
           </div>
         </div>

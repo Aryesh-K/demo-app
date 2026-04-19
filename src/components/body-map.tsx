@@ -5,38 +5,38 @@ import { useState } from "react";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ORGAN_COORDS: Record<string, readonly [number, number]> = {
-  brain:       [100,  30],
+  brain: [100, 30],
   spinal_cord: [100, 165],
-  lungs:       [ 85, 130],
-  heart:       [ 80, 118],
-  stomach:     [105, 195],
-  liver:       [118, 182],
-  kidney:      [ 82, 205],
-  intestines:  [100, 235],
+  lungs: [85, 130],
+  heart: [80, 118],
+  stomach: [105, 195],
+  liver: [118, 182],
+  kidney: [82, 205],
+  intestines: [100, 235],
   bloodstream: [140, 150],
-  skin:        [155, 190],
+  skin: [155, 190],
 };
 
 const ORGAN_LABELS: Record<string, string> = {
-  brain:       "Brain",
+  brain: "Brain",
   spinal_cord: "Spinal Cord",
-  lungs:       "Lungs",
-  heart:       "Heart",
-  stomach:     "Stomach",
-  liver:       "Liver",
-  kidney:      "Kidney",
-  intestines:  "Intestines",
+  lungs: "Lungs",
+  heart: "Heart",
+  stomach: "Stomach",
+  liver: "Liver",
+  kidney: "Kidney",
+  intestines: "Intestines",
   bloodstream: "Bloodstream",
-  skin:        "Skin",
+  skin: "Skin",
 };
 
 const STEP_ICONS: Record<string, string> = {
-  pill:    "💊",
-  blood:   "🩸",
-  brain:   "🧠",
-  enzyme:  "⚗️",
+  pill: "💊",
+  blood: "🩸",
+  brain: "🧠",
+  enzyme: "⚗️",
   warning: "⚠️",
-  check:   "✅",
+  check: "✅",
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -65,8 +65,8 @@ interface BodyMapProps {
 
 function dotColor(risk?: "high" | "moderate" | "low"): string {
   if (risk === "high") return "#f87171"; // red-400
-  if (risk === "low")  return "#2dd4bf"; // teal-400
-  return "#fbbf24";                      // amber-400 (moderate / default)
+  if (risk === "low") return "#2dd4bf"; // teal-400
+  return "#fbbf24"; // amber-400 (moderate / default)
 }
 
 // ─── Body silhouette SVG (viewBox 0 0 200 420) ───────────────────────────────
@@ -114,9 +114,9 @@ export default function BodyMap({
 
   if (!affected_systems.length || !steps.length) return null;
 
-  const color        = dotColor(riskLevel);
+  const color = dotColor(riskLevel);
   const validSystems = affected_systems.filter((s) => s.organ in ORGAN_COORDS);
-  const totalSteps   = steps.length;
+  const totalSteps = steps.length;
 
   const hoveredSystem = hoveredOrgan
     ? (validSystems.find((s) => s.organ === hoveredOrgan) ?? null)
@@ -138,8 +138,14 @@ export default function BodyMap({
         }
       `}</style>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "fit-content" }}>
-
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          width: "fit-content",
+        }}
+      >
         {/* Beta badge — top left, above body */}
         <span
           style={{
@@ -157,13 +163,24 @@ export default function BodyMap({
         </span>
 
         {/* Two-column row */}
-        <div
-          style={{ display: "flex", flexDirection: "row", gap: 20, alignItems: "flex-start" }}
+        <section
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: 20,
+            alignItems: "flex-start",
+          }}
           aria-label={`Body map showing organs affected by ${drugA} + ${drugB}`}
         >
-
           {/* ── Left column: SVG body + dots ── */}
-          <div style={{ position: "relative", width: 200, height: 420, flexShrink: 0 }}>
+          <div
+            style={{
+              position: "relative",
+              width: 200,
+              height: 420,
+              flexShrink: 0,
+            }}
+          >
             <svg
               viewBox="0 0 200 420"
               width="200"
@@ -181,8 +198,10 @@ export default function BodyMap({
               const isHovered = hoveredOrgan === system.organ;
               const isClicked = clickedOrgan === system.organ;
               return (
-                <div
+                <button
                   key={system.organ}
+                  type="button"
+                  aria-label={`Select ${ORGAN_LABELS[system.organ] ?? system.organ}`}
                   style={{
                     position: "absolute",
                     left: cx,
@@ -191,6 +210,9 @@ export default function BodyMap({
                     height: 18,
                     transform: "translate(-50%, -50%)",
                     cursor: "pointer",
+                    background: "none",
+                    border: "none",
+                    padding: 0,
                   }}
                   onMouseEnter={() => setHoveredOrgan(system.organ)}
                   onMouseLeave={() => setHoveredOrgan(null)}
@@ -222,11 +244,14 @@ export default function BodyMap({
                       left: 3.5,
                       borderRadius: "50%",
                       background: color,
-                      boxShadow: (isHovered || isClicked) ? `0 0 0 3px ${color}55` : "none",
+                      boxShadow:
+                        isHovered || isClicked
+                          ? `0 0 0 3px ${color}55`
+                          : "none",
                       transition: "box-shadow 0.2s ease",
                     }}
                   />
-                </div>
+                </button>
               );
             })}
           </div>
@@ -241,7 +266,6 @@ export default function BodyMap({
               flexDirection: "column",
             }}
           >
-
             {/* TOP SECTION (~40 %) — organ + reason, driven by hover */}
             <div
               style={{
@@ -277,10 +301,25 @@ export default function BodyMap({
                     gap: 8,
                   }}
                 >
-                  <p style={{ fontSize: 14, fontWeight: 700, color: "#2dd4bf", margin: 0, lineHeight: 1.3 }}>
-                    {ORGAN_LABELS[hoveredOrgan!] ?? hoveredOrgan}
+                  <p
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: "#2dd4bf",
+                      margin: 0,
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {ORGAN_LABELS[hoveredOrgan as string] ?? hoveredOrgan}
                   </p>
-                  <p style={{ fontSize: 12, color: "#94a3b8", margin: 0, lineHeight: 1.5 }}>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "#94a3b8",
+                      margin: 0,
+                      lineHeight: 1.5,
+                    }}
+                  >
                     {hoveredSystem.reason}
                   </p>
                 </div>
@@ -288,7 +327,14 @@ export default function BodyMap({
             </div>
 
             {/* Teal divider */}
-            <div style={{ height: 1, background: "#134e4a", width: "100%", flexShrink: 0 }} />
+            <div
+              style={{
+                height: 1,
+                background: "#134e4a",
+                width: "100%",
+                flexShrink: 0,
+              }}
+            />
 
             {/* BOTTOM SECTION (~60 %) — steps slideshow, always visible, driven by click */}
             <div
@@ -319,35 +365,65 @@ export default function BodyMap({
                   </p>
 
                   {/* Icon + title */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <span style={{ fontSize: 28, lineHeight: 1 }} aria-hidden="true">
-                      {STEP_ICONS[steps[currentStep]!.icon] ?? "💊"}
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                  >
+                    <span
+                      style={{ fontSize: 28, lineHeight: 1 }}
+                      aria-hidden="true"
+                    >
+                      {STEP_ICONS[steps[currentStep]?.icon ?? ""] ?? "💊"}
                     </span>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#f1f5f9", margin: 0, lineHeight: 1.4 }}>
-                      {steps[currentStep]!.title}
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#f1f5f9",
+                        margin: 0,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {steps[currentStep]?.title}
                     </p>
                   </div>
 
                   {/* Caption */}
-                  <p style={{ fontSize: 11, color: "#64748b", margin: 0, lineHeight: 1.55, flex: 1, overflow: "hidden" }}>
-                    {steps[currentStep]!.caption}
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: "#64748b",
+                      margin: 0,
+                      lineHeight: 1.55,
+                      flex: 1,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {steps[currentStep]?.caption}
                   </p>
 
                   {/* Navigation row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
                     <button
                       type="button"
                       onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
                       disabled={currentStep === 0}
                       aria-label="Previous step"
                       style={{
-                        width: 28, height: 28, borderRadius: "50%",
-                        border: "1px solid #1e3a4a", background: "transparent",
+                        width: 28,
+                        height: 28,
+                        borderRadius: "50%",
+                        border: "1px solid #1e3a4a",
+                        background: "transparent",
                         color: "#64748b",
                         cursor: currentStep === 0 ? "not-allowed" : "pointer",
                         opacity: currentStep === 0 ? 0.3 : 1,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 14, flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 14,
+                        flexShrink: 0,
                         transition: "opacity 0.15s ease",
                       }}
                     >
@@ -355,17 +431,29 @@ export default function BodyMap({
                     </button>
 
                     {/* Progress pips */}
-                    <div style={{ display: "flex", flex: 1, gap: 4, alignItems: "center" }}>
-                      {steps.map((_, i) => (
+                    <div
+                      style={{
+                        display: "flex",
+                        flex: 1,
+                        gap: 4,
+                        alignItems: "center",
+                      }}
+                    >
+                      {steps.map((step, i) => (
                         <button
-                          key={i}
+                          key={step.title}
                           type="button"
                           onClick={() => setCurrentStep(i)}
                           aria-label={`Go to step ${i + 1}`}
                           style={{
-                            flex: 1, height: 5, borderRadius: 3,
-                            border: "none", padding: 0, cursor: "pointer",
-                            background: i === currentStep ? "#2dd4bf" : "#1e3a4a",
+                            flex: 1,
+                            height: 5,
+                            borderRadius: 3,
+                            border: "none",
+                            padding: 0,
+                            cursor: "pointer",
+                            background:
+                              i === currentStep ? "#2dd4bf" : "#1e3a4a",
                             transition: "background 0.2s ease",
                           }}
                         />
@@ -374,17 +462,28 @@ export default function BodyMap({
 
                     <button
                       type="button"
-                      onClick={() => setCurrentStep((s) => Math.min(totalSteps - 1, s + 1))}
+                      onClick={() =>
+                        setCurrentStep((s) => Math.min(totalSteps - 1, s + 1))
+                      }
                       disabled={currentStep === totalSteps - 1}
                       aria-label="Next step"
                       style={{
-                        width: 28, height: 28, borderRadius: "50%",
-                        border: "1px solid #1e3a4a", background: "transparent",
+                        width: 28,
+                        height: 28,
+                        borderRadius: "50%",
+                        border: "1px solid #1e3a4a",
+                        background: "transparent",
                         color: "#64748b",
-                        cursor: currentStep === totalSteps - 1 ? "not-allowed" : "pointer",
+                        cursor:
+                          currentStep === totalSteps - 1
+                            ? "not-allowed"
+                            : "pointer",
                         opacity: currentStep === totalSteps - 1 ? 0.3 : 1,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 14, flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 14,
+                        flexShrink: 0,
                         transition: "opacity 0.15s ease",
                       }}
                     >
@@ -394,9 +493,8 @@ export default function BodyMap({
                 </>
               )}
             </div>
-
           </div>
-        </div>
+        </section>
       </div>
     </>
   );

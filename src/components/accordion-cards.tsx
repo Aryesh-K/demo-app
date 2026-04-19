@@ -13,10 +13,34 @@ interface CardDef {
 }
 
 const CARDS: CardDef[] = [
-  { id: 0, icon: "🧬", title: "What is ToxiClear AI?", side: "left",  bobClass: "card-bob-1" },
-  { id: 1, icon: "⚗️", title: "How It Works",           side: "left",  bobClass: "card-bob-2" },
-  { id: 2, icon: "💊", title: "Why ToxiClear AI?",      side: "right", bobClass: "card-bob-3" },
-  { id: 3, icon: "👑", title: "What is Premium?",       side: "right", bobClass: "card-bob-4" },
+  {
+    id: 0,
+    icon: "🧬",
+    title: "What is ToxiClear AI?",
+    side: "left",
+    bobClass: "card-bob-1",
+  },
+  {
+    id: 1,
+    icon: "⚗️",
+    title: "How It Works",
+    side: "left",
+    bobClass: "card-bob-2",
+  },
+  {
+    id: 2,
+    icon: "💊",
+    title: "Why ToxiClear AI?",
+    side: "right",
+    bobClass: "card-bob-3",
+  },
+  {
+    id: 3,
+    icon: "👑",
+    title: "What is Premium?",
+    side: "right",
+    bobClass: "card-bob-4",
+  },
 ];
 
 // ─── Per-card content ─────────────────────────────────────────────────────────
@@ -33,16 +57,16 @@ function CardContent({ id }: { id: number }) {
           <li className="flex gap-2">
             <span className="mt-px shrink-0 text-teal-500">▸</span>
             <span>
-              <span className="font-semibold text-slate-300">Check Mode</span>{" "}
-              — instantly see if your medications are safe to combine, with a
+              <span className="font-semibold text-slate-300">Check Mode</span> —
+              instantly see if your medications are safe to combine, with a
               plain-English explanation of the risks
             </span>
           </li>
           <li className="flex gap-2">
             <span className="mt-px shrink-0 text-teal-500">▸</span>
             <span>
-              <span className="font-semibold text-slate-300">Learn Mode</span>{" "}
-              — understand the biology behind why interactions happen, with
+              <span className="font-semibold text-slate-300">Learn Mode</span> —
+              understand the biology behind why interactions happen, with
               explanations tailored to your knowledge level
             </span>
           </li>
@@ -101,8 +125,8 @@ function CardContent({ id }: { id: number }) {
     return (
       <div className="flex flex-col gap-2 text-sm leading-relaxed text-slate-400">
         <p>
-          Most drug interaction checkers give you a one-line warning.
-          ToxiClear AI goes further:
+          Most drug interaction checkers give you a one-line warning. ToxiClear
+          AI goes further:
         </p>
         <ul className="flex flex-col gap-1.5 pl-0.5">
           <li className="flex gap-2">
@@ -205,8 +229,12 @@ function AccordionCard({
         className="info-card-banner flex w-full items-center gap-2.5 px-4 py-4 text-left"
         style={{ borderRadius: isOpen ? "12px 12px 0 0" : "12px" }}
       >
-        <span className="text-xl" aria-hidden="true">{card.icon}</span>
-        <span className="flex-1 text-base font-medium text-slate-200">{card.title}</span>
+        <span className="text-xl" aria-hidden="true">
+          {card.icon}
+        </span>
+        <span className="flex-1 text-base font-medium text-slate-200">
+          {card.title}
+        </span>
         <span
           aria-hidden="true"
           className="text-[10px] text-slate-400 transition-transform duration-300"
@@ -241,38 +269,51 @@ export function AccordionCards({ children }: { children: React.ReactNode }) {
     setOpenCard((prev) => (prev === id ? null : id));
   }
 
-  const leftCards  = CARDS.filter((c) => c.side === "left");
+  const leftCards = CARDS.filter((c) => c.side === "left");
   const rightCards = CARDS.filter((c) => c.side === "right");
 
   return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col md:flex-row md:items-start md:gap-4">
-
-        {/* Left column — cards stack naturally from top */}
-        <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
-          {leftCards.map((card) => (
-            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
-          ))}
-        </div>
-
-        {/* Center column — hero content */}
-        <div className="flex min-h-screen min-w-[500px] flex-1 flex-col items-center justify-center gap-6 px-8 py-[120px] text-center md:min-h-0">
-          {children}
-        </div>
-
-        {/* Right column — cards stack naturally from top */}
-        <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
-          {rightCards.map((card) => (
-            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
-          ))}
-        </div>
-
-        {/* Mobile cards — 2×2 grid below center */}
-        <div className="grid grid-cols-2 gap-3 p-4 md:hidden">
-          {CARDS.map((card) => (
-            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
-          ))}
-        </div>
-
+    <div className="mx-auto flex w-full max-w-6xl flex-col md:flex-row md:items-start md:gap-4">
+      {/* Left column — cards stack naturally from top */}
+      <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
+        {leftCards.map((card) => (
+          <AccordionCard
+            key={card.id}
+            card={card}
+            openCard={openCard}
+            onToggle={toggle}
+          />
+        ))}
       </div>
+
+      {/* Center column — hero content */}
+      <div className="flex min-h-screen min-w-[500px] flex-1 flex-col items-center justify-center gap-6 px-8 py-[120px] text-center md:min-h-0">
+        {children}
+      </div>
+
+      {/* Right column — cards stack naturally from top */}
+      <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
+        {rightCards.map((card) => (
+          <AccordionCard
+            key={card.id}
+            card={card}
+            openCard={openCard}
+            onToggle={toggle}
+          />
+        ))}
+      </div>
+
+      {/* Mobile cards — 2×2 grid below center */}
+      <div className="grid grid-cols-2 gap-3 p-4 md:hidden">
+        {CARDS.map((card) => (
+          <AccordionCard
+            key={card.id}
+            card={card}
+            openCard={openCard}
+            onToggle={toggle}
+          />
+        ))}
+      </div>
+    </div>
   );
 }

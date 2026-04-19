@@ -49,7 +49,10 @@ function findBadDrug(text: string, candidates: string[]): string | null {
       if (c.trim() && win.includes(c.toLowerCase().trim())) return c;
     }
   }
-  return candidates.filter((c) => c.trim()).join(" or ") || "one of the entered substances";
+  return (
+    candidates.filter((c) => c.trim()).join(" or ") ||
+    "one of the entered substances"
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -319,9 +322,14 @@ export async function POST(req: NextRequest) {
 
     const checkText = [
       result.overall_summary ?? "",
-      ...combinations.map((c) => `${c.simple_explanation} ${c.real_world_context}`),
+      ...combinations.map(
+        (c) => `${c.simple_explanation} ${c.real_world_context}`,
+      ),
     ].join(" ");
-    const badDrug = findBadDrug(checkText, drugs.map((d) => d.name));
+    const badDrug = findBadDrug(
+      checkText,
+      drugs.map((d) => d.name),
+    );
     if (badDrug) {
       return NextResponse.json(
         {

@@ -207,7 +207,10 @@ function buildHealthContext(profile: HealthProfile): string {
 
 function MoleculeAnimation({ fading }: { fading: boolean }) {
   const [animPhase, setAnimPhase] = useState(0);
-  const stateRef = useRef({ cancelled: false, timers: [] as ReturnType<typeof setTimeout>[] });
+  const stateRef = useRef({
+    cancelled: false,
+    timers: [] as ReturnType<typeof setTimeout>[],
+  });
 
   useEffect(() => {
     const s = stateRef.current;
@@ -219,9 +222,15 @@ function MoleculeAnimation({ fading }: { fading: boolean }) {
       s.timers = [];
       setAnimPhase(0);
       s.timers.push(
-        setTimeout(() => { if (!s.cancelled) setAnimPhase(1); }, 50),
-        setTimeout(() => { if (!s.cancelled) setAnimPhase(2); }, 600),
-        setTimeout(() => { if (!s.cancelled) setAnimPhase(3); }, 850),
+        setTimeout(() => {
+          if (!s.cancelled) setAnimPhase(1);
+        }, 50),
+        setTimeout(() => {
+          if (!s.cancelled) setAnimPhase(2);
+        }, 600),
+        setTimeout(() => {
+          if (!s.cancelled) setAnimPhase(3);
+        }, 850),
         setTimeout(() => runCycle(), 2200),
       );
     }
@@ -248,20 +257,26 @@ function MoleculeAnimation({ fading }: { fading: boolean }) {
           style={{
             opacity: sliding ? 1 : 0,
             transform: sliding ? "translateX(0)" : "translateX(-52px)",
-            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            transition:
+              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
             boxShadow: pulsing ? "0 0 28px 10px rgba(202,138,4,0.4)" : "none",
           }}
         />
         <div
           className="h-[3px] rounded-full bg-yellow-400"
-          style={{ width: "2.25rem", opacity: bonded ? 1 : 0, transition: "opacity 0.25s ease" }}
+          style={{
+            width: "2.25rem",
+            opacity: bonded ? 1 : 0,
+            transition: "opacity 0.25s ease",
+          }}
         />
         <div
           className="size-11 rounded-full bg-amber-500/75"
           style={{
             opacity: sliding ? 1 : 0,
             transform: sliding ? "translateX(0)" : "translateX(52px)",
-            transition: "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
+            transition:
+              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
             boxShadow: pulsing ? "0 0 28px 10px rgba(245,158,11,0.4)" : "none",
           }}
         />
@@ -501,7 +516,8 @@ function HealthProfilePanel({
         Optional — toggle fields on to include them in the AI analysis.
       </p>
       <p className="rounded-md border border-green-800/40 bg-green-950/20 px-3 py-2 text-xs text-green-400/80">
-        ✓ Prescription medications in your regimen are fully supported by Premium.
+        ✓ Prescription medications in your regimen are fully supported by
+        Premium.
       </p>
 
       {/* Fields */}
@@ -643,9 +659,15 @@ function Results({ result }: { result: ApiResult }) {
                 key={comboKey}
                 className={cn(
                   "flex flex-col gap-3 rounded-xl border bg-card p-5",
-                  !allLow && isLow ? "border-border/50 opacity-60" : "border-border",
+                  !allLow && isLow
+                    ? "border-border/50 opacity-60"
+                    : "border-border",
                 )}
-                style={!allLow && isLow && showLow ? { animation: "fade-in 0.3s ease forwards" } : undefined}
+                style={
+                  !allLow && isLow && showLow
+                    ? { animation: "fade-in 0.3s ease forwards" }
+                    : undefined
+                }
               >
                 {/* Drug pair + risk dot */}
                 <div className="flex items-start gap-2">
@@ -787,12 +809,16 @@ export default function CheckPremium() {
   function handleSubmit() {
     const filledDrugs = drugs.filter((d) => d.name.trim().length > 0);
     if (filledDrugs.length < 2) {
-      setValidationError("Please add at least 2 substances to analyze interactions. Use the '+ Add Another Drug' button to add more.");
+      setValidationError(
+        "Please add at least 2 substances to analyze interactions. Use the '+ Add Another Drug' button to add more.",
+      );
       return;
     }
     for (const d of filledDrugs) {
       if (d.name.trim().length < 2) {
-        setValidationError(`Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`);
+        setValidationError(
+          `Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`,
+        );
         return;
       }
     }
@@ -804,7 +830,12 @@ export default function CheckPremium() {
     setApiError(null);
 
     const healthContext = buildHealthContext(healthProfile);
-    const drugsPayload = drugs.map(({ name, method, amount, unit }) => ({ name, method, amount, unit }));
+    const drugsPayload = drugs.map(({ name, method, amount, unit }) => ({
+      name,
+      method,
+      amount,
+      unit,
+    }));
 
     fetch("/api/check-interaction-premium", {
       method: "POST",
@@ -818,8 +849,14 @@ export default function CheckPremium() {
     })
       .then(async (r) => {
         if (!r.ok) {
-          const errData = await r.json().catch(() => ({})) as { error?: string; message?: string };
-          const err = new Error(errData.message ?? "Failed to analyze the interactions. Please try again.");
+          const errData = (await r.json().catch(() => ({}))) as {
+            error?: string;
+            message?: string;
+          };
+          const err = new Error(
+            errData.message ??
+              "Failed to analyze the interactions. Please try again.",
+          );
           if (errData.error === "unrecognized_drug") {
             (err as Error & { isValidation?: boolean }).isValidation = true;
           }
@@ -836,7 +873,9 @@ export default function CheckPremium() {
         }, 300);
       })
       .catch((err: unknown) => {
-        const isValidation = err instanceof Error && (err as Error & { isValidation?: boolean }).isValidation;
+        const isValidation =
+          err instanceof Error &&
+          (err as Error & { isValidation?: boolean }).isValidation;
         setAnimFading(true);
         setTimeout(() => {
           setAnimFading(false);
@@ -914,7 +953,10 @@ export default function CheckPremium() {
                 drug={drug}
                 label={getDrugLabel(index)}
                 removable={index >= 2}
-                onNameChange={(v) => { updateDrug(drug.id, { name: v }); if (validationError) setValidationError(null); }}
+                onNameChange={(v) => {
+                  updateDrug(drug.id, { name: v });
+                  if (validationError) setValidationError(null);
+                }}
                 onMethodChange={(m) => updateDrug(drug.id, { method: m })}
                 onAmountChange={(v) => updateDrug(drug.id, { amount: v })}
                 onUnitChange={(u) => updateDrug(drug.id, { unit: u })}
@@ -1003,9 +1045,7 @@ export default function CheckPremium() {
       </div>
 
       {/* Molecule animation — loops until API responds */}
-      {phase === "animating" && (
-        <MoleculeAnimation fading={animFading} />
-      )}
+      {phase === "animating" && <MoleculeAnimation fading={animFading} />}
 
       {/* Error */}
       {phase === "error" && (

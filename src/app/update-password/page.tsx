@@ -46,7 +46,9 @@ export default function UpdatePasswordPage() {
       <div className="w-full max-w-md">
         <div className="rounded-xl border border-border bg-card p-6">
           <div className="mb-6 flex flex-col gap-1">
-            <h1 className="text-2xl font-bold tracking-tight">Set New Password</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Set New Password
+            </h1>
             <p className="text-sm text-muted-foreground">
               Choose a strong password for your account
             </p>
@@ -54,8 +56,12 @@ export default function UpdatePasswordPage() {
 
           {success ? (
             <div className="rounded-xl border border-green-700/50 bg-green-950/30 p-5 text-sm leading-relaxed text-green-300">
-              <p className="font-semibold text-green-200">Password updated successfully!</p>
-              <p className="mt-1 text-green-400/70">Redirecting you to log in…</p>
+              <p className="font-semibold text-green-200">
+                Password updated successfully!
+              </p>
+              <p className="mt-1 text-green-400/70">
+                Redirecting you to log in…
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
