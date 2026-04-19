@@ -192,23 +192,23 @@ export default function Home() {
             </div>
           </section>
         </GridReveal>
-        <hr className="border-border" />
-
-        {/* ── Get Premium CTA ── */}
-        <section className="flex flex-col items-center gap-5 py-16 text-center">
-          <p className="text-lg font-semibold">
-            Ready to unlock the full ToxiClear AI experience?
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Premium features available after signing up.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Supplements • Cosmetics • Advanced Learning • Personalized Health
-            Context
-          </p>
-        </section>
       </div>
-      <div className="h-24" />
+
+      {/* ── Contact footer banner ── */}
+      <footer className="w-full bg-black px-8 py-6 text-center">
+        <p className="text-sm text-slate-400">
+          Questions? Contact us at{" "}
+          <a
+            href="mailto:toxiclearai@gmail.com"
+            className="text-teal-400 hover:text-teal-300"
+          >
+            toxiclearai@gmail.com
+          </a>
+        </p>
+        <p className="mt-1 text-xs text-slate-600">
+          &copy; 2026 ToxiClear AI. For educational purposes only. Not medical advice.
+        </p>
+      </footer>
     </main>
   );
 }
