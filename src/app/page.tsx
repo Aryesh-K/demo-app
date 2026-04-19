@@ -34,6 +34,7 @@ const premiumStudentsFeatures = [
   "Immersive 3D interactive models tailored to selected explanation level",
   "Case study mode — analyze interactions for a specific patient profile",
   "Curriculum-aligned explanations for middle school/honors biology, AP Biology, and pre-med students",
+  "Clickable term definitions — tap any highlighted word for an instant explanation calibrated to your curriculum level",
 ];
 
 function FeatureList({ items }: { items: string[] }) {

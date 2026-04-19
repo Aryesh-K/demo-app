@@ -617,11 +617,14 @@ function Results({ result }: { result: ApiResult }) {
               <button
                 type="button"
                 onClick={() => setShowLow((v) => !v)}
-                className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
+                className="shrink-0 rounded-md border-2 border-border px-6 py-3 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:bg-muted/40 hover:text-foreground"
               >
-                {showLow
-                  ? "Hide low-risk interactions"
-                  : `Show low-risk interactions (${lowCombos.length})`}
+                <span className="flex items-center gap-2">
+                  {showLow
+                    ? "Hide low-risk interactions"
+                    : `Show low-risk interactions (${lowCombos.length})`}
+                  <span aria-hidden="true">{showLow ? "▲" : "▼"}</span>
+                </span>
               </button>
             )}
           </div>
