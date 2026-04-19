@@ -26,7 +26,7 @@ const CARDS: CardDef[] = [
 function CardContent({ id }: { id: number }) {
   if (id === 0) {
     return (
-      <div className="flex flex-col gap-2 text-xs leading-relaxed text-slate-400">
+      <div className="flex flex-col gap-2 text-sm leading-relaxed text-slate-400">
         <p>
           ToxiClear AI is a drug interaction checker powered by real FDA data,
           NIH databases, and advanced AI. It has two modes:
@@ -60,7 +60,7 @@ function CardContent({ id }: { id: number }) {
 
   if (id === 1) {
     return (
-      <div className="flex flex-col gap-2 text-xs leading-relaxed text-slate-400">
+      <div className="flex flex-col gap-2 text-sm leading-relaxed text-slate-400">
         <p>Every interaction analysis pulls from three trusted sources:</p>
         <ul className="flex flex-col gap-1.5 pl-0.5">
           <li className="flex gap-2">
@@ -101,7 +101,7 @@ function CardContent({ id }: { id: number }) {
 
   if (id === 2) {
     return (
-      <div className="flex flex-col gap-2 text-xs leading-relaxed text-slate-400">
+      <div className="flex flex-col gap-2 text-sm leading-relaxed text-slate-400">
         <p>
           Most drug interaction checkers give you a one-line warning.
           ToxiClear AI goes further:
@@ -148,7 +148,7 @@ function CardContent({ id }: { id: number }) {
 
   if (id === 3) {
     return (
-      <div className="flex flex-col gap-2 text-xs leading-relaxed text-slate-400">
+      <div className="flex flex-col gap-2 text-sm leading-relaxed text-slate-400">
         <p>
           For a one-time payment of $15, unlock everything ToxiClear AI has to
           offer — forever. No subscriptions, no monthly fees.
@@ -215,11 +215,11 @@ function AccordionCard({
         type="button"
         onClick={() => onToggle(card.id)}
         aria-expanded={isOpen}
-        className="info-card-banner flex w-full items-center gap-2.5 rounded-t-xl px-3.5 py-3 text-left"
+        className="info-card-banner flex w-full items-center gap-2.5 rounded-t-xl px-4 py-4 text-left"
         style={{ borderRadius: isOpen ? "12px 12px 0 0" : "12px" }}
       >
-        <span className="text-base" aria-hidden="true">{card.icon}</span>
-        <span className="flex-1 text-sm font-medium text-slate-200">{card.title}</span>
+        <span className="text-xl" aria-hidden="true">{card.icon}</span>
+        <span className="flex-1 text-base font-medium text-slate-200">{card.title}</span>
         <span
           aria-hidden="true"
           className="text-[10px] text-slate-400 transition-transform duration-300"
@@ -232,13 +232,13 @@ function AccordionCard({
       {/* Collapsible content */}
       <div
         style={{
-          maxHeight: isOpen ? 600 : 0,
-          overflow: "hidden",
+          maxHeight: isOpen ? "45vh" : 0,
+          overflowY: isOpen ? "auto" : "hidden",
           transition: "max-height 0.4s ease",
         }}
       >
         <div
-          className="px-3.5 py-3"
+          className="p-4"
           style={{ borderTop: "1px solid #4a9ebb" }}
         >
           <CardContent id={card.id} />
@@ -265,7 +265,7 @@ export function AccordionCards({ children }: { children: React.ReactNode }) {
       <style>{`
         @keyframes card-bob {
           0%, 100% { transform: translateY(0px);  }
-          50%       { transform: translateY(-5px); }
+          50%       { transform: translateY(-4px); }
         }
         .info-card {
           background: #0f1629;
@@ -287,22 +287,22 @@ export function AccordionCards({ children }: { children: React.ReactNode }) {
       `}</style>
 
       {/* Outer: flex-col on mobile, flex-row on md+ */}
-      <div className="relative z-10 flex w-full flex-col md:flex-row md:min-h-screen">
+      <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col md:min-h-screen md:flex-row md:gap-4">
 
         {/* Left column — desktop only */}
-        <div className="hidden w-[220px] flex-shrink-0 flex-col justify-center gap-4 p-5 md:flex">
+        <div className="hidden w-72 flex-shrink-0 flex-col justify-center gap-4 p-5 md:flex">
           {leftCards.map((card) => (
             <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
           ))}
         </div>
 
         {/* Center column — hero content */}
-        <div className="flex min-h-screen flex-1 flex-col items-center justify-center gap-6 px-8 py-[120px] text-center md:min-h-0">
+        <div className="flex min-h-screen min-w-[500px] flex-1 flex-col items-center justify-center gap-6 px-8 py-[120px] text-center md:min-h-0">
           {children}
         </div>
 
         {/* Right column — desktop only */}
-        <div className="hidden w-[220px] flex-shrink-0 flex-col justify-center gap-4 p-5 md:flex">
+        <div className="hidden w-72 flex-shrink-0 flex-col justify-center gap-4 p-5 md:flex">
           {rightCards.map((card) => (
             <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
           ))}
