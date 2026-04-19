@@ -116,7 +116,7 @@ export function Navbar() {
           href="/signup"
           className="rounded-md bg-yellow-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-yellow-600"
         >
-          Sign Up
+          Sign Up / Log In
         </Link>
       </div>
     </nav>

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 // ─── Card definitions ─────────────────────────────────────────────────────────
@@ -171,12 +170,9 @@ function CardContent({ id }: { id: number }) {
           ))}
         </ul>
         <p>One payment. Lifetime access.</p>
-        <Link
-          href="/signup"
-          className="mt-1 inline-flex items-center justify-center rounded-lg bg-yellow-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-yellow-600"
-        >
-          Get Premium →
-        </Link>
+        <p className="mt-1 text-sm text-slate-500">
+          Sign up using the button in the top right to get started.
+        </p>
       </div>
     );
   }

@@ -544,10 +544,7 @@ export default function CheckFree() {
       <div className="flex items-start gap-3 rounded-xl border border-amber-800/50 bg-amber-950/20 px-4 py-3">
         <span className="mt-0.5 shrink-0 text-sm text-amber-400" aria-hidden="true">ℹ</span>
         <p className="text-sm text-amber-300/80">
-          Free tier supports OTC medications and alcohol only. Prescription medications require Premium.{" "}
-          <Link href="/signup" className="font-medium text-amber-300 underline underline-offset-2 hover:text-amber-200">
-            Sign Up →
-          </Link>
+          Free tier supports OTC medications and alcohol only. Prescription medications require Premium.
         </p>
       </div>
 
@@ -684,13 +681,9 @@ export default function CheckFree() {
               personalized recommendations.
             </p>
           )}
-          <Button
-            asChild
-            className="bg-purple-700 text-white hover:bg-purple-600"
-            size="lg"
-          >
-            <Link href="/signup">Upgrade to Premium →</Link>
-          </Button>
+          <p className="text-sm text-muted-foreground">
+            Sign up or log in using the button in the top right to unlock premium features.
+          </p>
           <p className="text-xs text-muted-foreground">
             Free tier supports OTC medications and alcohol only.
           </p>
