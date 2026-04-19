@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -289,22 +289,31 @@ function LogInForm() {
   );
 }
 
+// ─── Message banner (needs Suspense because it reads search params) ───────────
+
+function MessageBanner() {
+  const searchParams = useSearchParams();
+  const message = searchParams.get("message");
+  if (!message) return null;
+  return (
+    <div className="mb-4 rounded-xl border border-amber-700/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-300">
+      {message}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SignUpPage() {
   const [tab, setTab] = useState<Tab>("signup");
-  const searchParams = useSearchParams();
-  const message = searchParams.get("message");
 
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         {/* Amber info banner for redirect messages */}
-        {message && (
-          <div className="mb-4 rounded-xl border border-amber-700/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-300">
-            {message}
-          </div>
-        )}
+        <Suspense>
+          <MessageBanner />
+        </Suspense>
 
         {/* Tab bar */}
         <div className="mb-6 flex border-b border-border">
