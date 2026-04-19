@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { getProfile, updateProfile } from "~/lib/profile";
+import { getProfile } from "~/lib/profile";
 import { createClient } from "~/lib/supabase/client";
 import { cn } from "~/lib/utils";
 
@@ -111,11 +111,16 @@ function AccountInfoTab({
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await updateProfile(user.id, {
-      first_name: firstName,
-      last_name: lastName,
-      phone: phone || undefined,
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone || null,
+      })
+      .eq("id", user.id);
+    if (error) console.error("[account] save error:", error);
     setSaving(false);
     setSaved(true);
     onSaved({ first_name: firstName, last_name: lastName, phone });
@@ -340,13 +345,18 @@ function PremiumInfoTab({
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await updateProfile(user.id, {
-      age: age || undefined,
-      conditions: conditions || undefined,
-      medications: medications || undefined,
-      allergies: allergies || undefined,
-      notes: notes || undefined,
-    });
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        age: age || null,
+        conditions: conditions || null,
+        medications: medications || null,
+        allergies: allergies || null,
+        notes: notes || null,
+      })
+      .eq("id", user.id);
+    if (error) console.error("[account] premium save error:", error);
     setSaving(false);
     setSaved(true);
     onSaved({ age, conditions, medications, allergies, notes });

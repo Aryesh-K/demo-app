@@ -6,7 +6,6 @@ import { Suspense, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { updateProfile } from "~/lib/profile";
 import { createClient } from "~/lib/supabase/client";
 
 type Tab = "signup" | "login";
@@ -63,10 +62,12 @@ function SignUpForm() {
     }
 
     if (signUpData.user) {
-      await updateProfile(signUpData.user.id, {
+      await supabase.from("profiles").insert({
+        id: signUpData.user.id,
         first_name: firstName,
         last_name: lastName,
-        phone: phone || undefined,
+        phone: phone || null,
+        is_premium: false,
       });
     }
 
