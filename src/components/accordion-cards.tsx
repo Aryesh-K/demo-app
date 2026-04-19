@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 // ─── Card definitions ─────────────────────────────────────────────────────────
 
@@ -10,15 +10,14 @@ interface CardDef {
   icon: string;
   title: string;
   side: "left" | "right";
-  animDuration: string;
-  animDelay: string;
+  bobClass: string;
 }
 
 const CARDS: CardDef[] = [
-  { id: 0, icon: "🧬", title: "What is ToxiClear AI?", side: "left",  animDuration: "3s",   animDelay: "0s"   },
-  { id: 1, icon: "⚗️", title: "How It Works",           side: "left",  animDuration: "3.5s", animDelay: "0.5s" },
-  { id: 2, icon: "💊", title: "Why ToxiClear AI?",      side: "right", animDuration: "4s",   animDelay: "1s"   },
-  { id: 3, icon: "👑", title: "What is Premium?",       side: "right", animDuration: "3.2s", animDelay: "1.5s" },
+  { id: 0, icon: "🧬", title: "What is ToxiClear AI?", side: "left",  bobClass: "card-bob-1" },
+  { id: 1, icon: "⚗️", title: "How It Works",           side: "left",  bobClass: "card-bob-2" },
+  { id: 2, icon: "💊", title: "Why ToxiClear AI?",      side: "right", bobClass: "card-bob-3" },
+  { id: 3, icon: "👑", title: "What is Premium?",       side: "right", bobClass: "card-bob-4" },
 ];
 
 // ─── Per-card content ─────────────────────────────────────────────────────────
@@ -191,35 +190,23 @@ function AccordionCard({
   card,
   openCard,
   onToggle,
-  mounted,
 }: {
   card: CardDef;
   openCard: number | null;
   onToggle: (id: number) => void;
-  mounted: boolean;
 }) {
   const isOpen = openCard === card.id;
 
-  // Animation applied only after client mount to avoid hydration mismatch
-  const animStyle = mounted
-    ? {
-        animationName: "card-bob",
-        animationDuration: card.animDuration,
-        animationDelay: card.animDelay,
-        animationTimingFunction: "ease-in-out",
-        animationIterationCount: "infinite",
-        animationPlayState: isOpen ? "paused" : "running",
-      }
-    : {};
-
   return (
-    <div className="info-card flex flex-col rounded-xl" style={animStyle}>
+    <div
+      className={`info-card flex flex-col rounded-xl ${card.bobClass}${isOpen ? " card-bob-paused" : ""}`}
+    >
       {/* Banner — always visible */}
       <button
         type="button"
         onClick={() => onToggle(card.id)}
         aria-expanded={isOpen}
-        className="info-card-banner flex w-full items-center gap-2.5 rounded-t-xl px-4 py-4 text-left"
+        className="info-card-banner flex w-full items-center gap-2.5 px-4 py-4 text-left"
         style={{ borderRadius: isOpen ? "12px 12px 0 0" : "12px" }}
       >
         <span className="text-xl" aria-hidden="true">{card.icon}</span>
@@ -241,10 +228,7 @@ function AccordionCard({
           transition: "max-height 0.4s ease",
         }}
       >
-        <div
-          className="p-4"
-          style={{ borderTop: "1px solid #4a9ebb" }}
-        >
+        <div className="p-4" style={{ borderTop: "1px solid #4a9ebb" }}>
           <CardContent id={card.id} />
         </div>
       </div>
@@ -256,9 +240,6 @@ function AccordionCard({
 
 export function AccordionCards({ children }: { children: React.ReactNode }) {
   const [openCard, setOpenCard] = useState<number | null>(null);
-  const [mounted,  setMounted]  = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
 
   function toggle(id: number) {
     setOpenCard((prev) => (prev === id ? null : id));
@@ -268,39 +249,12 @@ export function AccordionCards({ children }: { children: React.ReactNode }) {
   const rightCards = CARDS.filter((c) => c.side === "right");
 
   return (
-    <>
-      <style>{`
-        @keyframes card-bob {
-          0%, 100% { transform: translateY(0px);  }
-          50%       { transform: translateY(-4px); }
-        }
-        .info-card {
-          background: #0f1629;
-          border: 1px solid #4a9ebb;
-          transition: border-color 0.2s ease, box-shadow 0.2s ease;
-          overflow: hidden;
-        }
-        .info-card:hover {
-          border-color: #2dd4bf;
-          box-shadow: 0 0 18px rgba(45, 212, 191, 0.18);
-        }
-        .info-card-banner {
-          background: #131f3a;
-          transition: background 0.15s ease;
-        }
-        .info-card-banner:hover {
-          background: #1a2b4a;
-        }
-      `}</style>
-
-      {/* Outer: flex-col on mobile, flex-row on md+
-          md:items-start prevents side columns from stretching to center-column height */}
       <div className="mx-auto flex w-full max-w-6xl flex-col md:flex-row md:items-start md:gap-4">
 
-        {/* Left column — desktop only, cards stack from top */}
+        {/* Left column — cards stack naturally from top */}
         <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
           {leftCards.map((card) => (
-            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} mounted={mounted} />
+            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
           ))}
         </div>
 
@@ -309,21 +263,20 @@ export function AccordionCards({ children }: { children: React.ReactNode }) {
           {children}
         </div>
 
-        {/* Right column — desktop only, cards stack from top */}
+        {/* Right column — cards stack naturally from top */}
         <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
           {rightCards.map((card) => (
-            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} mounted={mounted} />
+            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
           ))}
         </div>
 
         {/* Mobile cards — 2×2 grid below center */}
         <div className="grid grid-cols-2 gap-3 p-4 md:hidden">
           {CARDS.map((card) => (
-            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} mounted={mounted} />
+            <AccordionCard key={card.id} card={card} openCard={openCard} onToggle={toggle} />
           ))}
         </div>
 
       </div>
-    </>
   );
 }

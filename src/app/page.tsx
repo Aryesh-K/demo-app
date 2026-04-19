@@ -88,18 +88,7 @@ export default function Home() {
 
             <div className="flex flex-col gap-3">
               {/* Change 3 — animated wave gradient on title */}
-              <h1
-                className="text-5xl font-bold tracking-tight md:text-7xl"
-                style={{
-                  background:
-                    "linear-gradient(90deg, #9333ea, #2dd4bf, #f59e0b, #9333ea, #2dd4bf, #f59e0b, #9333ea)",
-                  backgroundSize: "200% 100%",
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  animation: "wave-gradient 6s linear infinite",
-                }}
-              >
+              <h1 className="text-5xl font-bold tracking-tight text-white md:text-7xl">
                 ToxiClear AI
               </h1>
               <p className="max-w-md text-xl text-slate-200 md:text-2xl">
@@ -128,12 +117,21 @@ export default function Home() {
             </div>
           </AccordionCards>
 
-          {/* Change 2 — social proof strip */}
-          <p className="py-3 text-center text-xs text-slate-400">
-            Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for students and patients
-          </p>
-
-          <ScrollIndicator />
+          {/* Change 2 — social proof strip + scroll indicator */}
+          <div className="flex flex-col items-center">
+            <div
+              className="mx-auto mb-6 inline-flex rounded-full px-6 py-2"
+              style={{
+                background: "rgba(255, 255, 255, 0.05)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+              }}
+            >
+              <p className="text-sm text-slate-400">
+                Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for students and patients
+              </p>
+            </div>
+            <ScrollIndicator />
+          </div>
         </div>
       </section>
 

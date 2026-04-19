@@ -41,15 +41,14 @@ export function HeroCanvas() {
     }
 
     function resize() {
-      cv.width = cv.offsetWidth;
-      cv.height = cv.offsetHeight;
+      cv.width = window.innerWidth;
+      cv.height = window.innerHeight;
       init();
     }
 
     resize();
 
-    const ro = new ResizeObserver(resize);
-    ro.observe(cv);
+    window.addEventListener("resize", resize);
 
     function drawHelix(centerX: number, color: string, speed: number) {
       const h = cv.height;
@@ -144,9 +143,15 @@ export function HeroCanvas() {
 
     return () => {
       cancelAnimationFrame(raf);
-      ro.disconnect();
+      window.removeEventListener("resize", resize);
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed left-0 top-0 h-full w-full"
+      style={{ zIndex: -1, pointerEvents: "none" }}
+    />
+  );
 }

@@ -62,9 +62,46 @@
   }
 }
 
-@keyframes wave-gradient {
-  0%   { background-position: 0% 50%;   }
-  100% { background-position: 200% 50%; }
+/* ── Accordion card bob animations ── */
+@keyframes bob1 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+@keyframes bob2 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+@keyframes bob3 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+@keyframes bob4 {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+.card-bob-1 { animation: bob1 3s   ease-in-out 0s   infinite; }
+.card-bob-2 { animation: bob2 3.5s ease-in-out 0.5s infinite; }
+.card-bob-3 { animation: bob3 4s   ease-in-out 1s   infinite; }
+.card-bob-4 { animation: bob4 3.2s ease-in-out 1.5s infinite; }
+.card-bob-paused { animation-play-state: paused !important; }
+
+/* ── Accordion card styles ── */
+.info-card {
+  background: #0f1629;
+  border: 1px solid #4a9ebb;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+.info-card:hover {
+  border-color: #2dd4bf;
+  box-shadow: 0 0 18px rgba(45, 212, 191, 0.18);
+}
+.info-card-banner {
+  background: #131f3a;
+  transition: background 0.15s ease;
+}
+.info-card-banner:hover {
+  background: #1a2b4a;
 }
 
 .scroll-hidden {
