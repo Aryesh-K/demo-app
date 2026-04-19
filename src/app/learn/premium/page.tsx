@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import BodyMap from "~/components/body-map";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -131,6 +132,8 @@ interface Combination {
   explanation: string;
   key_terms: (KeyTerm | string)[];
   risk_level?: "high" | "moderate" | "low";
+  affected_systems?: { organ: string; reason: string }[];
+  steps?: { title: string; caption: string; icon: string }[];
 }
 
 interface ApiResult {
@@ -733,6 +736,16 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
                     );
                   })}
                 </p>
+
+                {/* Body map */}
+                <BodyMap
+                  affected_systems={combo.affected_systems ?? []}
+                  steps={combo.steps ?? []}
+                  level={level}
+                  drugA={combo.drug_a}
+                  drugB={combo.drug_b}
+                  riskLevel={combo.risk_level}
+                />
 
                 {/* Key term pills — terms not already highlighted in text */}
                 {pillTerms.length > 0 && (

@@ -69,6 +69,45 @@ function normalizeKeyTerm(raw: unknown): { term: string; definition: string } {
   return { term: "", definition: "" };
 }
 
+// ─── Normalize affected_systems entries ───────────────────────────────────────
+
+const VALID_ORGANS = new Set([
+  "brain", "liver", "heart", "kidney", "stomach",
+  "lungs", "spinal_cord", "bloodstream", "intestines", "skin",
+]);
+
+function normalizeAffectedSystem(
+  raw: unknown,
+): { organ: string; reason: string } | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const r = raw as { organ?: unknown; reason?: unknown };
+  const organ = typeof r.organ === "string" ? r.organ.toLowerCase().trim() : "";
+  if (!VALID_ORGANS.has(organ)) return null;
+  return { organ, reason: typeof r.reason === "string" ? r.reason : "" };
+}
+
+// ─── Normalize steps entries ──────────────────────────────────────────────────
+
+const VALID_ICONS = new Set([
+  "pill", "blood", "brain", "enzyme", "warning", "check",
+]);
+
+function normalizeStep(
+  raw: unknown,
+): { title: string; caption: string; icon: string } | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const r = raw as { title?: unknown; caption?: unknown; icon?: unknown };
+  const icon =
+    typeof r.icon === "string" && VALID_ICONS.has(r.icon.toLowerCase().trim())
+      ? r.icon.toLowerCase().trim()
+      : "pill";
+  return {
+    title: typeof r.title === "string" ? r.title : "",
+    caption: typeof r.caption === "string" ? r.caption : "",
+    icon,
+  };
+}
+
 // ─── Level-specific system prompts ───────────────────────────────────────────
 
 const EDUCATOR_PREAMBLE =
@@ -292,6 +331,14 @@ export async function POST(req: NextRequest) {
     `      "key_terms": [\n` +
     `        { "term": "exact term as it appears in the explanation", "definition": "definition calibrated to the curriculum level" },\n` +
     `        ... (3-5 terms total, chosen from words actually used in the explanation)\n` +
+    `      ],\n` +
+    `      "affected_systems": [\n` +
+    `        { "organ": "brain | liver | heart | kidney | stomach | lungs | spinal_cord | bloodstream | intestines | skin", "reason": "one sentence explaining why this organ is affected, calibrated to the selected curriculum level" }\n` +
+    `        ... (list every organ meaningfully involved in this interaction)\n` +
+    `      ],\n` +
+    `      "steps": [\n` +
+    `        { "title": "short step title e.g. Drug A enters bloodstream", "caption": "1-2 sentences at the selected curriculum level", "icon": "pill | blood | brain | enzyme | warning | check" },\n` +
+    `        ... (exactly 4-5 steps tracing the full interaction from drug ingestion to final physiological effect)\n` +
     `      ]\n` +
     `    }\n` +
     `  ],\n` +
@@ -366,6 +413,8 @@ export async function POST(req: NextRequest) {
       classification: string;
       explanation: string;
       key_terms: unknown[];
+      affected_systems: unknown[];
+      steps: unknown[];
     };
 
     type ParsedResult = {
@@ -447,6 +496,16 @@ export async function POST(req: NextRequest) {
       explanation: c.explanation ?? "",
       key_terms: Array.isArray(c.key_terms)
         ? c.key_terms.map(normalizeKeyTerm).filter((t) => t.term.length > 0)
+        : [],
+      affected_systems: Array.isArray(c.affected_systems)
+        ? (c.affected_systems
+            .map(normalizeAffectedSystem)
+            .filter((s): s is { organ: string; reason: string } => s !== null))
+        : [],
+      steps: Array.isArray(c.steps)
+        ? (c.steps
+            .map(normalizeStep)
+            .filter((s): s is { title: string; caption: string; icon: string } => s !== null))
         : [],
     }));
 
