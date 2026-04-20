@@ -5,7 +5,7 @@ export const env = createEnv({
   server: {
     NODE_ENV: z
       .enum(["development", "test", "production"])
-      .default("development"),
+      .default("production"),
     GROQ_API_KEY: z.string().min(1),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   },
