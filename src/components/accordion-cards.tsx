@@ -148,7 +148,7 @@ function CardContent({ id }: { id: number }) {
     return (
       <div className="flex flex-col gap-2 text-sm leading-relaxed text-slate-400">
         <p>
-          For a one-time payment of $15, unlock everything ToxiClear AI has to
+          For a one-time payment of $9.99, unlock everything ToxiClear AI has to
           offer — forever. No subscriptions, no monthly fees.
         </p>
         <p className="font-semibold text-slate-300">Premium includes:</p>

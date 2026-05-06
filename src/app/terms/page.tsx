@@ -78,7 +78,7 @@ export default function TermsPage() {
 
         <Section title="5. Premium Access">
           <p>
-            Premium access is available for a one-time payment of $15 USD. This
+            Premium access is available for a one-time payment of $9.99 USD. This
             grants lifetime access to Premium features as they exist at the time
             of purchase, plus future updates to those features.
           </p>

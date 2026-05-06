@@ -198,7 +198,7 @@ function SignUpForm() {
 
       <p className="text-center text-xs text-muted-foreground">
         After signing up, you&apos;ll have the option to upgrade to Premium for
-        $15 — one-time, no subscriptions.
+        $9.99 — one-time, no subscriptions.
       </p>
     </form>
   );

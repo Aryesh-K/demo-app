@@ -293,7 +293,7 @@ function AccountInfoTab({
         </div>
         {!isPremium && (
           <p className="text-xs text-muted-foreground">
-            Upgrade to Premium for $15 — coming soon
+            Upgrade to Premium for $9.99 — coming soon
           </p>
         )}
         <p className="text-xs text-muted-foreground">
