@@ -352,7 +352,7 @@ function PremiumInfoTab({
     const { error } = await supabase
       .from("profiles")
       .update({
-        age: age || null,
+        age: encryptField(age) || null,
         conditions: encryptField(conditions) || null,
         medications: encryptField(medications) || null,
         allergies: encryptField(allergies) || null,
@@ -498,6 +498,7 @@ export default function AccountPage() {
         // Decrypt sensitive fields before storing in state
         setProfile({
           ...profileData,
+          age: decryptField(profileData.age ?? ""),
           conditions: decryptField(profileData.conditions ?? ""),
           medications: decryptField(profileData.medications ?? ""),
           allergies: decryptField(profileData.allergies ?? ""),

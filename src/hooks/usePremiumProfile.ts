@@ -29,7 +29,7 @@ export function usePremiumProfile() {
         .single();
       if (data) {
         setProfile({
-          age: data.age ?? "",
+          age: decryptField(data.age ?? ""),
           conditions: decryptField(data.conditions ?? ""),
           medications: decryptField(data.medications ?? ""),
           allergies: decryptField(data.allergies ?? ""),

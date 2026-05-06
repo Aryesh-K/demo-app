@@ -69,6 +69,8 @@ export default function Home() {
         <div className="relative z-10">
           <AccordionCards>
             <div className="flex flex-col items-center gap-6 text-center">
+              <HeroStats />
+
               <LogoFull />
 
               <p className="max-w-md text-2xl text-slate-200">
@@ -97,11 +99,6 @@ export default function Home() {
           <ScrollIndicator />
         </div>
       </section>
-
-      {/* ── Stats ── */}
-      <div className="w-full px-6 pb-12">
-        <HeroStats />
-      </div>
 
       {/* ── Did You Know ── */}
       <DidYouKnow />

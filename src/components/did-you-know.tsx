@@ -98,45 +98,17 @@ export function DidYouKnow() {
           <p className="text-sm text-slate-500">— {current.source}</p>
         </div>
 
-        {/* Controls */}
-        <div className="mt-6 flex items-center justify-center gap-4">
-          {/* Prev */}
-          <button
-            type="button"
-            onClick={() => goTo((index - 1 + COUNT) % COUNT)}
-            aria-label="Previous fact"
-            className="flex size-6 items-center justify-center rounded-full p-3 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
-          >
-            ←
-          </button>
-
-          {/* Dots */}
-          <div className="flex items-center gap-3">
-            {FACTS.map((f, i) => (
-              <button
-                key={f.source}
-                type="button"
-                onClick={() => goTo(i)}
-                aria-label={`Go to fact ${i + 1}`}
-                className={cn(
-                  "rounded-full transition-all duration-300",
-                  i === index
-                    ? "h-3 w-5 bg-teal-400"
-                    : "size-3 bg-slate-600 hover:bg-slate-500",
-                )}
-              />
-            ))}
-          </div>
-
-          {/* Next */}
-          <button
-            type="button"
-            onClick={() => goTo((index + 1) % COUNT)}
-            aria-label="Next fact"
-            className="flex size-6 items-center justify-center rounded-full p-3 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
-          >
-            →
-          </button>
+        {/* Dots — position indicator only, auto-rotation only */}
+        <div className="mt-6 flex items-center justify-center gap-3">
+          {FACTS.map((f, i) => (
+            <div
+              key={f.source}
+              className={cn(
+                "rounded-full transition-all duration-300",
+                i === index ? "h-3 w-5 bg-teal-400" : "size-3 bg-slate-600",
+              )}
+            />
+          ))}
         </div>
       </div>
     </section>
