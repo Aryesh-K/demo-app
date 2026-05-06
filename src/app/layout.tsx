@@ -8,9 +8,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ToxiClear AI",
+  title: "ToxiClear AI — Know Before You Take",
   description:
-    "Know before you take. Understand the science behind your medications.",
+    "Drug interaction education for students and patients, powered by FDA data and AI",
 };
 
 export default function RootLayout({

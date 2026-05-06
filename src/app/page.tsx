@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AccordionCards } from "~/components/accordion-cards";
+import { LogoFull } from "~/components/logo-full";
 import { DidYouKnow } from "~/components/did-you-know";
 import { GridReveal } from "~/components/grid-reveal";
 import { HeroCanvas } from "~/components/hero-canvas";
@@ -69,35 +70,12 @@ export default function Home() {
         {/* Change 4 — centering wrapper */}
         <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center">
           <AccordionCards>
-            {/* Molecule icon — two atoms joined by a single bond */}
-            <svg
-              viewBox="0 0 56 28"
-              className="h-8 w-16 text-blue-400"
-              aria-hidden="true"
-            >
-              <circle cx="13" cy="14" r="10" fill="currentColor" />
-              <line
-                x1="23"
-                y1="14"
-                x2="33"
-                y2="14"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-              <circle cx="43" cy="14" r="10" fill="currentColor" />
-            </svg>
+            <LogoFull />
 
-            <div className="flex flex-col gap-3">
-              {/* Change 3 — animated wave gradient on title */}
-              <h1 className="text-5xl font-bold tracking-tight text-white md:text-7xl">
-                ToxiClear AI
-              </h1>
-              <p className="max-w-md text-xl text-slate-200 md:text-2xl">
-                Know before you take. Understand the science behind your
-                medications.
-              </p>
-            </div>
+            <p className="max-w-md text-xl text-slate-200 md:text-2xl">
+              Know before you take. Understand the science behind your
+              medications.
+            </p>
 
             {/* Change 1 — two CTA buttons */}
             <HeroCtaButtons />
