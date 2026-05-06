@@ -1006,7 +1006,7 @@ export default function CheckPremium() {
   }
 
   const getDrugLabel = (index: number) =>
-    index === 0 ? "Drug A" : index === 1 ? "Drug B" : `Drug ${index + 1}`;
+    `Drug ${String.fromCharCode(65 + index)}`;
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[960px] flex-col gap-8 px-6 py-12">

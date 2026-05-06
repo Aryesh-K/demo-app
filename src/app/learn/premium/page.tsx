@@ -1071,7 +1071,7 @@ export default function LearnPremium() {
   }
 
   const getDrugLabel = (index: number) =>
-    index === 0 ? "Drug A" : index === 1 ? "Drug B" : `Drug ${index + 1}`;
+    `Drug ${String.fromCharCode(65 + index)}`;
 
   const selectedLevelDef = LEVELS.find((l) => l.id === selectedLevel);
 
