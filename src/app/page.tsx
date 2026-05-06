@@ -60,46 +60,43 @@ function FeatureList({ items }: { items: string[] }) {
 export default function Home() {
   return (
     <main className="flex flex-col">
-      {/* ── Hero — full viewport, centered ── */}
+      {/* ── Hero + accordion cards — three-column layout ── */}
       <section className="relative w-full bg-gradient-to-b from-blue-950/60 via-blue-900/20 to-transparent">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <HeroCanvas />
         </div>
 
-        <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center">
-          <div className="flex flex-col items-center gap-6 px-8 py-[120px] text-center">
-            <LogoFull />
+        <div className="relative z-10">
+          <AccordionCards>
+            <div className="flex flex-col items-center gap-6 text-center">
+              <LogoFull />
 
-            <p className="max-w-md text-2xl text-slate-200">
-              Know before you take. Understand the science behind your
-              medications.
-            </p>
-
-            <HeroCtaButtons />
-
-            <div
-              className="mt-4 inline-flex rounded-full px-6 py-2"
-              style={{
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-              }}
-            >
-              <p className="text-sm text-slate-400">
-                Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm
-                &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for
-                students and patients
+              <p className="max-w-md text-2xl text-slate-200">
+                Know before you take. Understand the science behind your
+                medications.
               </p>
+
+              <HeroCtaButtons />
+
+              <div
+                className="mt-4 inline-flex rounded-full px-6 py-2"
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                }}
+              >
+                <p className="text-sm text-slate-400">
+                  Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm
+                  &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for
+                  students and patients
+                </p>
+              </div>
             </div>
-          </div>
+          </AccordionCards>
 
           <ScrollIndicator />
         </div>
       </section>
-
-      {/* ── Accordion cards — 2×2 grid ── */}
-      <div className="w-full py-12">
-        <AccordionCards />
-      </div>
 
       {/* ── Stats ── */}
       <div className="w-full px-6 pb-12">
