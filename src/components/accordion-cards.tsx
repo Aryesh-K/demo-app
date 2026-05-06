@@ -8,39 +8,14 @@ interface CardDef {
   id: number;
   icon: string;
   title: string;
-  side: "left" | "right";
   bobClass: string;
 }
 
 const CARDS: CardDef[] = [
-  {
-    id: 0,
-    icon: "🧬",
-    title: "What is ToxiClear AI?",
-    side: "left",
-    bobClass: "card-bob-1",
-  },
-  {
-    id: 1,
-    icon: "⚗️",
-    title: "How It Works",
-    side: "left",
-    bobClass: "card-bob-2",
-  },
-  {
-    id: 2,
-    icon: "💊",
-    title: "Why ToxiClear AI?",
-    side: "right",
-    bobClass: "card-bob-3",
-  },
-  {
-    id: 3,
-    icon: "👑",
-    title: "What is Premium?",
-    side: "right",
-    bobClass: "card-bob-4",
-  },
+  { id: 0, icon: "🧬", title: "What is ToxiClear AI?", bobClass: "card-bob-1" },
+  { id: 1, icon: "⚗️", title: "How It Works", bobClass: "card-bob-2" },
+  { id: 2, icon: "💊", title: "Why ToxiClear AI?", bobClass: "card-bob-3" },
+  { id: 3, icon: "👑", title: "What is Premium?", bobClass: "card-bob-4" },
 ];
 
 // ─── Per-card content ─────────────────────────────────────────────────────────
@@ -96,7 +71,7 @@ function CardContent({ id }: { id: number }) {
             <span className="mt-px shrink-0 text-teal-500">▸</span>
             <span>
               <span className="font-semibold text-slate-300">RxNorm</span> —
-              NIH's standardized drug naming database that maps brand and
+              NIH&apos;s standardized drug naming database that maps brand and
               generic names to ensure accurate matching
             </span>
           </li>
@@ -262,58 +237,26 @@ function AccordionCard({
 
 // ─── Exported layout component ────────────────────────────────────────────────
 
-export function AccordionCards({ children }: { children: React.ReactNode }) {
+export function AccordionCards() {
   const [openCard, setOpenCard] = useState<number | null>(null);
 
   function toggle(id: number) {
     setOpenCard((prev) => (prev === id ? null : id));
   }
 
-  const leftCards = CARDS.filter((c) => c.side === "left");
-  const rightCards = CARDS.filter((c) => c.side === "right");
-
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col md:flex-row md:items-start md:gap-4">
-      {/* Left column — cards stack naturally from top */}
-      <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
-        {leftCards.map((card) => (
-          <AccordionCard
-            key={card.id}
-            card={card}
-            openCard={openCard}
-            onToggle={toggle}
-          />
-        ))}
-      </div>
-
-      {/* Center column — hero content */}
-      <div className="flex min-h-screen min-w-[500px] flex-1 flex-col items-center justify-center gap-6 px-8 py-[120px] text-center md:min-h-0">
-        {children}
-      </div>
-
-      {/* Right column — cards stack naturally from top */}
-      <div className="hidden w-72 flex-shrink-0 flex-col justify-start gap-4 p-5 md:flex">
-        {rightCards.map((card) => (
-          <AccordionCard
-            key={card.id}
-            card={card}
-            openCard={openCard}
-            onToggle={toggle}
-          />
-        ))}
-      </div>
-
-      {/* Mobile cards — 2×2 grid below center */}
-      <div className="grid grid-cols-2 gap-3 p-4 md:hidden">
-        {CARDS.map((card) => (
-          <AccordionCard
-            key={card.id}
-            card={card}
-            openCard={openCard}
-            onToggle={toggle}
-          />
-        ))}
-      </div>
+    <div
+      className="mx-auto w-full max-w-4xl px-6"
+      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}
+    >
+      {CARDS.map((card) => (
+        <AccordionCard
+          key={card.id}
+          card={card}
+          openCard={openCard}
+          onToggle={toggle}
+        />
+      ))}
     </div>
   );
 }

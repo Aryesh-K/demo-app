@@ -60,16 +60,14 @@ function FeatureList({ items }: { items: string[] }) {
 export default function Home() {
   return (
     <main className="flex flex-col">
-      {/* ── Hero — full viewport width ── */}
+      {/* ── Hero — full viewport, centered ── */}
       <section className="relative w-full bg-gradient-to-b from-blue-950/60 via-blue-900/20 to-transparent">
-        {/* Canvas stays clipped to the section without clipping the cards */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <HeroCanvas />
         </div>
 
-        {/* Change 4 — centering wrapper */}
         <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center">
-          <AccordionCards>
+          <div className="flex flex-col items-center gap-6 px-8 py-[120px] text-center">
             <LogoFull />
 
             <p className="max-w-md text-2xl text-slate-200">
@@ -77,10 +75,7 @@ export default function Home() {
               medications.
             </p>
 
-            {/* Change 1 — two CTA buttons */}
             <HeroCtaButtons />
-
-            <HeroStats />
 
             <div
               className="mt-4 inline-flex rounded-full px-6 py-2"
@@ -95,11 +90,21 @@ export default function Home() {
                 students and patients
               </p>
             </div>
-          </AccordionCards>
+          </div>
 
           <ScrollIndicator />
         </div>
       </section>
+
+      {/* ── Accordion cards — 2×2 grid ── */}
+      <div className="w-full py-12">
+        <AccordionCards />
+      </div>
+
+      {/* ── Stats ── */}
+      <div className="w-full px-6 pb-12">
+        <HeroStats />
+      </div>
 
       {/* ── Did You Know ── */}
       <DidYouKnow />

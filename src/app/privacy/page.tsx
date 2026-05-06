@@ -78,6 +78,12 @@ export default function PrivacyPage() {
             transmission. While we take security seriously, no system is 100%
             secure — please use a strong, unique password.
           </p>
+          <p>
+            Sensitive health profile information including medical conditions,
+            medications, and allergies is encrypted before storage using AES
+            encryption. This information is only readable by you when logged
+            into your account.
+          </p>
         </Section>
 
         <Section title="5. Third-Party Services">

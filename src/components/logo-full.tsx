@@ -33,7 +33,7 @@ export function LogoFull() {
           borderRadius: "999px",
           padding: "6px 24px",
           background: "rgba(239,159,39,0.08)",
-          animation: "badge-pulse 3s ease-in-out infinite",
+          animation: "badge-pulse 2s ease-in-out infinite",
         }}
       >
         <span style={{ fontSize: "12px", fontWeight: 600, color: "#EF9F27", letterSpacing: "2px" }}>

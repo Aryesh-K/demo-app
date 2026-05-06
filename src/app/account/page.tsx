@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { decryptField, encryptField } from "~/lib/encrypt";
 import { getProfile } from "~/lib/profile";
 import { createClient } from "~/lib/supabase/client";
 import { cn } from "~/lib/utils";
@@ -328,10 +329,12 @@ function AccountInfoTab({
 function PremiumInfoTab({
   user,
   profile,
+  needsReEncryption,
   onSaved,
 }: {
   user: User;
   profile: Profile;
+  needsReEncryption: boolean;
   onSaved: (updated: Partial<Profile>) => void;
 }) {
   const [age, setAge] = useState(profile.age ?? "");
@@ -350,10 +353,10 @@ function PremiumInfoTab({
       .from("profiles")
       .update({
         age: age || null,
-        conditions: conditions || null,
-        medications: medications || null,
-        allergies: allergies || null,
-        notes: notes || null,
+        conditions: encryptField(conditions) || null,
+        medications: encryptField(medications) || null,
+        allergies: encryptField(allergies) || null,
+        notes: encryptField(notes) || null,
       })
       .eq("id", user.id);
     if (error) console.error("[account] premium save error:", error);
@@ -365,6 +368,12 @@ function PremiumInfoTab({
 
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-4">
+      {needsReEncryption && (
+        <div className="rounded-xl border border-amber-600/50 bg-amber-950/30 p-3 text-sm text-amber-300">
+          For your security, please re-save your health information to enable
+          encryption.
+        </div>
+      )}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="age">Age</Label>
         <Input
@@ -459,6 +468,7 @@ export default function AccountPage() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [isPremium, setIsPremium] = useState(false);
+  const [needsReEncryption, setNeedsReEncryption] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -475,12 +485,26 @@ export default function AccountPage() {
 
       setUser(authUser);
       const profileData = await getProfile(authUser.id);
-      setProfile(profileData ?? {});
       if (profileData) {
         setFirstName(profileData.first_name ?? "");
         setLastName(profileData.last_name ?? "");
         setPhone(profileData.phone ?? "");
         setIsPremium(profileData.is_premium ?? false);
+        // Check raw values before decryption to detect plaintext data
+        const hasPlaintext =
+          (!!profileData.conditions && !profileData.conditions.startsWith("U2Fsd")) ||
+          (!!profileData.medications && !profileData.medications.startsWith("U2Fsd"));
+        setNeedsReEncryption(hasPlaintext);
+        // Decrypt sensitive fields before storing in state
+        setProfile({
+          ...profileData,
+          conditions: decryptField(profileData.conditions ?? ""),
+          medications: decryptField(profileData.medications ?? ""),
+          allergies: decryptField(profileData.allergies ?? ""),
+          notes: decryptField(profileData.notes ?? ""),
+        });
+      } else {
+        setProfile({});
       }
       setLoading(false);
     }
@@ -572,6 +596,7 @@ export default function AccountPage() {
           <PremiumInfoTab
             user={user}
             profile={profile}
+            needsReEncryption={needsReEncryption}
             onSaved={mergeProfile}
           />
         )}

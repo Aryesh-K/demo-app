@@ -26,6 +26,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      crypto-js:
+        specifier: ^4.2.0
+        version: 4.2.0
       next:
         specifier: 16.2.2
         version: 16.2.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -56,6 +59,9 @@ importers:
         version: 1.2.4(@types/react@19.2.14)(react@19.2.4)
       '@tailwindcss/postcss':
         specifier: ^4
+        version: 4.2.2
+      '@types/crypto-js':
+        specifier: ^4.2.2
         version: 4.2.2
       '@types/node':
         specifier: ^20
@@ -1245,6 +1251,9 @@ packages:
   '@tailwindcss/postcss@4.2.2':
     resolution: {integrity: sha512-n4goKQbW8RVXIbNKRB/45LzyUqN451deQK0nzIeauVEqjlI49slUlgKYJM2QyUzap/PcpnS7kzSUmPb1sCRvYQ==}
 
+  '@types/crypto-js@4.2.2':
+    resolution: {integrity: sha512-sDOLlVbHhXpAUAL0YHDUUwDZf3iN4Bwi4W6a0W0b+QcAezUbRtH4FVb+9J4h+XFPW7l/gQ9F8qC7P+Ec4k8QVQ==}
+
   '@types/node@20.19.39':
     resolution: {integrity: sha512-orrrD74MBUyK8jOAD/r0+lfa1I2MO6I+vAkmAWzMYbCcgrN4lCrmK52gRFQq/JRxfYPfonkr4b0jcY7Olqdqbw==}
 
@@ -1329,6 +1338,9 @@ packages:
   cookie@1.1.1:
     resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
     engines: {node: '>=18'}
+
+  crypto-js@4.2.0:
+    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
@@ -2794,6 +2806,8 @@ snapshots:
       postcss: 8.5.9
       tailwindcss: 4.2.2
 
+  '@types/crypto-js@4.2.2': {}
+
   '@types/node@20.19.39':
     dependencies:
       undici-types: 6.21.0
@@ -2846,6 +2860,8 @@ snapshots:
   cmd-shim@8.0.0: {}
 
   cookie@1.1.1: {}
+
+  crypto-js@4.2.0: {}
 
   csstype@3.2.3: {}
 
