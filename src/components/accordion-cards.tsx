@@ -8,14 +8,15 @@ interface CardDef {
   id: number;
   icon: string;
   title: string;
+  side: "left" | "right";
   bobClass: string;
 }
 
 const CARDS: CardDef[] = [
-  { id: 0, icon: "🧬", title: "What is ToxiClear AI?", bobClass: "card-bob-1" },
-  { id: 1, icon: "⚗️", title: "How It Works", bobClass: "card-bob-2" },
-  { id: 2, icon: "💊", title: "Why ToxiClear AI?", bobClass: "card-bob-3" },
-  { id: 3, icon: "👑", title: "What is Premium?", bobClass: "card-bob-4" },
+  { id: 0, icon: "🧬", title: "What is ToxiClear AI?", side: "left",  bobClass: "card-bob-1" },
+  { id: 1, icon: "⚗️", title: "How It Works",          side: "left",  bobClass: "card-bob-2" },
+  { id: 2, icon: "💊", title: "Why ToxiClear AI?",     side: "right", bobClass: "card-bob-3" },
+  { id: 3, icon: "👑", title: "What is Premium?",      side: "right", bobClass: "card-bob-4" },
 ];
 
 // ─── Per-card content ─────────────────────────────────────────────────────────
@@ -237,26 +238,109 @@ function AccordionCard({
 
 // ─── Exported layout component ────────────────────────────────────────────────
 
-export function AccordionCards() {
+export function AccordionCards({ children }: { children?: React.ReactNode }) {
   const [openCard, setOpenCard] = useState<number | null>(null);
 
   function toggle(id: number) {
     setOpenCard((prev) => (prev === id ? null : id));
   }
 
+  const leftCards  = CARDS.filter((c) => c.side === "left");
+  const rightCards = CARDS.filter((c) => c.side === "right");
+
   return (
-    <div
-      className="mx-auto w-full max-w-4xl px-6"
-      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}
-    >
-      {CARDS.map((card) => (
-        <AccordionCard
-          key={card.id}
-          card={card}
-          openCard={openCard}
-          onToggle={toggle}
-        />
-      ))}
-    </div>
+    <>
+      {/* ── Desktop: three-column layout ── */}
+      <div
+        className="hidden w-full md:flex"
+        style={{
+          minHeight: "100vh",
+          alignItems: "center",
+          maxWidth: "80rem",
+          margin: "0 auto",
+          padding: "0 2rem",
+        }}
+      >
+        {/* Left column */}
+        <div
+          style={{
+            width: "18rem",
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+            marginTop: "auto",
+            marginBottom: "auto",
+          }}
+        >
+          {leftCards.map((card) => (
+            <AccordionCard
+              key={card.id}
+              card={card}
+              openCard={openCard}
+              onToggle={toggle}
+            />
+          ))}
+        </div>
+
+        {/* Center column */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: "500px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "1.5rem",
+            padding: "7.5rem 2rem",
+            textAlign: "center",
+          }}
+        >
+          {children}
+        </div>
+
+        {/* Right column */}
+        <div
+          style={{
+            width: "18rem",
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+            marginTop: "auto",
+            marginBottom: "auto",
+          }}
+        >
+          {rightCards.map((card) => (
+            <AccordionCard
+              key={card.id}
+              card={card}
+              openCard={openCard}
+              onToggle={toggle}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Mobile: center content + 2×2 card grid ── */}
+      <div className="flex flex-col md:hidden">
+        {children && (
+          <div className="flex flex-col items-center gap-6 px-8 py-[120px] text-center">
+            {children}
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-3 p-4">
+          {CARDS.map((card) => (
+            <AccordionCard
+              key={card.id}
+              card={card}
+              openCard={openCard}
+              onToggle={toggle}
+            />
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
