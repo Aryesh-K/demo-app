@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
+import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -225,6 +226,8 @@ interface DrugGroupProps {
   onAmountChange: (v: string) => void;
   unit: Unit;
   onUnitChange: (u: Unit) => void;
+  mode: "free" | "premium" | "premium-learn";
+  recentSearches: string[];
 }
 
 function DrugInputGroup({
@@ -238,6 +241,8 @@ function DrugInputGroup({
   onAmountChange,
   unit,
   onUnitChange,
+  mode,
+  recentSearches,
 }: DrugGroupProps) {
   const uid = useId();
   const drugId = `${uid}-drug`;
@@ -251,11 +256,12 @@ function DrugInputGroup({
           Enter brand name (e.g. Tylenol) or generic name (e.g. acetaminophen)
         </p>
       </div>
-      <Input
-        id={drugId}
+      <DrugAutocomplete
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
         placeholder={placeholder}
+        mode={mode}
+        recentSearches={recentSearches}
       />
       <div className="flex flex-col gap-1">
         <Label
@@ -478,6 +484,8 @@ export default function LearnFree() {
   const [unitB, setUnitB] = useState<Unit>("mg");
   const [treatmentContext, setTreatmentContext] = useState("");
   const [notes, setNotes] = useState("");
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [apiResult, setApiResult] = useState<ApiResult | null>(null);
@@ -545,6 +553,9 @@ export default function LearnFree() {
     setAnimFading(false);
     setApiResult(null);
     setApiError(null);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
 
     fetch("/api/learn-interaction", {
       method: "POST",
@@ -577,9 +588,25 @@ export default function LearnFree() {
           }
           throw err;
         }
-        return r.json() as Promise<ApiResult>;
+        const data = (await r.json()) as ApiResult & {
+          error?: string;
+          unrecognized_drugs?: string[];
+        };
+        if (data.error === "unrecognized") {
+          const names =
+            data.unrecognized_drugs?.join('", "') ?? "the entered substance";
+          const err = new Error(
+            `We couldn't recognize "${names}" as a known substance. Please check your spelling or choose from the suggestions list.`,
+          );
+          (err as Error & { isValidation?: boolean }).isValidation = true;
+          throw err;
+        }
+        return data as ApiResult;
       })
       .then((data) => {
+        setRecentSearches((prev) =>
+          [drugA, drugB, ...prev.filter((s) => s !== drugA && s !== drugB)].slice(0, 5),
+        );
         setAnimFading(true);
         setTimeout(() => {
           setAnimFading(false);
@@ -661,6 +688,8 @@ export default function LearnFree() {
           onAmountChange={setAmountA}
           unit={unitA}
           onUnitChange={setUnitA}
+          mode="free"
+          recentSearches={recentSearches}
         />
         <DrugInputGroup
           label="Drug B"
@@ -680,6 +709,8 @@ export default function LearnFree() {
           onAmountChange={setAmountB}
           unit={unitB}
           onUnitChange={setUnitB}
+          mode="free"
+          recentSearches={recentSearches}
         />
       </div>
 
@@ -747,6 +778,7 @@ export default function LearnFree() {
         Analyze Interaction →
       </Button>
 
+      <div ref={resultsRef}>
       {/* Molecule animation — loops until API responds */}
       {phase === "animating" && <MoleculeAnimation fading={animFading} />}
 
@@ -834,6 +866,7 @@ export default function LearnFree() {
           Start New Analysis
         </Button>
       )}
+      </div>
     </main>
   );
 }

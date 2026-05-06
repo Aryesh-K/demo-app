@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -301,6 +302,8 @@ interface DrugCardProps {
   onAmountChange: (v: string) => void;
   onUnitChange: (u: Unit) => void;
   onRemove: () => void;
+  mode: "free" | "premium" | "premium-learn";
+  recentSearches: string[];
 }
 
 function DrugCard({
@@ -312,6 +315,8 @@ function DrugCard({
   onAmountChange,
   onUnitChange,
   onRemove,
+  mode,
+  recentSearches,
 }: DrugCardProps) {
   const uid = useId();
   const drugId = `${uid}-name`;
@@ -346,11 +351,12 @@ function DrugCard({
           Brand name (e.g. Tylenol) or generic (e.g. acetaminophen)
         </p>
       </div>
-      <Input
-        id={drugId}
+      <DrugAutocomplete
         value={drug.name}
-        onChange={(e) => onNameChange(e.target.value)}
+        onChange={onNameChange}
         placeholder="e.g. ibuprofen"
+        mode={mode}
+        recentSearches={recentSearches}
       />
       {isPrescriptionDrug(drug.name.trim()) && (
         <span className="inline-flex items-center gap-1.5 rounded-full border border-green-700 bg-green-950/40 px-2.5 py-0.5 text-xs text-green-300">
@@ -828,6 +834,8 @@ export default function CheckPremium() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [animFading, setAnimFading] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
@@ -881,6 +889,9 @@ export default function CheckPremium() {
     setAnimFading(false);
     setApiResult(null);
     setApiError(null);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
 
     const healthContext = buildHealthContext(healthProfile);
     const drugsPayload = drugs.map(({ name, method, amount, unit }) => ({
@@ -915,9 +926,26 @@ export default function CheckPremium() {
           }
           throw err;
         }
-        return r.json() as Promise<ApiResult>;
+        const data = (await r.json()) as ApiResult & {
+          error?: string;
+          unrecognized_drugs?: string[];
+        };
+        if (data.error === "unrecognized") {
+          const names =
+            data.unrecognized_drugs?.join('", "') ?? "the entered substance";
+          const err = new Error(
+            `We couldn't recognize "${names}" as a known substance. Please check your spelling or choose from the suggestions list.`,
+          );
+          (err as Error & { isValidation?: boolean }).isValidation = true;
+          throw err;
+        }
+        return data as ApiResult;
       })
       .then((data) => {
+        setRecentSearches((prev) => {
+          const names = drugs.map((d) => d.name).filter(Boolean);
+          return [...names, ...prev.filter((s) => !names.includes(s))].slice(0, 5);
+        });
         setAnimFading(true);
         setTimeout(() => {
           setAnimFading(false);
@@ -1014,6 +1042,8 @@ export default function CheckPremium() {
                 onAmountChange={(v) => updateDrug(drug.id, { amount: v })}
                 onUnitChange={(u) => updateDrug(drug.id, { unit: u })}
                 onRemove={() => removeDrug(drug.id)}
+                mode="premium"
+                recentSearches={recentSearches}
               />
             </div>
           ))}
@@ -1099,6 +1129,7 @@ export default function CheckPremium() {
         />
       </div>
 
+      <div ref={resultsRef}>
       {/* Molecule animation — loops until API responds */}
       {phase === "animating" && <MoleculeAnimation fading={animFading} />}
 
@@ -1124,6 +1155,7 @@ export default function CheckPremium() {
           </Button>
         </>
       )}
+      </div>
     </main>
   );
 }

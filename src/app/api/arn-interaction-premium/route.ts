@@ -240,7 +240,10 @@ const KEY_TERM_DEF_GUIDANCE: Record<1 | 2 | 3, string> = {
 
 const CONTEXT_ADDITION =
   "\nWhen treatment context is provided, explicitly reference it in your explanation. " +
-  "When health profile is provided, flag any additional risks based on that profile. This is mandatory.";
+  "When health profile is provided, flag any additional risks based on that profile. This is mandatory.\n\n" +
+  "If any substance entered does not appear to be a real medication, drug, supplement, chemical, or known substance, respond with this exact JSON and nothing else:\n" +
+  "{\"error\": \"unrecognized\", \"unrecognized_drugs\": [\"drug name here\"]}\n" +
+  "Do not attempt to analyze unrecognized substances.";
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
@@ -464,6 +467,22 @@ export async function POST(req: NextRequest) {
       // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control-char stripping from AI response
       .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, "") // control chars (keep \n \r)
       .replace(/,(\s*[}\]])/g, "$1"); // trailing commas before } or ]
+
+    // Check for unrecognized drug signal from AI
+    try {
+      const probe = JSON.parse(preCleaned) as {
+        error?: string;
+        unrecognized_drugs?: string[];
+      };
+      if (probe.error === "unrecognized") {
+        return NextResponse.json({
+          error: "unrecognized",
+          unrecognized_drugs: probe.unrecognized_drugs ?? [],
+        });
+      }
+    } catch {
+      /* not JSON or no error field, proceed normally */
+    }
 
     let result: ParsedResult;
     try {

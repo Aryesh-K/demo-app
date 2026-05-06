@@ -138,7 +138,10 @@ export async function POST(req: NextRequest) {
     "Always mention in simple_explanation if one product is being rendered ineffective, even if there is no safety risk.\n\n" +
     "IMPORTANT: When one substance chemically destroys, oxidizes, or degrades another substance on contact — even if there is no safety risk — you MUST classify interaction_type as 'efficacy'. This is not optional. Benzoyl peroxide + any vitamin C product is ALWAYS efficacy type.\n\n" +
     "When treatment context is provided, you MUST explicitly mention it by name in the simple_explanation. " +
-    "Do not give generic responses. For example, if the user says they are treating anxiety, the explanation must reference anxiety specifically and explain how the interaction affects their ability to treat anxiety. This is non-negotiable.";
+    "Do not give generic responses. For example, if the user says they are treating anxiety, the explanation must reference anxiety specifically and explain how the interaction affects their ability to treat anxiety. This is non-negotiable.\n\n" +
+    "If any substance entered does not appear to be a real medication, drug, supplement, chemical, or known substance, respond with this exact JSON and nothing else:\n" +
+    "{\"error\": \"unrecognized\", \"unrecognized_drugs\": [\"drug name here\"]}\n" +
+    "Do not attempt to analyze unrecognized substances.";
 
   const ctx = treatment_context?.trim();
   const contextLine = ctx
@@ -248,6 +251,22 @@ export async function POST(req: NextRequest) {
       .replace(/^```json?\s*/i, "")
       .replace(/```\s*$/, "")
       .trim();
+
+    // Check for unrecognized drug signal from AI
+    try {
+      const probe = JSON.parse(cleaned) as {
+        error?: string;
+        unrecognized_drugs?: string[];
+      };
+      if (probe.error === "unrecognized") {
+        return NextResponse.json({
+          error: "unrecognized",
+          unrecognized_drugs: probe.unrecognized_drugs ?? [],
+        });
+      }
+    } catch {
+      /* not JSON or no error field, proceed normally */
+    }
 
     type ParsedResult = {
       risk_level: string;

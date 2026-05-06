@@ -127,7 +127,10 @@ export async function POST(req: NextRequest) {
     "- both: affects both\n\n" +
     "For overall_risk, use the highest risk level found across all combinations.\n\n" +
     "When treatment context is provided, explicitly mention it in every explanation. This is mandatory.\n\n" +
-    "Always respond with valid JSON only.";
+    "Always respond with valid JSON only.\n\n" +
+    "If any substance entered does not appear to be a real medication, drug, supplement, chemical, or known substance, respond with this exact JSON and nothing else:\n" +
+    "{\"error\": \"unrecognized\", \"unrecognized_drugs\": [\"drug name here\"]}\n" +
+    "Do not attempt to analyze unrecognized substances.";
 
   const ctx = treatment_context?.trim();
   const contextLine = ctx
@@ -230,6 +233,22 @@ export async function POST(req: NextRequest) {
       .replace(/^```json?\s*/i, "")
       .replace(/```\s*$/, "")
       .trim();
+
+    // Check for unrecognized drug signal from AI
+    try {
+      const probe = JSON.parse(cleaned) as {
+        error?: string;
+        unrecognized_drugs?: string[];
+      };
+      if (probe.error === "unrecognized") {
+        return NextResponse.json({
+          error: "unrecognized",
+          unrecognized_drugs: probe.unrecognized_drugs ?? [],
+        });
+      }
+    } catch {
+      /* not JSON or no error field, proceed normally */
+    }
 
     type ParsedCombination = {
       drug_a: string;

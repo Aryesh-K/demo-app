@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import BodyMap from "~/components/body-map";
+import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -378,6 +379,8 @@ interface DrugCardProps {
   onAmountChange: (v: string) => void;
   onUnitChange: (u: Unit) => void;
   onRemove: () => void;
+  mode: "free" | "premium" | "premium-learn";
+  recentSearches: string[];
 }
 
 function DrugCard({
@@ -389,6 +392,8 @@ function DrugCard({
   onAmountChange,
   onUnitChange,
   onRemove,
+  mode,
+  recentSearches,
 }: DrugCardProps) {
   const uid = useId();
   const drugId = `${uid}-name`;
@@ -422,11 +427,12 @@ function DrugCard({
           cyanide, sulfur dioxide, ethanol, ammonia)
         </p>
       </div>
-      <Input
-        id={drugId}
+      <DrugAutocomplete
         value={drug.name}
-        onChange={(e) => onNameChange(e.target.value)}
+        onChange={onNameChange}
         placeholder="e.g. ibuprofen"
+        mode={mode}
+        recentSearches={recentSearches}
       />
 
       <div className="flex flex-col gap-1">
@@ -883,6 +889,8 @@ export default function LearnPremium() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [_submittedCount, setSubmittedCount] = useState(0);
   const [submittedLevel, setSubmittedLevel] = useState<1 | 2 | 3 | null>(null);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
@@ -944,6 +952,9 @@ export default function LearnPremium() {
     setApiError(null);
     setSubmittedCount(drugs.length);
     setSubmittedLevel(selectedLevel);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
 
     const healthContext = isCaseStudy
       ? buildHealthContext(caseStudyProfile)
@@ -983,9 +994,26 @@ export default function LearnPremium() {
           }
           throw err;
         }
-        return r.json() as Promise<ApiResult>;
+        const data = (await r.json()) as ApiResult & {
+          error?: string;
+          unrecognized_drugs?: string[];
+        };
+        if (data.error === "unrecognized") {
+          const names =
+            data.unrecognized_drugs?.join('", "') ?? "the entered substance";
+          const err = new Error(
+            `We couldn't recognize "${names}" as a known substance. Please check your spelling or choose from the suggestions list.`,
+          );
+          (err as Error & { isValidation?: boolean }).isValidation = true;
+          throw err;
+        }
+        return data as ApiResult;
       })
       .then((data) => {
+        setRecentSearches((prev) => {
+          const names = drugs.map((d) => d.name).filter(Boolean);
+          return [...names, ...prev.filter((s) => !names.includes(s))].slice(0, 5);
+        });
         setAnimFading(true);
         setTimeout(() => {
           setAnimFading(false);
@@ -1198,6 +1226,8 @@ export default function LearnPremium() {
                     onAmountChange={(v) => updateDrug(drug.id, { amount: v })}
                     onUnitChange={(u) => updateDrug(drug.id, { unit: u })}
                     onRemove={() => removeDrug(drug.id)}
+                    mode="premium-learn"
+                    recentSearches={recentSearches}
                   />
                 </div>
               ))}
@@ -1308,6 +1338,7 @@ export default function LearnPremium() {
       )}
 
       {/* Molecule animation — loops until API responds */}
+      <div ref={resultsRef}>
       {phase === "animating" && <MoleculeAnimation fading={animFading} />}
 
       {/* Error */}
@@ -1332,6 +1363,7 @@ export default function LearnPremium() {
           </Button>
         </>
       )}
+      </div>
     </main>
   );
 }

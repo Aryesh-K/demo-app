@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AccordionCards } from "~/components/accordion-cards";
 import { DidYouKnow } from "~/components/did-you-know";
 import { GridReveal } from "~/components/grid-reveal";
@@ -191,8 +192,11 @@ export default function Home() {
           </a>
         </p>
         <p className="mt-1 text-xs text-slate-600">
-          &copy; 2026 ToxiClear AI. For educational purposes only. Not medical
-          advice.
+          &copy; 2026 ToxiClear AI. For educational purposes only. Not medical advice.{" "}
+          &middot;{" "}
+          <Link href="/privacy" className="text-teal-600 hover:text-teal-500">Privacy Policy</Link>
+          {" "}&middot;{" "}
+          <Link href="/terms" className="text-teal-600 hover:text-teal-500">Terms of Service</Link>
         </p>
       </footer>
     </main>

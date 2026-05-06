@@ -123,7 +123,10 @@ export async function POST(req: NextRequest) {
     "IMPORTANT: When treatment context is provided, you MUST explicitly mention it by name in BOTH simple_explanation AND intermediate_explanation. " +
     "Do not give generic responses. If the user says they are treating anxiety, both explanations must reference anxiety specifically " +
     "and explain how the interaction affects their ability to treat it. This is non-negotiable.\n\n" +
-    "Always respond with valid JSON only.";
+    "Always respond with valid JSON only.\n\n" +
+    "If any substance entered does not appear to be a real medication, drug, supplement, chemical, or known substance, respond with this exact JSON and nothing else:\n" +
+    "{\"error\": \"unrecognized\", \"unrecognized_drugs\": [\"drug name here\"]}\n" +
+    "Do not attempt to analyze unrecognized substances.";
 
   const ctx = treatment_context?.trim();
   const contextLine = ctx
@@ -224,6 +227,22 @@ export async function POST(req: NextRequest) {
       .replace(/^```json?\s*/i, "")
       .replace(/```\s*$/, "")
       .trim();
+
+    // Check for unrecognized drug signal from AI
+    try {
+      const probe = JSON.parse(cleaned) as {
+        error?: string;
+        unrecognized_drugs?: string[];
+      };
+      if (probe.error === "unrecognized") {
+        return NextResponse.json({
+          error: "unrecognized",
+          unrecognized_drugs: probe.unrecognized_drugs ?? [],
+        });
+      }
+    } catch {
+      /* not JSON or no error field, proceed normally */
+    }
 
     type ParsedResult = {
       risk_level: string;
