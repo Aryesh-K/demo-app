@@ -9,7 +9,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ToxiClear AI — Know Before You Take",
+  title: "ToxiClear AI",
   description:
     "Drug interaction education for students and patients, powered by FDA data and AI",
 };
