@@ -5,13 +5,13 @@ import { DidYouKnow } from "~/components/did-you-know";
 import { GridReveal } from "~/components/grid-reveal";
 import { HeroCanvas } from "~/components/hero-canvas";
 import { HeroCtaButtons } from "~/components/hero-cta-buttons";
+import { HeroStats } from "~/components/hero-stats";
 import { ScrollIndicator } from "~/components/scroll-indicator";
 
 const freePublicFeatures = [
   "Check interactions between 2 drugs, OTC medications, or alcohol",
   "Risk level indicator (Low / Moderate / High)",
   "Plain English explanation of why the combination is dangerous",
-  "Works anonymously — no account needed",
 ];
 
 const freeStudentsFeatures = [
@@ -72,13 +72,15 @@ export default function Home() {
           <AccordionCards>
             <LogoFull />
 
-            <p className="max-w-md text-xl text-slate-200 md:text-2xl">
+            <p className="max-w-md text-2xl text-slate-200">
               Know before you take. Understand the science behind your
               medications.
             </p>
 
             {/* Change 1 — two CTA buttons */}
             <HeroCtaButtons />
+
+            <HeroStats />
 
             <div
               className="mt-4 inline-flex rounded-full px-6 py-2"
