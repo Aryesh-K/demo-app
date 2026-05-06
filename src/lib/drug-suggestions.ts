@@ -56,6 +56,52 @@ export const PREMIUM_LEARN_EXTRA = [
   "Bleach", "Acetaldehyde", "Nicotine", "Caffeine anhydrous",
 ];
 
+export function isLikelyValidDrug(name: string): boolean {
+  if (!name || name.trim().length < 2) return false;
+
+  const cleaned = name.trim().toLowerCase();
+
+  // Check against known drug lists first — if it matches, always valid
+  const allDrugs = [
+    ...FREE_DRUGS,
+    ...PREMIUM_EXTRA_DRUGS,
+    ...PREMIUM_LEARN_EXTRA,
+  ].map((d) => d.toLowerCase());
+
+  if (
+    allDrugs.some(
+      (d) =>
+        d.includes(cleaned) ||
+        cleaned.includes(d) ||
+        d.startsWith(cleaned.substring(0, 5)),
+    )
+  ) {
+    return true;
+  }
+
+  // If not in any known list, apply strict pattern checks
+  const letters = (cleaned.match(/[a-z]/gi) ?? []).length;
+  const vowels = (cleaned.match(/[aeiou]/gi) ?? []).length;
+  const vowelRatio = vowels / letters;
+
+  // Strict vowel ratio — real words typically have 30-50% vowels
+  if (vowelRatio < 0.25) return false;
+
+  // No run of 3+ consonants in a row
+  if (/[^aeiou\s\-]{3,}/i.test(cleaned)) return false;
+
+  // Must be at least 3 characters
+  if (cleaned.length < 3) return false;
+
+  // Must not look like keyboard mashing — check for repeated character patterns
+  if (/(.)\1{2,}/.test(cleaned)) return false;
+
+  // Reasonable max length for a drug name
+  if (cleaned.length > 30) return false;
+
+  return true;
+}
+
 export function getDrugSuggestions(
   query: string,
   mode: "free" | "premium" | "premium-learn",

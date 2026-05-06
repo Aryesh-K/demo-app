@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { DrugAutocomplete } from "~/components/drug-autocomplete";
+import { isLikelyValidDrug } from "~/lib/drug-suggestions";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -772,11 +773,6 @@ function Results({ result }: { result: ApiResult }) {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-
-function isLikelyValidDrug(name: string): boolean {
-  const t = name.trim();
-  return t.length >= 2 && /[a-zA-Z]/.test(t);
-}
 
 export default function CheckPremium() {
   const { profile: savedProfile, loading: profileLoading } =
