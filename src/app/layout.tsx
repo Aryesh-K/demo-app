@@ -2,6 +2,7 @@ import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Navbar } from "~/components/navbar";
+import { RotatePrompt } from "~/components/rotate-prompt";
 import { ThemeProvider } from "./theme-provider";
 import "./globals.css";
 
@@ -21,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
+        <RotatePrompt />
         <ThemeProvider>
           <Navbar />
           {children}
