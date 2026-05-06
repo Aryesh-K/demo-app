@@ -773,6 +773,11 @@ function Results({ result }: { result: ApiResult }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function isLikelyValidDrug(name: string): boolean {
+  const t = name.trim();
+  return t.length >= 2 && /[a-zA-Z]/.test(t);
+}
+
 export default function CheckPremium() {
   const { profile: savedProfile, loading: profileLoading } =
     usePremiumProfile();
@@ -875,13 +880,15 @@ export default function CheckPremium() {
       );
       return;
     }
-    for (const d of filledDrugs) {
-      if (d.name.trim().length < 2) {
-        setValidationError(
-          `Drug name '${d.name.trim()}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`,
-        );
-        return;
-      }
+    const invalidDrugs = drugs
+      .map((d) => d.name)
+      .filter((name) => name.trim().length > 0)
+      .filter((name) => !isLikelyValidDrug(name));
+    if (invalidDrugs.length > 0) {
+      setValidationError(
+        `The following don't look like recognized substances: "${invalidDrugs.join('", "')}". Please check your spelling or select from the suggestions list.`,
+      );
+      return;
     }
     setValidationError(null);
 

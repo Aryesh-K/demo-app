@@ -423,6 +423,11 @@ function isPremium(drugName: string, method: ApplicationMethod): boolean {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function isLikelyValidDrug(name: string): boolean {
+  const t = name.trim();
+  return t.length >= 2 && /[a-zA-Z]/.test(t);
+}
+
 export default function CheckFree() {
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
@@ -490,15 +495,12 @@ export default function CheckFree() {
       );
       return;
     }
-    if (trimA.length < 2) {
+    const invalidDrugs = [trimA, trimB].filter(
+      (name) => !isLikelyValidDrug(name),
+    );
+    if (invalidDrugs.length > 0) {
       setValidationError(
-        `Drug name '${trimA}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`,
-      );
-      return;
-    }
-    if (trimB.length < 2) {
-      setValidationError(
-        `Drug name '${trimB}' doesn't look right. Please enter a valid medication, OTC product, or substance name (e.g. ibuprofen, NyQuil, alcohol).`,
+        `The following don't look like recognized substances: "${invalidDrugs.join('", "')}". Please check your spelling or select from the suggestions list.`,
       );
       return;
     }
