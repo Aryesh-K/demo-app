@@ -5,7 +5,6 @@ import { DidYouKnow } from "~/components/did-you-know";
 import { GridReveal } from "~/components/grid-reveal";
 import { HeroCanvas } from "~/components/hero-canvas";
 import { HeroCtaButtons } from "~/components/hero-cta-buttons";
-import { HeroStats } from "~/components/hero-stats";
 import { ScrollIndicator } from "~/components/scroll-indicator";
 
 const freePublicFeatures = [
@@ -66,10 +65,39 @@ export default function Home() {
           <HeroCanvas />
         </div>
 
-        <div className="relative z-10">
+        <div className="relative z-10 min-h-screen">
           <AccordionCards>
             <div className="flex flex-col items-center gap-6 text-center">
-              <HeroStats />
+              {/* Slim stats strip */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "32px",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginBottom: "16px",
+                }}
+              >
+                <div style={{ textAlign: "center" }}>
+                  <span style={{ fontSize: "20px", fontWeight: 700, color: "#1D9E75" }}>10,000+</span>
+                  <span style={{ fontSize: "11px", color: "#64748b", display: "block", letterSpacing: "0.5px" }}>combinations</span>
+                </div>
+                <div style={{ width: "1px", height: "30px", background: "rgba(29,158,117,0.3)" }} />
+                <div style={{ textAlign: "center" }}>
+                  <span style={{ fontSize: "20px", fontWeight: 700, color: "#1D9E75" }}>3</span>
+                  <span style={{ fontSize: "11px", color: "#64748b", display: "block", letterSpacing: "0.5px" }}>data sources</span>
+                </div>
+                <div style={{ width: "1px", height: "30px", background: "rgba(29,158,117,0.3)" }} />
+                <div style={{ textAlign: "center" }}>
+                  <span style={{ fontSize: "20px", fontWeight: 700, color: "#1D9E75" }}>100,000+</span>
+                  <span style={{ fontSize: "11px", color: "#64748b", display: "block", letterSpacing: "0.5px" }}>interactions</span>
+                </div>
+                <div style={{ width: "1px", height: "30px", background: "rgba(29,158,117,0.3)" }} />
+                <div style={{ textAlign: "center" }}>
+                  <span style={{ fontSize: "20px", fontWeight: 700, color: "#1D9E75" }}>3</span>
+                  <span style={{ fontSize: "11px", color: "#64748b", display: "block", letterSpacing: "0.5px" }}>learning levels</span>
+                </div>
+              </div>
 
               <LogoFull />
 
