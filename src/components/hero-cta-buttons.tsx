@@ -37,7 +37,7 @@ export function HeroCtaButtons() {
       <Button
         type="button"
         variant="outline"
-        className="border-teal-600 text-teal-400 hover:bg-teal-950/30 hover:text-teal-300"
+        className="border-teal-600 bg-teal-950/20 text-teal-400 hover:bg-teal-950/40 hover:text-teal-300"
         size="lg"
         onClick={() => handleNav("/learn/free")}
       >

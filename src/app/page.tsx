@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { AccordionCards } from "~/components/accordion-cards";
+import { BackgroundAnimation } from "~/components/background-animation";
 import { LogoFull } from "~/components/logo-full";
 import { DidYouKnow } from "~/components/did-you-know";
 import { GridReveal } from "~/components/grid-reveal";
-import { HeroCanvas } from "~/components/hero-canvas";
 import { HeroCtaButtons } from "~/components/hero-cta-buttons";
 import { HeroStats } from "~/components/hero-stats";
 import { ScrollIndicator } from "~/components/scroll-indicator";
@@ -59,13 +59,11 @@ function FeatureList({ items }: { items: string[] }) {
 
 export default function Home() {
   return (
-    <main className="flex flex-col">
+    <main className="relative z-[1] flex flex-col">
+      <BackgroundAnimation />
+
       {/* ── Hero + accordion cards — three-column layout ── */}
       <section className="relative w-full bg-gradient-to-b from-blue-950/60 via-blue-900/20 to-transparent">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <HeroCanvas />
-        </div>
-
         <div className="relative z-10 min-h-screen">
           <AccordionCards>
             <div className="flex flex-col items-center gap-6 text-center">
@@ -81,8 +79,8 @@ export default function Home() {
               <div
                 className="mt-4 inline-flex rounded-full px-6 py-2"
                 style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  background: "rgba(255, 255, 255, 0.1)",
+                  border: "1px solid rgba(255, 255, 255, 0.25)",
                 }}
               >
                 <p className="text-sm text-slate-400">

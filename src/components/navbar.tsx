@@ -209,7 +209,7 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="border-b border-border bg-background">
+    <nav className="relative z-10 border-b border-border bg-background">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4">
         <Link href="/" className="font-semibold tracking-tight">
           ToxiClear AI
