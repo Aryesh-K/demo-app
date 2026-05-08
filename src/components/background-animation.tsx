@@ -29,6 +29,7 @@ export function BackgroundAnimation() {
     let hexes: Hex[] = [];
 
     function buildHexGrid() {
+      if (!canvas) return;
       hexes = [];
       const cols = Math.ceil(canvas.width / HEX_W) + 3;
       const rows = Math.ceil(canvas.height / ROW_SPACING) + 3;
@@ -44,6 +45,7 @@ export function BackgroundAnimation() {
     }
 
     function drawHex(x: number, y: number, r: number) {
+      if (!ctx) return;
       ctx.beginPath();
       for (let i = 0; i < 6; i++) {
         const angle = (Math.PI / 3) * i - Math.PI / 6;
@@ -73,6 +75,7 @@ export function BackgroundAnimation() {
 
     // ── Resize ───────────────────────────────────────────────────────────────────
     const resize = () => {
+      if (!canvas) return;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       buildHexGrid();
@@ -98,6 +101,7 @@ export function BackgroundAnimation() {
 
     // ── Draw loop ─────────────────────────────────────────────────────────────────
     const draw = () => {
+      if (!canvas || !ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       waveX += WAVE_SPEED;
