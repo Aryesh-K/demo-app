@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "~/lib/utils";
 
@@ -110,6 +111,16 @@ export function DidYouKnow() {
             />
           ))}
         </div>
+
+        <p className="mt-4 text-center text-xs text-slate-400">
+          Want to learn more? →{" "}
+          <Link
+            href="/history"
+            className="text-teal-400 underline-offset-2 hover:text-teal-300 hover:underline"
+          >
+            Explore the History of Drug Interactions
+          </Link>
+        </p>
       </div>
     </section>
   );

@@ -232,6 +232,15 @@ export function Navbar() {
               isActive={pathname.startsWith(d.basePath)}
             />
           ))}
+          <Link
+            href="/history"
+            className={cn(
+              "text-sm transition-colors hover:text-foreground",
+              pathname === "/history" ? "text-foreground" : "text-muted-foreground",
+            )}
+          >
+            History
+          </Link>
         </div>
         {auth.status === "unauthenticated" || auth.status === "loading" ? (
           auth.status === "unauthenticated" ? (
