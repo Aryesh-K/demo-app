@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -56,11 +57,61 @@ const ERAS = [
   },
 ];
 
-const IMAGE_YEARS = ["1937", "1957", "1963", "1989", "1998"];
+const LEFT_IMAGES = [
+  "cat1a-apothecary-woodcut.png",
+  "cat2a-pharmacy-interior.png",
+  "cat3a-woman-scientist.png",
+  "cat4a-sulfanilamide-newspaper.png",
+  "cat5a-pills-scattered.png",
+  "cat6a-hospital-ward.png",
+  "cat7a-aspirin-molecule.png",
+  "cat8a-dna-plaque.png",
+];
+
+const RIGHT_IMAGES = [
+  "cat1b-hildegard.png",
+  "cat2b-apothecary-bottles.png",
+  "cat3b-marie-curie.png",
+  "cat4b-dinitrophenol-newspaper.png",
+  "cat5b-ritalin-bottle.png",
+  "cat6b-surgeon.png",
+  "cat7b-drug-protein-binding.png",
+  "cat8b-sequencing-facility.png",
+];
+
+const TITLE = "A History of Drug Interactions";
+
+const IMG_FILTER = "grayscale(100%) sepia(15%) contrast(108%)";
+const COL_MASK =
+  "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)";
 
 export default function HistoryPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [displayedTitle, setDisplayedTitle] = useState("");
+  const [titleDone, setTitleDone] = useState(false);
+  const [showSubtitle, setShowSubtitle] = useState(false);
+  const [showLine, setShowLine] = useState(false);
+  const [showScroll, setShowScroll] = useState(false);
 
+  // Typewriter effect
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < TITLE.length) {
+        setDisplayedTitle(TITLE.slice(0, i + 1));
+        i++;
+      } else {
+        setTitleDone(true);
+        clearInterval(interval);
+        setTimeout(() => setShowSubtitle(true), 300);
+        setTimeout(() => setShowLine(true), 600);
+        setTimeout(() => setShowScroll(true), 900);
+      }
+    }, 55);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Timeline fade-in
   useEffect(() => {
     const cards = document.querySelectorAll<HTMLElement>(".era-card");
     const observer = new IntersectionObserver(
@@ -82,10 +133,6 @@ export default function HistoryPage() {
   return (
     <>
       <style>{`
-        @keyframes scroll-strip {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
         @keyframes pulse-arrow {
           0%, 100% { opacity: 0.35; transform: translateY(0); }
           50% { opacity: 0.9; transform: translateY(8px); }
@@ -102,136 +149,185 @@ export default function HistoryPage() {
         {/* ── Hero ── */}
         <section
           style={{
-            minHeight: "100vh",
             display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            padding: "5rem 1.5rem 10rem",
-            position: "relative",
+            flexDirection: "row",
+            minHeight: "100vh",
+            backgroundColor: "#000",
+            overflow: "hidden",
           }}
         >
-          <h1
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: "clamp(1.9rem, 5vw, 3.75rem)",
-              fontWeight: 400,
-              color: "#ffffff",
-              letterSpacing: "0.02em",
-              lineHeight: 1.2,
-              marginBottom: "1.25rem",
-              maxWidth: "700px",
-            }}
-          >
-            A History of Drug Interactions
-          </h1>
-
-          <p
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: "clamp(0.95rem, 2vw, 1.2rem)",
-              fontStyle: "italic",
-              color: "#8a8a8a",
-              maxWidth: "560px",
-              lineHeight: 1.65,
-              marginBottom: "2.25rem",
-            }}
-          >
-            The discoveries, tragedies, and breakthroughs that shaped modern medicine
-          </p>
-
+          {/* Left column — scrolls upward */}
           <div
             style={{
-              width: "40%",
-              maxWidth: "320px",
-              height: "1px",
-              backgroundColor: "rgba(255,255,255,0.28)",
-              marginBottom: "1.5rem",
-            }}
-          />
-
-          <p
-            style={{
-              fontFamily: "Arial, sans-serif",
-              fontSize: "0.62rem",
-              letterSpacing: "0.22em",
-              color: "#555",
-              textTransform: "uppercase",
-              marginBottom: "1.4rem",
-            }}
-          >
-            Scroll to Explore
-          </p>
-
-          <div
-            style={{
-              animation: "pulse-arrow 2.2s ease-in-out infinite",
-              fontSize: "1.2rem",
-              color: "rgba(255,255,255,0.7)",
-              marginBottom: "2rem",
-              lineHeight: 1,
-            }}
-          >
-            ↓
-          </div>
-
-          {/* Rolling image strip */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: "2.5rem",
-              left: 0,
-              right: 0,
+              width: "220px",
+              flexShrink: 0,
               overflow: "hidden",
+              height: "100vh",
+              WebkitMaskImage: COL_MASK,
+              maskImage: COL_MASK,
             }}
           >
             <div
               style={{
                 display: "flex",
-                gap: "1.25rem",
-                animation: "scroll-strip 22s linear infinite",
-                width: "max-content",
-                paddingLeft: "1.25rem",
+                flexDirection: "column",
+                gap: "12px",
+                animation: "scroll-up 25s linear infinite",
+                paddingTop: "12px",
               }}
             >
-              {[...IMAGE_YEARS, ...IMAGE_YEARS].map((year, idx) => (
-                <div key={idx} style={{ textAlign: "center", flexShrink: 0 }}>
-                  <div
-                    style={{
-                      width: "200px",
-                      height: "130px",
-                      backgroundColor: "#111",
-                      border: "1px solid rgba(255,255,255,0.18)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "#3a3a3a",
-                        fontSize: "0.7rem",
-                        letterSpacing: "0.12em",
-                        fontFamily: "Arial, sans-serif",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Photo
-                    </span>
-                  </div>
-                  <p
-                    style={{
-                      color: "rgba(255,255,255,0.38)",
-                      fontSize: "0.68rem",
-                      marginTop: "0.45rem",
-                      fontFamily: "Arial, sans-serif",
-                      letterSpacing: "0.06em",
-                    }}
-                  >
-                    {year}
-                  </p>
-                </div>
+              {[...LEFT_IMAGES, ...LEFT_IMAGES].map((file, idx) => (
+                <Image
+                  key={idx}
+                  src={`/history-images/${file}`}
+                  alt=""
+                  width={220}
+                  height={160}
+                  style={{
+                    objectFit: "cover",
+                    display: "block",
+                    flexShrink: 0,
+                    filter: IMG_FILTER,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Center column — text content */}
+          <div
+            style={{
+              flex: 1,
+              minWidth: "500px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100vh",
+              textAlign: "center",
+              padding: "0 40px",
+            }}
+          >
+            {/* Title with typewriter */}
+            <h1
+              style={{
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                fontSize: "clamp(36px, 5vw, 64px)",
+                fontWeight: 700,
+                color: "#ffffff",
+                letterSpacing: "-0.5px",
+                lineHeight: 1.2,
+                margin: "0 0 24px",
+                textAlign: "center",
+              }}
+            >
+              {displayedTitle}
+              {!titleDone && (
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "3px",
+                    height: "0.85em",
+                    background: "white",
+                    marginLeft: "4px",
+                    verticalAlign: "middle",
+                    animation: "blink 0.7s step-end infinite",
+                  }}
+                />
+              )}
+            </h1>
+
+            {/* Subtitle — fades in after title */}
+            <div style={{ opacity: showSubtitle ? 1 : 0, transition: "opacity 0.8s ease-in" }}>
+              <p
+                style={{
+                  fontFamily: "Georgia, 'Times New Roman', serif",
+                  fontSize: "clamp(0.9rem, 1.8vw, 1.15rem)",
+                  fontStyle: "italic",
+                  color: "#8a8a8a",
+                  maxWidth: "480px",
+                  lineHeight: 1.65,
+                  marginBottom: "2.25rem",
+                }}
+              >
+                The discoveries, tragedies, and breakthroughs that shaped modern
+                medicine
+              </p>
+            </div>
+
+            {/* Divider line */}
+            <div style={{ opacity: showLine ? 1 : 0, transition: "opacity 0.6s ease-in" }}>
+              <div
+                style={{
+                  width: "280px",
+                  height: "1px",
+                  backgroundColor: "rgba(255,255,255,0.28)",
+                  marginBottom: "1.5rem",
+                }}
+              />
+            </div>
+
+            {/* Scroll to explore + arrow */}
+            <div style={{ opacity: showScroll ? 1 : 0, transition: "opacity 0.6s ease-in" }}>
+              <p
+                style={{
+                  fontFamily: "Arial, sans-serif",
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.22em",
+                  color: "#555",
+                  textTransform: "uppercase",
+                  marginBottom: "1.4rem",
+                }}
+              >
+                Scroll to Explore
+              </p>
+              <div
+                style={{
+                  animation: "pulse-arrow 2.2s ease-in-out infinite",
+                  fontSize: "1.2rem",
+                  color: "rgba(255,255,255,0.7)",
+                  lineHeight: 1,
+                }}
+              >
+                ↓
+              </div>
+            </div>
+          </div>
+
+          {/* Right column — scrolls downward */}
+          <div
+            style={{
+              width: "220px",
+              flexShrink: 0,
+              overflow: "hidden",
+              height: "100vh",
+              WebkitMaskImage: COL_MASK,
+              maskImage: COL_MASK,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                animation: "scroll-down 25s linear infinite",
+                paddingTop: "12px",
+              }}
+            >
+              {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((file, idx) => (
+                <Image
+                  key={idx}
+                  src={`/history-images/${file}`}
+                  alt=""
+                  width={220}
+                  height={160}
+                  style={{
+                    objectFit: "cover",
+                    display: "block",
+                    flexShrink: 0,
+                    filter: IMG_FILTER,
+                  }}
+                />
               ))}
             </div>
           </div>
