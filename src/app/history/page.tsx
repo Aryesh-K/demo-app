@@ -289,9 +289,7 @@ const TITLE = "A History of Drug Interactions";
 const IMG_FILTER = "grayscale(100%) sepia(15%) contrast(108%)";
 const COL_MASK = "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)";
 
-type FlipPhase = "idle" | "pre" | "flip-out" | "expand" | "open" | "flip-close" | "shrink";
-
-interface CardRect { top: number; left: number; width: number; height: number; vw: number; vh: number }
+type Era = (typeof ERAS)[0];
 
 const SERIF = "Georgia, 'Times New Roman', serif";
 const SANS  = "Arial, sans-serif";
@@ -346,10 +344,10 @@ export default function HistoryPage() {
   const [showLine,        setShowLine]         = useState(false);
   const [showScroll,      setShowScroll]       = useState(false);
 
-  const [flipPhase,       setFlipPhase]        = useState<FlipPhase>("idle");
-  const [selectedEra,     setSelectedEra]      = useState<(typeof ERAS)[0] | null>(null);
-  const [showModalContent,setShowModalContent] = useState(false);
-  const [cardRect,        setCardRect]         = useState<CardRect | null>(null);
+  const [curtainActive,   setCurtainActive]    = useState(false);
+  const [curtainDone,     setCurtainDone]      = useState(false);
+  const [selectedEra,     setSelectedEra]      = useState<Era | null>(null);
+  const [modalVisible,    setModalVisible]     = useState(false);
 
   // Typewriter
   useEffect(() => {
@@ -379,62 +377,32 @@ export default function HistoryPage() {
 
   // Body scroll lock when modal is open
   useEffect(() => {
-    document.body.style.overflow = flipPhase === "open" ? "hidden" : "";
+    document.body.style.overflow = modalVisible ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [flipPhase]);
+  }, [modalVisible]);
 
   // Escape key
   useEffect(() => {
-    if (flipPhase !== "open") return;
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape") closeModal(); };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [flipPhase]); // eslint-disable-line react-hooks/exhaustive-deps
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && modalVisible) handleClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modalVisible]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function openModal(era: (typeof ERAS)[0], ev: React.MouseEvent<HTMLDivElement>) {
-    const r = ev.currentTarget.getBoundingClientRect();
-    setCardRect({ top: r.top, left: r.left, width: r.width, height: r.height, vw: window.innerWidth, vh: window.innerHeight });
-    setSelectedEra(era);
-    setShowModalContent(false);
-    setFlipPhase("pre");
-    setTimeout(() => setFlipPhase("flip-out"), 20);
-    setTimeout(() => { setShowModalContent(true); setFlipPhase("expand"); }, 300);
-    setTimeout(() => setFlipPhase("open"), 680);
+  function handleCardClick(era: Era) {
+    setCurtainActive(true);
+    setCurtainDone(false);
+    setModalVisible(false);
+    setTimeout(() => { setSelectedEra(era); setModalVisible(true); }, 500);
+    setTimeout(() => { setCurtainActive(false); setCurtainDone(true); }, 550);
+    setTimeout(() => { setCurtainDone(false); }, 1100);
   }
 
-  function closeModal() {
-    setFlipPhase("flip-close");
-    setTimeout(() => { setShowModalContent(false); setFlipPhase("shrink"); }, 280);
-    setTimeout(() => { setFlipPhase("idle"); setSelectedEra(null); setCardRect(null); }, 650);
-  }
-
-  function overlayStyle(): React.CSSProperties {
-    if (!cardRect || flipPhase === "idle") return { display: "none" };
-    const { top, left, width, height, vw, vh } = cardRect;
-    const clip = `inset(${top}px ${vw - left - width}px ${vh - top - height}px ${left}px round 4px)`;
-    const base: React.CSSProperties = { position: "fixed", inset: 0, zIndex: 100, backgroundColor: "#000", overflow: "hidden", color: "#fff" };
-    switch (flipPhase) {
-      case "pre":        return { ...base, clipPath: clip };
-      case "flip-out":   return { ...base, clipPath: clip };
-      case "expand":     return { ...base, clipPath: "inset(0px)", transition: "clip-path 0.38s cubic-bezier(0.4,0,0.2,1)" };
-      case "open":       return { ...base, clipPath: "inset(0px)" };
-      case "flip-close": return { ...base, clipPath: "inset(0px)" };
-      case "shrink":     return { ...base, clipPath: clip, transition: "clip-path 0.35s cubic-bezier(0.4,0,0.2,1)" };
-      default:           return { display: "none" };
-    }
-  }
-
-  function innerStyle(): React.CSSProperties {
-    const base: React.CSSProperties = { width: "100%", height: "100%" };
-    switch (flipPhase) {
-      case "pre":        return { ...base, transform: "perspective(1000px) rotateY(0deg)" };
-      case "flip-out":   return { ...base, transform: "perspective(1000px) rotateY(90deg)",  transition: "transform 0.22s ease-in" };
-      case "expand":     return { ...base, transform: "perspective(1000px) rotateY(0deg)",   transition: "transform 0.22s ease-out" };
-      case "open":       return { ...base };
-      case "flip-close": return { ...base, transform: "perspective(1000px) rotateY(90deg)",  transition: "transform 0.22s ease-in" };
-      case "shrink":     return { ...base, transform: "perspective(1000px) rotateY(0deg)",   transition: "transform 0.22s ease-out" };
-      default:           return base;
-    }
+  function handleClose() {
+    setCurtainActive(true);
+    setCurtainDone(false);
+    setTimeout(() => { setModalVisible(false); setSelectedEra(null); }, 500);
+    setTimeout(() => { setCurtainActive(false); setCurtainDone(true); }, 550);
+    setTimeout(() => { setCurtainDone(false); }, 1100);
   }
 
   const eraIndex = selectedEra ? ERAS.indexOf(selectedEra) : 0;
@@ -568,7 +536,7 @@ export default function HistoryPage() {
                   <div style={{ display: "flex", justifyContent: isLeft ? "flex-start" : "flex-end" }}>
                     <div
                       className={isLeft ? "era-card-left" : "era-card-right"}
-                      onClick={(e) => era.filled && openModal(era, e)}
+                      onClick={() => era.filled && handleCardClick(era)}
                       style={{
                         position: "relative", width: "420px", padding: "32px", borderRadius: "4px",
                         backgroundColor: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
@@ -645,29 +613,25 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* ── Flip Modal Overlay ── */}
-      {flipPhase !== "idle" && (
-        <div style={overlayStyle()}>
-          <div style={innerStyle()}>
-            {!showModalContent || !selectedEra || !modalContent ? (
-              /* Card face shown during flip-out */
-              <div style={{ width: "100%", height: "100%", backgroundColor: "rgba(255,255,255,0.03)", padding: "32px", display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden", position: "relative" }}>
-                <p style={{ fontSize: "11px", letterSpacing: "3px", color: "rgba(200,170,100,0.7)", textTransform: "uppercase", fontFamily: SANS, margin: "0 0 10px" }}>
-                  ERA {String(eraIndex + 1).padStart(2, "0")}
-                </p>
-                <h3 style={{ fontFamily: SERIF, fontSize: "22px", fontWeight: 700, color: "#fff", margin: "0 0 10px" }}>
-                  {selectedEra?.name}
-                </h3>
-                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.5)", lineHeight: 1.55, fontFamily: SANS, margin: "0 0 16px" }}>
-                  {selectedEra?.desc}
-                </p>
-                <p style={{ fontSize: "12px", fontStyle: "italic", color: "rgba(255,255,255,0.4)", fontFamily: SERIF, margin: 0 }}>
-                  Click to explore →
-                </p>
-              </div>
-            ) : (
-              /* Full newspaper modal */
-              <div style={{ display: "flex", height: "100%", backgroundColor: "#000" }}>
+      {/* ── Curtain ── */}
+      <div style={{
+        position: "fixed", top: 0,
+        left: curtainActive ? "0" : curtainDone ? "100vw" : "-100vw",
+        width: "100vw", height: "100vh", backgroundColor: "#000000",
+        zIndex: 200,
+        transition: (curtainActive || curtainDone) ? "left 0.5s cubic-bezier(0.7, 0, 0.3, 1)" : "none",
+        pointerEvents: "none",
+      }}>
+        <div style={{
+          position: "absolute", top: 0, left: "-30%", width: "30%", height: "100%",
+          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)",
+          animation: curtainActive ? "sheen 0.5s ease-in-out" : "none",
+        }} />
+      </div>
+
+      {/* ── Modal ── */}
+      {modalVisible && selectedEra && modalContent && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 150, backgroundColor: "#000000", display: "flex", height: "100%" }}>
 
                 {/* ── Left column ── */}
                 <div style={{ width: "42%", flexShrink: 0, height: "100%", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column" }}>
@@ -717,7 +681,7 @@ export default function HistoryPage() {
                 <div className="modal-scroll" style={{ flex: 1, height: "100%", overflowY: "auto", padding: "48px 52px 60px 48px" }}>
 
                   {/* Close button */}
-                  <button type="button" onClick={closeModal} style={{ position: "sticky", top: 0, float: "right", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: "16px", marginBottom: "8px" }}>
+                  <button type="button" onClick={handleClose} style={{ position: "sticky", top: 0, float: "right", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)", width: "32px", height: "32px", borderRadius: "50%", cursor: "pointer", fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: "16px", marginBottom: "8px" }}>
                     ✕
                   </button>
 
@@ -789,9 +753,6 @@ export default function HistoryPage() {
                     </Link>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
         </div>
       )}
     </>

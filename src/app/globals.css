@@ -208,3 +208,7 @@
   0%, 100% { transform: rotate(45deg) translateY(0); opacity: 0.6; }
   50% { transform: rotate(45deg) translateY(4px); opacity: 1; }
 }
+@keyframes sheen {
+  0%   { left: -30%; }
+  100% { left: 130%; }
+}
