@@ -5,35 +5,51 @@ export function CustomCursor() {
   const cursorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const style = document.createElement("style");
-    style.id = "custom-cursor-style";
-    style.innerHTML = `
-      *, *::before, *::after,
-      a, a:hover, a:active, a:focus,
-      button, button:hover, button:active, button:focus,
-      input, input:hover, input:active, input:focus,
-      textarea, textarea:hover, textarea:active,
-      select, select:hover, select:active,
-      label, label:hover,
-      [role="button"], [role="button"]:hover,
-      [tabindex], [tabindex]:hover,
-      [onclick], [onclick]:hover,
-      summary, summary:hover,
-      details, details:hover,
-      nav, nav *,
-      header, header *,
-      [style*="position: fixed"], [style*="position:fixed"] {
-        cursor: none !important;
+    const forceCursorNone = (el: Element) => {
+      if (el instanceof HTMLElement) {
+        el.style.setProperty("cursor", "none", "important");
       }
-    `;
-    document.head.appendChild(style);
+    };
 
-    document.documentElement.style.setProperty("cursor", "none", "important");
-    document.body.style.setProperty("cursor", "none", "important");
+    const applyToAll = () => {
+      document.querySelectorAll("*").forEach(forceCursorNone);
+    };
+
+    applyToAll();
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            forceCursorNone(node);
+            node.querySelectorAll("*").forEach(forceCursorNone);
+          }
+        });
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "style" &&
+          mutation.target instanceof HTMLElement
+        ) {
+          const el = mutation.target;
+          if (el !== cursorRef.current) {
+            forceCursorNone(el);
+          }
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
+
+    const interval = setInterval(applyToAll, 500);
 
     return () => {
-      const el = document.getElementById("custom-cursor-style");
-      if (el) el.remove();
+      observer.disconnect();
+      clearInterval(interval);
     };
   }, []);
 
@@ -42,6 +58,9 @@ export function CustomCursor() {
     if (!cursor) return;
 
     const onMove = (e: MouseEvent) => {
+      if (e.target instanceof HTMLElement) {
+        e.target.style.setProperty("cursor", "none", "important");
+      }
       cursor.style.left = e.clientX + "px";
       cursor.style.top = e.clientY + "px";
       cursor.style.opacity = "1";
