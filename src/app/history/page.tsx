@@ -531,7 +531,7 @@ export default function HistoryPage() {
 
           {/* Center column */}
           <div style={{ position: "relative", zIndex: 4, width: "100%" }}>
-            <h1 style={{ fontFamily: SERIF, fontSize: "clamp(42px, 6vw, 80px)", fontWeight: 800, color: "#fff", letterSpacing: "-1px", lineHeight: 1.2, margin: "0 0 24px", textShadow: "0 2px 40px rgba(255,255,255,0.08)" }}>
+            <h1 style={{ fontFamily: SERIF, fontSize: "clamp(42px, 6vw, 80px)", fontWeight: 800, color: "#fff", letterSpacing: "-1px", lineHeight: 1.2, margin: "0 auto 24px", textAlign: "center", width: "100%", maxWidth: "700px", textShadow: "0 2px 40px rgba(255,255,255,0.08)" }}>
               {displayedTitle}
               {!titleDone && (
                 <span style={{ display: "inline-block", width: "3px", height: "0.85em", background: "white", marginLeft: "4px", verticalAlign: "middle", animation: "blink 0.7s step-end infinite" }} />
@@ -545,7 +545,7 @@ export default function HistoryPage() {
             </div>
 
             <div style={{ opacity: showLine ? 1 : 0, transition: "opacity 0.6s ease-in" }}>
-              <div style={{ width: "120px", height: "1px", backgroundColor: "rgba(200,170,100,0.4)", marginBottom: "1.5rem" }} />
+              <div style={{ width: "120px", height: "1px", backgroundColor: "rgba(200,170,100,0.4)", margin: "0 auto 1.5rem", display: "block" }} />
             </div>
 
             <div style={{ opacity: showScroll ? 1 : 0, transition: "opacity 0.6s ease-in" }}>
