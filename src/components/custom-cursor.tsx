@@ -19,7 +19,10 @@ export function CustomCursor() {
       [tabindex], [tabindex]:hover,
       [onclick], [onclick]:hover,
       summary, summary:hover,
-      details, details:hover {
+      details, details:hover,
+      nav, nav *,
+      header, header *,
+      [style*="position: fixed"], [style*="position:fixed"] {
         cursor: none !important;
       }
     `;
@@ -106,7 +109,7 @@ export function CustomCursor() {
         border: "1.5px solid rgba(255,255,255,0.7)",
         transform: "translate(-50%, -50%) scale(1)",
         pointerEvents: "none",
-        zIndex: 99999,
+        zIndex: 2147483647,
         opacity: 0,
         transition:
           "width 0.15s ease, height 0.15s ease, border-color 0.15s ease, transform 0.1s ease, opacity 0.2s ease",
