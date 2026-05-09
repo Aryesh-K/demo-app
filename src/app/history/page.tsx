@@ -492,43 +492,45 @@ export default function HistoryPage() {
 
       <div style={{ backgroundColor: "#080808", minHeight: "100vh", color: "#fff", position: "relative", zIndex: 2 }}>
 
-        {/* ── Hero ── */}
-        <section
-          style={{ display: "flex", flexDirection: "row", minHeight: "100vh", backgroundColor: "#080808", overflow: "hidden", position: "relative" }}
-        >
-          {/* Grain overlay */}
-          <div style={{
-            position: "fixed", inset: 0, width: "100%", height: "100%",
-            pointerEvents: "none", zIndex: 2, opacity: 0.035,
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
-            backgroundRepeat: "repeat", backgroundSize: "300px 300px",
-            animation: "grain 0.4s steps(1) infinite",
-          }} />
-
-          {/* Vignette */}
-          <div style={{
-            position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3,
-            background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.85) 100%)",
-          }} />
-
-          {/* Warm sepia glow */}
-          <div style={{
-            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
-            width: "600px", height: "400px", pointerEvents: "none", zIndex: 1,
-            background: "radial-gradient(ellipse, rgba(180,140,80,0.06) 0%, transparent 70%)",
-          }} />
-
-          {/* Left image column */}
-          <div style={{ width: "220px", flexShrink: 0, overflow: "hidden", height: "100vh", position: "relative", zIndex: 2, WebkitMaskImage: COL_MASK, maskImage: COL_MASK }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", animation: "scroll-up 25s linear infinite", paddingTop: "12px" }}>
-              {[...LEFT_IMAGES, ...LEFT_IMAGES].map((file, idx) => (
-                <Image key={idx} src={`/history-images/${file}`} alt="" width={220} height={160} style={{ objectFit: "cover", display: "block", flexShrink: 0, filter: IMG_FILTER }} />
-              ))}
-            </div>
+        {/* Fixed left image column */}
+        <div style={{ position: "fixed", top: 0, left: 0, width: "220px", height: "100vh", overflow: "hidden", zIndex: 10, backgroundColor: "#080808", WebkitMaskImage: COL_MASK, maskImage: COL_MASK }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", animation: "scroll-up 25s linear infinite", paddingTop: "12px" }}>
+            {[...LEFT_IMAGES, ...LEFT_IMAGES].map((file, idx) => (
+              <Image key={idx} src={`/history-images/${file}`} alt="" width={220} height={160} style={{ objectFit: "cover", display: "block", flexShrink: 0, filter: IMG_FILTER }} />
+            ))}
           </div>
+        </div>
+
+        {/* Fixed right image column */}
+        <div style={{ position: "fixed", top: 0, right: 0, width: "220px", height: "100vh", overflow: "hidden", zIndex: 10, backgroundColor: "#080808", WebkitMaskImage: COL_MASK, maskImage: COL_MASK }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", animation: "scroll-down 25s linear infinite", paddingTop: "12px" }}>
+            {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((file, idx) => (
+              <Image key={idx} src={`/history-images/${file}`} alt="" width={220} height={160} style={{ objectFit: "cover", display: "block", flexShrink: 0, filter: IMG_FILTER }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Scrollable center */}
+        <div style={{ marginLeft: "220px", marginRight: "220px", minHeight: "100vh", position: "relative", zIndex: 5 }}>
+
+          {/* ── Hero ── */}
+          <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", textAlign: "center", padding: "0 40px" }}>
+
+            {/* Vignette */}
+            <div style={{
+              position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3,
+              background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 65%, rgba(0,0,0,0.85) 100%)",
+            }} />
+
+            {/* Warm sepia glow */}
+            <div style={{
+              position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+              width: "600px", height: "400px", pointerEvents: "none", zIndex: 1,
+              background: "radial-gradient(ellipse, rgba(180,140,80,0.06) 0%, transparent 70%)",
+            }} />
 
           {/* Center column */}
-          <div style={{ flex: 1, minWidth: "500px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", textAlign: "center", padding: "0 40px", position: "relative", zIndex: 4 }}>
+          <div style={{ position: "relative", zIndex: 4, width: "100%" }}>
             <h1 style={{ fontFamily: SERIF, fontSize: "clamp(42px, 6vw, 80px)", fontWeight: 800, color: "#fff", letterSpacing: "-1px", lineHeight: 1.2, margin: "0 0 24px", textShadow: "0 2px 40px rgba(255,255,255,0.08)" }}>
               {displayedTitle}
               {!titleDone && (
@@ -554,15 +556,7 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          {/* Right image column */}
-          <div style={{ width: "220px", flexShrink: 0, overflow: "hidden", height: "100vh", position: "relative", zIndex: 2, WebkitMaskImage: COL_MASK, maskImage: COL_MASK }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", animation: "scroll-down 25s linear infinite", paddingTop: "12px" }}>
-              {[...RIGHT_IMAGES, ...RIGHT_IMAGES].map((file, idx) => (
-                <Image key={idx} src={`/history-images/${file}`} alt="" width={220} height={160} style={{ objectFit: "cover", display: "block", flexShrink: 0, filter: IMG_FILTER }} />
-              ))}
-            </div>
           </div>
-        </section>
 
         {/* ── Timeline ── */}
         <section style={{ backgroundColor: "#080808", padding: "6rem 2rem" }}>
@@ -648,6 +642,7 @@ export default function HistoryPage() {
             Check a Drug Interaction →
           </Link>
         </footer>
+        </div>
       </div>
 
       {/* ── Flip Modal Overlay ── */}
