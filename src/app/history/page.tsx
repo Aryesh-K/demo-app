@@ -678,21 +678,28 @@ export default function HistoryPage() {
                 <div style={{ width: "42%", flexShrink: 0, height: "100%", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column" }}>
 
                   {/* Image area */}
-                  <div style={{ flex: "0 0 58%", padding: "40px", display: "flex", flexDirection: "column", alignItems: "stretch", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ flex: 1, border: "1px dashed rgba(255,255,255,0.15)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                      <p style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: "13px", color: "#444", margin: 0 }}>Historical photograph</p>
-                      <p style={{ fontFamily: SANS, fontSize: "10px", color: "rgba(200,170,100,0.5)", margin: 0, letterSpacing: "1px" }}>
-                        {modalContent.eraNum} · {selectedEra.year}
-                      </p>
+                  <div style={{ flex: "0 0 58%", display: "flex", flexDirection: "column", alignItems: "stretch", borderBottom: "1px solid rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                    <div style={{ position: "relative", width: "100%", height: "100%", minHeight: "400px" }}>
+                      <Image
+                        src={`/history-images/era${eraIndex + 1}-photo.png`}
+                        alt={`${selectedEra.name} historical photograph`}
+                        fill
+                        style={{ objectFit: "cover", objectPosition: "center center", filter: "grayscale(100%) sepia(15%) contrast(108%)" }}
+                      />
                     </div>
                   </div>
 
                   {/* Pull quote */}
                   <div style={{ flex: 1, padding: "28px 32px", display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden" }}>
                     <div style={{ borderLeft: `2px solid ${GOLD_DIM}`, paddingLeft: "24px" }}>
-                      {/* Portrait placeholder */}
-                      <div style={{ width: "64px", height: "64px", borderRadius: "50%", border: "1px dashed rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
-                        <span style={{ color: "#333", fontSize: "9px", fontFamily: SANS, textAlign: "center" }}>Portrait</span>
+                      {/* Portrait */}
+                      <div style={{ position: "relative", width: "80px", height: "80px", borderRadius: "50%", overflow: "hidden", border: "1px solid rgba(200,170,100,0.4)", flexShrink: 0, marginBottom: "16px" }}>
+                        <Image
+                          src={`/history-images/era${eraIndex + 1}-portrait.png`}
+                          alt={`${modalContent.quoteAttrib} portrait`}
+                          fill
+                          style={{ objectFit: "cover", objectPosition: "center top", filter: "grayscale(100%) sepia(10%)" }}
+                        />
                       </div>
 
                       {/* Big opening quote mark */}
