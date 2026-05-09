@@ -1,73 +1,116 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export function CustomCursor() {
-  const [position, setPosition] = useState({ x: -100, y: -100 });
-  const [isHovering, setIsHovering] = useState(false);
-  const [isClicking, setIsClicking] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const cursorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const style = document.createElement("style");
-    style.innerHTML = "* { cursor: none !important; }";
+    style.id = "custom-cursor-style";
+    style.innerHTML = `
+      *, *::before, *::after,
+      a, a:hover, a:active, a:focus,
+      button, button:hover, button:active, button:focus,
+      input, input:hover, input:active, input:focus,
+      textarea, textarea:hover, textarea:active,
+      select, select:hover, select:active,
+      label, label:hover,
+      [role="button"], [role="button"]:hover,
+      [tabindex], [tabindex]:hover,
+      [onclick], [onclick]:hover,
+      summary, summary:hover,
+      details, details:hover {
+        cursor: none !important;
+      }
+    `;
     document.head.appendChild(style);
-    return () => { document.head.removeChild(style); };
+
+    document.documentElement.style.setProperty("cursor", "none", "important");
+    document.body.style.setProperty("cursor", "none", "important");
+
+    return () => {
+      const el = document.getElementById("custom-cursor-style");
+      if (el) el.remove();
+    };
   }, []);
 
   useEffect(() => {
-    const moveCursor = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
-      setIsVisible(true);
+    const cursor = cursorRef.current;
+    if (!cursor) return;
+
+    const onMove = (e: MouseEvent) => {
+      cursor.style.left = e.clientX + "px";
+      cursor.style.top = e.clientY + "px";
+      cursor.style.opacity = "1";
     };
 
-    const handleMouseOver = (e: MouseEvent) => {
+    const onOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const isClickable = target.closest(
-        'a, button, [role="button"], input, textarea, select, label',
+      const clickable = target.closest(
+        'a, button, [role="button"], input, textarea, select, label, [tabindex], [onclick]',
       );
-      setIsHovering(!!isClickable);
+      if (clickable) {
+        cursor.style.width = "32px";
+        cursor.style.height = "32px";
+        cursor.style.borderColor = "rgba(239,159,39,0.9)";
+      } else {
+        cursor.style.width = "20px";
+        cursor.style.height = "20px";
+        cursor.style.borderColor = "rgba(255,255,255,0.7)";
+      }
     };
 
-    const handleMouseDown = () => setIsClicking(true);
-    const handleMouseUp = () => setIsClicking(false);
-    const handleMouseLeave = () => setIsVisible(false);
-    const handleMouseEnter = () => setIsVisible(true);
+    const onDown = () => {
+      cursor.style.transform = "translate(-50%, -50%) scale(0.75)";
+    };
 
-    document.addEventListener("mousemove", moveCursor);
-    document.addEventListener("mouseover", handleMouseOver);
-    document.addEventListener("mousedown", handleMouseDown);
-    document.addEventListener("mouseup", handleMouseUp);
-    document.addEventListener("mouseleave", handleMouseLeave);
-    document.addEventListener("mouseenter", handleMouseEnter);
+    const onUp = () => {
+      cursor.style.transform = "translate(-50%, -50%) scale(1)";
+    };
+
+    const onLeave = () => {
+      cursor.style.opacity = "0";
+    };
+
+    const onEnter = () => {
+      cursor.style.opacity = "1";
+    };
+
+    document.addEventListener("mousemove", onMove, { passive: true });
+    document.addEventListener("mouseover", onOver, { passive: true });
+    document.addEventListener("mousedown", onDown, { passive: true });
+    document.addEventListener("mouseup", onUp, { passive: true });
+    document.addEventListener("mouseleave", onLeave);
+    document.addEventListener("mouseenter", onEnter);
 
     return () => {
-      document.removeEventListener("mousemove", moveCursor);
-      document.removeEventListener("mouseover", handleMouseOver);
-      document.removeEventListener("mousedown", handleMouseDown);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("mouseleave", handleMouseLeave);
-      document.removeEventListener("mouseenter", handleMouseEnter);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseover", onOver);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("mouseleave", onLeave);
+      document.removeEventListener("mouseenter", onEnter);
     };
   }, []);
 
   return (
     <div
+      ref={cursorRef}
       style={{
         position: "fixed",
-        left: position.x,
-        top: position.y,
-        width: isHovering ? "32px" : "20px",
-        height: isHovering ? "32px" : "20px",
+        left: "-100px",
+        top: "-100px",
+        width: "20px",
+        height: "20px",
         borderRadius: "50%",
-        border: isHovering
-          ? "1.5px solid rgba(239,159,39,0.9)"
-          : "1.5px solid rgba(255,255,255,0.7)",
-        transform: `translate(-50%, -50%) scale(${isClicking ? 0.8 : 1})`,
+        border: "1.5px solid rgba(255,255,255,0.7)",
+        transform: "translate(-50%, -50%) scale(1)",
         pointerEvents: "none",
         zIndex: 99999,
-        opacity: isVisible ? 1 : 0,
+        opacity: 0,
         transition:
-          "width 0.2s ease, height 0.2s ease, border-color 0.2s ease, transform 0.1s ease, opacity 0.2s ease",
+          "width 0.15s ease, height 0.15s ease, border-color 0.15s ease, transform 0.1s ease, opacity 0.2s ease",
+        willChange: "transform, left, top",
         mixBlendMode: "difference",
       }}
     />

@@ -34,15 +34,7 @@
   }
 }
 
-html,
-html *,
-html *::before,
-html *::after {
-  cursor: none !important;
-}
-
-a, button, input, textarea, select, label,
-[role="button"], [tabindex] {
+* {
   cursor: none !important;
 }
 
