@@ -4,17 +4,17 @@ import { useState } from "react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ORGAN_COORDS: Record<string, readonly [number, number]> = {
-  brain: [100, 30],
-  spinal_cord: [100, 165],
-  lungs: [85, 130],
-  heart: [80, 118],
-  stomach: [105, 195],
-  liver: [118, 182],
-  kidney: [82, 205],
-  intestines: [100, 235],
-  bloodstream: [140, 150],
-  skin: [155, 190],
+const ORGAN_COORDS: Record<string, { x: number; y: number }> = {
+  brain:       { x: 94,  y: 28  },
+  spinal_cord: { x: 100, y: 180 },
+  lungs:       { x: 82,  y: 115 },
+  heart:       { x: 88,  y: 118 },
+  stomach:     { x: 100, y: 195 },
+  liver:       { x: 115, y: 185 },
+  kidney:      { x: 80,  y: 205 },
+  intestines:  { x: 100, y: 240 },
+  bloodstream: { x: 130, y: 155 },
+  skin:        { x: 155, y: 200 },
 };
 
 const ORGAN_LABELS: Record<string, string> = {
@@ -194,7 +194,6 @@ export default function BodyMap({
             {validSystems.map((system) => {
               const coords = ORGAN_COORDS[system.organ];
               if (!coords) return null;
-              const [cx, cy] = coords;
               const isHovered = hoveredOrgan === system.organ;
               const isClicked = clickedOrgan === system.organ;
               return (
@@ -204,8 +203,8 @@ export default function BodyMap({
                   aria-label={`Select ${ORGAN_LABELS[system.organ] ?? system.organ}`}
                   style={{
                     position: "absolute",
-                    left: cx,
-                    top: cy,
+                    left: coords.x,
+                    top: coords.y,
                     width: 18,
                     height: 18,
                     transform: "translate(-50%, -50%)",
