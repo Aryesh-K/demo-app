@@ -244,13 +244,14 @@ function TermChip({
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: MouseEvent) => {
-      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
-        onToggle(e as unknown as React.MouseEvent);
+      if (popupRef.current?.contains(e.target as Node)) {
+        return;
       }
+      onToggle(e as unknown as React.MouseEvent);
     };
     const timer = setTimeout(() => {
       document.addEventListener("mousedown", handler);
-    }, 100);
+    }, 150);
     return () => {
       clearTimeout(timer);
       document.removeEventListener("mousedown", handler);
@@ -280,10 +281,11 @@ function TermChip({
       {isOpen && (
         <div
           ref={popupRef}
-          className="absolute left-0 top-[calc(100%+6px)] z-50 w-64 rounded-xl border border-teal-800 bg-card p-3 shadow-xl"
-          style={{ animation: "fade-in 0.2s ease forwards" }}
+          className="absolute left-0 top-[calc(100%+6px)] w-64 rounded-xl border border-teal-800 bg-card p-3 shadow-xl"
+          style={{ animation: "fade-in 0.2s ease forwards", pointerEvents: "all", zIndex: 9999, position: "absolute" }}
           role="dialog"
           onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
           <span className="flex items-start justify-between gap-1.5">
@@ -311,9 +313,27 @@ function TermChip({
               ) : (
                 <button
                   type="button"
-                  onClick={(e) => {
+                  style={{ position: "relative", zIndex: 10000, pointerEvents: "all", cursor: "pointer" }}
+                  onMouseDown={async (e) => {
                     e.stopPropagation();
-                    onAdd();
+                    e.preventDefault();
+                    console.log("[flashcard] mousedown for:", term);
+                    alert("Button clicked: " + term);
+                    const supabase = createClient();
+                    const { data: { user } } = await supabase.auth.getUser();
+                    console.log("[flashcard] user:", user?.id);
+                    if (!user) return;
+                    const { error } = await supabase.from("user_flashcards").insert({
+                      user_id: user.id,
+                      term,
+                      definition,
+                      category: "interactions",
+                      source: "analysis",
+                    });
+                    console.log("[flashcard] error:", error);
+                    if (!error) {
+                      onAdd();
+                    }
                   }}
                   className="text-[11px] text-teal-400 transition-colors hover:text-teal-300"
                 >
@@ -684,7 +704,7 @@ function CaseStudyPanel({
 
 // ─── Results ──────────────────────────────────────────────────────────────────
 
-function Results({ result, level, addedTerms, onAddTerm }: { result: ApiResult; level: 1 | 2 | 3; addedTerms: Set<string>; onAddTerm: (term: string, definition: string) => void }) {
+function Results({ result, level, addedTerms, onAddTerm }: { result: ApiResult; level: 1 | 2 | 3; addedTerms: Set<string>; onAddTerm: (term: string) => void }) {
   // Track which term chip is open by its [comboIndex, termIndex] encoded as a string
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [showLow, setShowLow] = useState(false);
@@ -826,7 +846,7 @@ function Results({ result, level, addedTerms, onAddTerm }: { result: ApiResult; 
                         }}
                         variant="inline"
                         isAdded={addedTerms.has(seg.termDef.term)}
-                        onAdd={() => onAddTerm(seg.termDef.term, seg.termDef.definition)}
+                        onAdd={() => onAddTerm(seg.termDef.term)}
                       />
                     );
                   })}
@@ -872,7 +892,7 @@ function Results({ result, level, addedTerms, onAddTerm }: { result: ApiResult; 
                           }}
                           variant="pill"
                           isAdded={addedTerms.has(termObj.term)}
-                          onAdd={() => onAddTerm(termObj.term, termObj.definition)}
+                          onAdd={() => onAddTerm(termObj.term)}
                         />
                       );
                     })}
@@ -934,25 +954,7 @@ export default function LearnPremium() {
     });
   }, []);
 
-  async function handleAddToFlashcards(term: string, definition: string) {
-    console.log("[MCAT] handleAddToFlashcards called", { term, definition });
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.log("[MCAT] no user, aborting");
-      return;
-    }
-    const { error } = await supabase.from("user_flashcards").insert({
-      user_id: user.id,
-      term,
-      definition,
-      source: "analysis",
-    });
-    if (error) {
-      console.log("[MCAT] insert error", error);
-      return;
-    }
-    console.log("[MCAT] inserted successfully");
+  function handleTermAdded(term: string) {
     setAddedTerms((prev) => new Set([...prev, term]));
   }
 
@@ -1426,7 +1428,7 @@ export default function LearnPremium() {
       {/* Results */}
       {phase === "results" && apiResult && submittedLevel && (
         <>
-          <Results result={apiResult} level={submittedLevel} addedTerms={addedTerms} onAddTerm={handleAddToFlashcards} />
+          <Results result={apiResult} level={submittedLevel} addedTerms={addedTerms} onAddTerm={handleTermAdded} />
           <Button
             type="button"
             onClick={handleNewAnalysis}
