@@ -26,8 +26,8 @@ export function HeroCtaButtons() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-3 md:flex-row md:justify-center md:items-center">
         <Button
           type="button"
           className="bg-blue-900 text-white hover:bg-blue-800"
@@ -45,13 +45,40 @@ export function HeroCtaButtons() {
         >
           Learn the Biology →
         </Button>
+        <Link
+          href="/history"
+          className="inline-flex items-center justify-center rounded-md px-6 py-2.5 text-sm font-medium transition-colors"
+          style={{
+            border: "1px solid rgba(255,255,255,0.25)",
+            color: "rgba(255,255,255,0.7)",
+            background: "transparent",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.borderColor =
+              "rgba(255,255,255,0.5)";
+            (e.currentTarget as HTMLAnchorElement).style.color = "white";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.borderColor =
+              "rgba(255,255,255,0.25)";
+            (e.currentTarget as HTMLAnchorElement).style.color =
+              "rgba(255,255,255,0.7)";
+          }}
+        >
+          Learn the History →
+        </Link>
       </div>
-      <Link
-        href="/history"
-        className="mt-3 font-serif text-sm uppercase italic tracking-widest text-white underline decoration-white/50 underline-offset-4 transition-colors hover:text-slate-300 hover:decoration-white"
+      <p
+        style={{
+          fontSize: "11px",
+          color: "rgba(255,255,255,0.3)",
+          textAlign: "center",
+          marginTop: "8px",
+          letterSpacing: "0.3px",
+        }}
       >
-        — Learn the History —
-      </Link>
+        History is free — no account needed
+      </p>
     </div>
   );
 }
