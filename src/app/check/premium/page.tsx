@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { ConfidenceScore } from "~/components/confidence-score";
+import { SeveritySpectrum } from "~/components/severity-spectrum";
 import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { isLikelyValidDrug } from "~/lib/drug-suggestions";
 import { Button } from "~/components/ui/button";
@@ -90,40 +91,6 @@ interface ApiResult {
   pharm_gkb_found?: boolean;
   rxnorm_found?: boolean;
 }
-
-// ─── Risk config ──────────────────────────────────────────────────────────────
-
-type RiskConfig = {
-  bg: string;
-  border: string;
-  text: string;
-  label: string;
-  emoji: string;
-};
-
-const RISK_CONFIG: Record<Risk, RiskConfig> = {
-  high: {
-    bg: "bg-red-950/40",
-    border: "border-red-800",
-    text: "text-red-300",
-    label: "HIGH RISK",
-    emoji: "⚠️",
-  },
-  moderate: {
-    bg: "bg-amber-950/40",
-    border: "border-amber-800",
-    text: "text-amber-300",
-    label: "MODERATE RISK",
-    emoji: "⚡",
-  },
-  low: {
-    bg: "bg-green-950/40",
-    border: "border-green-800",
-    text: "text-green-300",
-    label: "LOW RISK",
-    emoji: "✅",
-  },
-};
 
 // ─── Recommendation config ────────────────────────────────────────────────────
 
@@ -615,7 +582,6 @@ function HealthProfilePanel({
 
 function Results({ result }: { result: ApiResult }) {
   const [showLow, setShowLow] = useState(false);
-  const overallCfg = RISK_CONFIG[result.overall_risk];
   const recCfg =
     RECOMMENDATION_CONFIG[result.recommendation] ??
     RECOMMENDATION_CONFIG["Consult your doctor"];
@@ -631,41 +597,20 @@ function Results({ result }: { result: ApiResult }) {
   return (
     <div className="flex flex-col gap-6">
       {/* Overall risk banner */}
-      <div
-        className={cn(
-          "flex flex-col gap-3 rounded-xl border p-5",
-          overallCfg.bg,
-          overallCfg.border,
-        )}
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Overall risk badge */}
-          <div className="flex items-center gap-2">
-            <span className="text-2xl leading-none" aria-hidden="true">
-              {overallCfg.emoji}
-            </span>
-            <span
-              className={cn(
-                "text-sm font-bold tracking-widest",
-                overallCfg.text,
-              )}
-            >
-              {overallCfg.label}
-            </span>
-          </div>
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
+        <SeveritySpectrum riskLevel={result.overall_risk} />
 
-          {/* Recommendation badge */}
-          <span
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-semibold",
-              recCfg.bg,
-              recCfg.border,
-              recCfg.text,
-            )}
-          >
-            {recCfg.emoji} {result.recommendation}
-          </span>
-        </div>
+        {/* Recommendation badge */}
+        <span
+          className={cn(
+            "w-fit rounded-full border px-3 py-1 text-xs font-semibold",
+            recCfg.bg,
+            recCfg.border,
+            recCfg.text,
+          )}
+        >
+          {recCfg.emoji} {result.recommendation}
+        </span>
 
         <p className="text-sm leading-relaxed text-muted-foreground">
           {result.overall_summary}
@@ -708,7 +653,6 @@ function Results({ result }: { result: ApiResult }) {
           {sorted.map((combo) => {
             const isLow = combo.risk_level === "low";
             if (!allLow && isLow && !showLow) return null;
-            const cfg = RISK_CONFIG[combo.risk_level];
             const ineffective = isCombinationIneffective(combo);
             const classEmoji =
               CLASSIFICATION_EMOJI[combo.classification] ?? "🔍";
@@ -755,22 +699,11 @@ function Results({ result }: { result: ApiResult }) {
                     {combo.classification}
                   </span>
 
-                  {ineffective ? (
-                    <span className="flex items-center gap-1.5 rounded-full border border-purple-800 bg-purple-950/40 px-3 py-1 text-xs font-bold text-purple-300">
-                      🚫 INEFFECTIVE
-                    </span>
-                  ) : (
-                    <span
-                      className={cn(
-                        "rounded-full border px-3 py-1 text-xs font-bold",
-                        cfg.bg,
-                        cfg.border,
-                        cfg.text,
-                      )}
-                    >
-                      {cfg.emoji} {cfg.label}
-                    </span>
-                  )}
+                  <SeveritySpectrum
+                    riskLevel={combo.risk_level}
+                    interactionType={combo.interaction_type}
+                    showIneffective={ineffective}
+                  />
                 </div>
 
                 {/* Simple explanation */}

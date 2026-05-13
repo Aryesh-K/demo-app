@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { isLikelyValidDrug } from "~/lib/drug-suggestions";
 import { ConfidenceScore } from "~/components/confidence-score";
+import { SeveritySpectrum } from "~/components/severity-spectrum";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -47,40 +48,6 @@ interface ApiResult {
   pharm_gkb_found?: boolean;
   rxnorm_found?: boolean;
 }
-
-// ─── Risk config ──────────────────────────────────────────────────────────────
-
-type RiskConfig = {
-  bg: string;
-  border: string;
-  text: string;
-  label: string;
-  emoji: string;
-};
-
-const RISK_CONFIG: Record<Risk, RiskConfig> = {
-  high: {
-    bg: "bg-red-950/40",
-    border: "border-red-800",
-    text: "text-red-300",
-    label: "HIGH RISK",
-    emoji: "⚠️",
-  },
-  moderate: {
-    bg: "bg-amber-950/40",
-    border: "border-amber-800",
-    text: "text-amber-300",
-    label: "MODERATE RISK",
-    emoji: "⚡",
-  },
-  low: {
-    bg: "bg-green-950/40",
-    border: "border-green-800",
-    text: "text-green-300",
-    label: "LOW RISK",
-    emoji: "✅",
-  },
-};
 
 // ─── Classification config ────────────────────────────────────────────────────
 
@@ -339,7 +306,6 @@ function Results({ result }: { result: ApiResult }) {
   const [activeTab, setActiveTab] = useState<"simple" | "intermediate">(
     "simple",
   );
-  const cfg = RISK_CONFIG[result.risk_level];
 
   const mentionsDegradation = DEGRADATION_KEYWORDS.some(
     (kw) =>
@@ -367,32 +333,11 @@ function Results({ result }: { result: ApiResult }) {
         </span>
       </div>
 
-      {/* Risk / Ineffective badge */}
-      {showIneffective ? (
-        <div className="flex items-center gap-3 rounded-lg border border-purple-800 bg-purple-950/40 px-4 py-3">
-          <span className="text-2xl leading-none" aria-hidden="true">
-            🚫
-          </span>
-          <span className="text-sm font-bold tracking-widest text-purple-300">
-            INEFFECTIVE
-          </span>
-        </div>
-      ) : (
-        <div
-          className={cn(
-            "flex items-center gap-3 rounded-lg border px-4 py-3",
-            cfg.bg,
-            cfg.border,
-          )}
-        >
-          <span className="text-2xl leading-none" aria-hidden="true">
-            {cfg.emoji}
-          </span>
-          <span className={cn("text-sm font-bold tracking-widest", cfg.text)}>
-            {cfg.label}
-          </span>
-        </div>
-      )}
+      <SeveritySpectrum
+        riskLevel={result.risk_level}
+        interactionType={result.interaction_type}
+        showIneffective={showIneffective}
+      />
 
       <ConfidenceScore
         score={result.confidence_score ?? 70}
