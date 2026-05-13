@@ -318,7 +318,6 @@ function TermChip({
                     e.stopPropagation();
                     e.preventDefault();
                     console.log("[flashcard] mousedown for:", term);
-                    alert("Button clicked: " + term);
                     const supabase = createClient();
                     const { data: { user } } = await supabase.auth.getUser();
                     console.log("[flashcard] user:", user?.id);

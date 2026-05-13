@@ -254,7 +254,7 @@ export default function FlashcardsPage() {
 
   // My cards tab
   const [myCards, setMyCards] = useState<UserFlashcard[]>([]);
-  const [myCardsLoading, setMyCardsLoading] = useState(false);
+  const [myCardsLoading, setMyCardsLoading] = useState(true);
 
   // Study session config
   const [studyCategoryFilter, setStudyCategoryFilter] = useState<CategoryFilter>("all");
@@ -293,21 +293,27 @@ export default function FlashcardsPage() {
     })();
   }, [router]);
 
-  // Load my cards
+  // Load my cards on mount
   useEffect(() => {
-    if (!ready || tab !== "mine") return;
-    setMyCardsLoading(true);
-    const supabase = createClient();
-    supabase
-      .from("user_flashcards")
-      .select("id, term, definition, category, source")
-      .eq("source", "analysis")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setMyCards((data as UserFlashcard[]) ?? []);
+    const loadUserCards = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         setMyCardsLoading(false);
-      });
-  }, [ready, tab]);
+        return;
+      }
+      const { data } = await supabase
+        .from("user_flashcards")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (data) {
+        setMyCards(data as UserFlashcard[]);
+      }
+      setMyCardsLoading(false);
+    };
+    loadUserCards();
+  }, []);
 
   async function deleteMyCard(id: number) {
     const supabase = createClient();
