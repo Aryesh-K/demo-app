@@ -40,6 +40,7 @@ const premiumStudentsFeatures = [
   "Organ and biochemical process focus — direct the AI to emphasize specific systems like cardiac function, cellular respiration, or liver metabolism",
   "Clickable term definitions — tap any highlighted word for an instant explanation calibrated to your curriculum level",
   "🃏 MCAT Pharmacology Flashcard Bank — 100 pre-loaded cards across pharmacokinetics, pharmacodynamics, and drug interactions. Add terms directly from your analyses.",
+  "🔬 Interactive Case Studies — work through real patient scenarios with animated diagrams, drag-and-drop exercises, and AI-graded written responses. Built for AP Biology and Pre-Med students.",
 ];
 
 function FeatureList({ items }: { items: string[] }) {

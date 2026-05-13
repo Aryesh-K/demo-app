@@ -48,6 +48,7 @@ function buildDropdownItems(
     items.push({ href: "/account", label: "Premium 🔒", locked: true });
     if (mode === "learn") {
       items.push({ href: "/account", label: "MCAT Flashcards 🔒", locked: true });
+      items.push({ href: "/case-studies", label: "Case Studies 🔒", locked: true });
     }
     return items;
   }
@@ -64,6 +65,7 @@ function buildDropdownItems(
   });
   if (mode === "learn") {
     items.push({ href: "/flashcards", label: "MCAT Flashcards 👑", locked: false, premiumColor: "teal" });
+    items.push({ href: "/case-studies", label: "Case Studies 👑", locked: false, premiumColor: "teal" });
   }
   return items;
 }
