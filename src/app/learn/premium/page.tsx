@@ -9,6 +9,7 @@ import { usePremiumProfile } from "~/hooks/usePremiumProfile";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { createClient } from "~/lib/supabase/client";
 import { cn } from "~/lib/utils";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -230,6 +231,7 @@ function TermChip({
   isOpen,
   onToggle,
   variant = "pill",
+  userId,
 }: {
   displayText: string;
   term: string;
@@ -237,7 +239,38 @@ function TermChip({
   isOpen: boolean;
   onToggle: (e: React.MouseEvent) => void;
   variant?: "inline" | "pill";
+  userId: string | null;
 }) {
+  const [deckState, setDeckState] = useState<"idle" | "checking" | "added" | "exists">("idle");
+
+  useEffect(() => {
+    if (!isOpen || !userId || !definition) return;
+    setDeckState("checking");
+    const supabase = createClient();
+    supabase
+      .from("user_flashcards")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("term", term)
+      .maybeSingle()
+      .then(({ data }) => {
+        setDeckState(data ? "exists" : "idle");
+      });
+  }, [isOpen, userId, term, definition]);
+
+  async function handleAddToDeck(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!userId) return;
+    const supabase = createClient();
+    await supabase.from("user_flashcards").insert({
+      user_id: userId,
+      term,
+      definition,
+      source: "analysis",
+    });
+    setDeckState("added");
+  }
+
   return (
     <span className="relative inline" style={{ zIndex: isOpen ? 51 : "auto" }}>
       <button
@@ -282,6 +315,24 @@ function TermChip({
           <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
             {definition || "No definition available."}
           </span>
+          {userId && definition && (
+            <div className="mt-2.5 border-t border-border pt-2.5">
+              {deckState === "exists" || deckState === "added" ? (
+                <p className="text-[11px] text-muted-foreground">
+                  ✓ {deckState === "added" ? "Added to deck" : "Already in your deck"}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAddToDeck}
+                  disabled={deckState === "checking"}
+                  className="text-[11px] text-teal-400 transition-colors hover:text-teal-300 disabled:opacity-40"
+                >
+                  ➕ Add to MCAT Deck
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </span>
@@ -644,7 +695,7 @@ function CaseStudyPanel({
 
 // ─── Results ──────────────────────────────────────────────────────────────────
 
-function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
+function Results({ result, level, userId }: { result: ApiResult; level: 1 | 2 | 3; userId: string | null }) {
   // Track which term chip is open by its [comboIndex, termIndex] encoded as a string
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [showLow, setShowLow] = useState(false);
@@ -815,6 +866,7 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
                           setOpenKey(openKey === chipKey ? null : chipKey);
                         }}
                         variant="inline"
+                        userId={userId}
                       />
                     );
                   })}
@@ -859,6 +911,7 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
                             setOpenKey(openKey === pillKey ? null : pillKey);
                           }}
                           variant="pill"
+                          userId={userId}
                         />
                       );
                     })}
@@ -910,7 +963,15 @@ export default function LearnPremium() {
   const [_submittedCount, setSubmittedCount] = useState(0);
   const [submittedLevel, setSubmittedLevel] = useState<1 | 2 | 3 | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
 
   useEffect(() => {
     if (savedProfile?.notes) setPersonalNotes(savedProfile.notes);
@@ -1382,7 +1443,7 @@ export default function LearnPremium() {
       {/* Results */}
       {phase === "results" && apiResult && submittedLevel && (
         <>
-          <Results result={apiResult} level={submittedLevel} />
+          <Results result={apiResult} level={submittedLevel} userId={userId} />
           <Button
             type="button"
             onClick={handleNewAnalysis}

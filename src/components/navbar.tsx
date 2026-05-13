@@ -42,22 +42,30 @@ function buildDropdownItems(
   }
 
   if (auth.status === "free") {
-    return [
+    const items: DropdownItem[] = [
       { href: `${base}/free`, label: "✓ Free", locked: false },
-      { href: "/account", label: "🔒 Premium", locked: true },
     ];
+    if (mode === "learn") {
+      items.push({ href: "/account", label: "🔒 MCAT Flashcards", locked: true });
+    }
+    items.push({ href: "/account", label: "🔒 Premium", locked: true });
+    return items;
   }
 
   // premium
-  return [
+  const items: DropdownItem[] = [
     { href: `${base}/free`, label: "✓ Free", locked: false },
-    {
-      href: `${base}/premium`,
-      label: "✓ Premium",
-      locked: false,
-      premiumColor,
-    },
   ];
+  if (mode === "learn") {
+    items.push({ href: "/flashcards", label: "🃏 MCAT Flashcards", locked: false, premiumColor: "teal" });
+  }
+  items.push({
+    href: `${base}/premium`,
+    label: "✓ Premium",
+    locked: false,
+    premiumColor,
+  });
+  return items;
 }
 
 function NavDropdown({

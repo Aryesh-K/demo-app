@@ -39,6 +39,7 @@ const premiumStudentsFeatures = [
   "Case study mode — analyze interactions for a specific patient profile",
   "Organ and biochemical process focus — direct the AI to emphasize specific systems like cardiac function, cellular respiration, or liver metabolism",
   "Clickable term definitions — tap any highlighted word for an instant explanation calibrated to your curriculum level",
+  "🃏 MCAT Pharmacology Flashcard Bank — 100 pre-loaded cards across pharmacokinetics, pharmacodynamics, and drug interactions. Add terms directly from your analyses.",
 ];
 
 function FeatureList({ items }: { items: string[] }) {
