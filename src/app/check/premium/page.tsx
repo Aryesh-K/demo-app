@@ -49,7 +49,7 @@ interface DrugEntry {
 
 // ─── Health profile types ─────────────────────────────────────────────────────
 
-type HealthFieldKey = "age" | "conditions" | "medications" | "allergies";
+type HealthFieldKey = "age" | "conditions" | "medications" | "allergies" | "personalNotes";
 
 interface HealthField {
   value: string;
@@ -63,6 +63,7 @@ const INITIAL_HEALTH_PROFILE: HealthProfile = {
   conditions: { value: "", included: true },
   medications: { value: "", included: true },
   allergies: { value: "", included: true },
+  personalNotes: { value: "", included: true },
 };
 
 // ─── API types ────────────────────────────────────────────────────────────────
@@ -450,6 +451,7 @@ const HEALTH_FIELD_DEFS: Array<{
   placeholder: string;
   type: "input" | "textarea";
   inputMode?: "numeric" | "text";
+  subtitle?: string;
 }> = [
   {
     key: "age",
@@ -475,6 +477,14 @@ const HEALTH_FIELD_DEFS: Array<{
     label: "Allergies",
     placeholder: "e.g. penicillin, sulfa drugs",
     type: "input",
+  },
+  {
+    key: "personalNotes",
+    label: "Personal Notes",
+    placeholder: "Add any personal health notes relevant to this analysis…",
+    type: "textarea",
+    subtitle:
+      "Auto-filled from your account. Edit here for this analysis only — changes won't affect your saved profile.",
   },
 ];
 
@@ -549,7 +559,7 @@ function HealthProfilePanel({
       )}
 
       {/* Fields */}
-      {HEALTH_FIELD_DEFS.map(({ key, label, placeholder, type, inputMode }) => {
+      {HEALTH_FIELD_DEFS.map(({ key, label, placeholder, type, inputMode, subtitle }) => {
         const field = profile[key];
         return (
           <div key={key} className="flex flex-col gap-1.5">
@@ -574,6 +584,7 @@ function HealthProfilePanel({
                 value={field.value}
                 onChange={(e) => onChange(key, { value: e.target.value })}
                 placeholder={placeholder}
+                rows={3}
                 className={TEXTAREA_CLS}
               />
             ) : (
@@ -584,12 +595,12 @@ function HealthProfilePanel({
                 inputMode={inputMode}
               />
             )}
+            {subtitle && (
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
+            )}
           </div>
         );
       })}
-      <p className="text-xs italic text-muted-foreground">
-        Personal notes from your account profile are automatically included.
-      </p>
     </div>
   );
 }
@@ -802,7 +813,6 @@ export default function CheckPremium() {
   ]);
   const drugCounter = useRef(3);
   const [treatmentContext, setTreatmentContext] = useState("");
-  const [personalNotes, setPersonalNotes] = useState("");
   const [drugNotes, setDrugNotes] = useState("");
   const [healthProfile, setHealthProfile] = useState<HealthProfile>(
     INITIAL_HEALTH_PROFILE,
@@ -814,8 +824,8 @@ export default function CheckPremium() {
       savedProfile.age ||
       savedProfile.conditions ||
       savedProfile.medications ||
-      savedProfile.allergies;
-    if (savedProfile.notes) setPersonalNotes(savedProfile.notes);
+      savedProfile.allergies ||
+      savedProfile.notes;
     if (!hasData) return;
     setHealthProfile((prev) => ({
       age: { value: savedProfile.age, included: prev.age.included },
@@ -830,6 +840,10 @@ export default function CheckPremium() {
       allergies: {
         value: savedProfile.allergies,
         included: prev.allergies.included,
+      },
+      personalNotes: {
+        value: savedProfile.notes ?? "",
+        included: prev.personalNotes.included,
       },
     }));
     setAutoFilled(true);
@@ -916,7 +930,7 @@ export default function CheckPremium() {
         drugs: drugsPayload,
         treatment_context: treatmentContext,
         health_context: healthContext,
-        personal_notes: personalNotes,
+        personal_notes: healthProfile.personalNotes.included ? healthProfile.personalNotes.value : "",
         drug_notes: drugNotes,
       }),
     })
