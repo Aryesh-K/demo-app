@@ -16,6 +16,8 @@ interface UserFlashcard {
   source: string;
 }
 
+type StudyCard = Flashcard | UserFlashcard;
+
 type Tab = "all" | "mine" | "study";
 type CategoryFilter = "all" | "pharmacokinetics" | "pharmacodynamics" | "interactions";
 type CardSetFilter = "all" | "mine";
@@ -90,28 +92,29 @@ function BrowseCard({
   );
 }
 
-// ─── Study card ───────────────────────────────────────────────────────────────
+// ─── Flip card ────────────────────────────────────────────────────────────────
 
-function StudyCard({
+function FlipCard({
   card,
-  index,
-  total,
-  mastered,
+  masteredCount,
+  toReviewCount,
+  totalCount,
   onGotIt,
   onReviewAgain,
 }: {
-  card: Flashcard | UserFlashcard;
-  index: number;
-  total: number;
-  mastered: number;
+  card: StudyCard;
+  masteredCount: number;
+  toReviewCount: number;
+  totalCount: number;
   onGotIt: () => void;
   onReviewAgain: () => void;
 }) {
   const [flipped, setFlipped] = useState(false);
 
-  function handleFlip() {
-    setFlipped((v) => !v);
-  }
+  // Reset flip state when card changes
+  useEffect(() => {
+    setFlipped(false);
+  }, [card]);
 
   function handleGotIt() {
     setFlipped(false);
@@ -123,35 +126,49 @@ function StudyCard({
     onReviewAgain();
   }
 
-  const remaining = total - index - 1;
-
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "24px",
+        width: "100%",
+      }}
+    >
       {/* Progress */}
       <div className="w-full max-w-[500px]">
-        <div className="mb-1.5 flex items-center justify-between text-xs text-muted-foreground">
-          <span>Card {index + 1} of {total}</span>
-          <span>{mastered} mastered · {remaining} remaining</span>
+        <div className="mb-1.5 flex items-center justify-between text-xs">
+          <span className="font-medium text-teal-400">
+            Mastered: {masteredCount}
+          </span>
+          <span className="text-amber-400">
+            To review: {toReviewCount}
+          </span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
             className="h-full rounded-full bg-teal-500 transition-all duration-300"
-            style={{ width: `${((index + 1) / total) * 100}%` }}
+            style={{ width: totalCount > 0 ? `${(masteredCount / totalCount) * 100}%` : "0%" }}
           />
         </div>
       </div>
 
-      {/* Card with 3D flip */}
-      <div
-        style={{ perspective: "1000px", width: "100%", maxWidth: "500px" }}
-      >
+      {/* 3D flip card — fixed height, buttons outside */}
+      <div style={{ perspective: "1000px", width: "100%", maxWidth: "500px" }}>
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: card flip is supplementary to the Reveal button */}
         <div
+          onClick={() => !flipped && setFlipped(true)}
           style={{
             transformStyle: "preserve-3d",
             transition: "transform 0.4s ease",
             transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
             position: "relative",
-            minHeight: "220px",
+            minHeight: "280px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            cursor: flipped ? "default" : "pointer",
           }}
         >
           {/* Front */}
@@ -159,15 +176,8 @@ function StudyCard({
             style={{ backfaceVisibility: "hidden" }}
             className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card p-8 text-center"
           >
-            <p className="text-xl font-bold text-foreground">{"term" in card ? card.term : ""}</p>
-            <p className="text-xs text-muted-foreground">Tap to reveal definition</p>
-            <button
-              type="button"
-              onClick={handleFlip}
-              className="mt-2 rounded-lg border border-border px-5 py-2 text-sm text-muted-foreground transition-colors hover:border-teal-700 hover:text-teal-300"
-            >
-              Reveal →
-            </button>
+            <p className="text-xl font-bold text-foreground">{card.term}</p>
+            <p className="text-xs text-muted-foreground">Tap card or click Reveal to see definition</p>
           </div>
 
           {/* Back */}
@@ -176,7 +186,7 @@ function StudyCard({
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
             }}
-            className="absolute inset-0 flex flex-col gap-4 rounded-2xl border border-teal-800 bg-card p-8"
+            className="absolute inset-0 flex flex-col gap-3 rounded-2xl border border-teal-800 bg-card p-8"
           >
             <p className="text-[10px] font-semibold uppercase tracking-widest text-teal-400/70">
               Definition
@@ -184,24 +194,46 @@ function StudyCard({
             <p className="flex-1 text-sm leading-relaxed text-muted-foreground">
               {card.definition}
             </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleGotIt}
-                className="flex-1 rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
-              >
-                Got it ✓
-              </button>
-              <button
-                type="button"
-                onClick={handleReview}
-                className="flex-1 rounded-lg border border-border py-2.5 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
-              >
-                Review Again
-              </button>
-            </div>
           </div>
         </div>
+      </div>
+
+      {/* Action buttons — always outside the flip container */}
+      <div
+        style={{
+          marginTop: "16px",
+          display: "flex",
+          gap: "12px",
+          width: "100%",
+          maxWidth: "500px",
+        }}
+      >
+        {!flipped ? (
+          <button
+            type="button"
+            onClick={() => setFlipped(true)}
+            className="w-full rounded-lg border border-border py-2.5 text-sm text-muted-foreground transition-colors hover:border-teal-700 hover:text-teal-300"
+          >
+            Reveal →
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleGotIt}
+              className="flex-1 rounded-lg bg-teal-700 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
+            >
+              Got it ✓
+            </button>
+            <button
+              type="button"
+              onClick={handleReview}
+              className="flex-1 rounded-lg border border-border py-2.5 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
+            >
+              Review Again
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -224,15 +256,20 @@ export default function FlashcardsPage() {
   const [myCards, setMyCards] = useState<UserFlashcard[]>([]);
   const [myCardsLoading, setMyCardsLoading] = useState(false);
 
-  // Study session state
+  // Study session config
   const [studyCategoryFilter, setStudyCategoryFilter] = useState<CategoryFilter>("all");
   const [cardSetFilter, setCardSetFilter] = useState<CardSetFilter>("all");
   const [shuffle, setShuffle] = useState(true);
   const [studyStarted, setStudyStarted] = useState(false);
-  const [studyDeck, setStudyDeck] = useState<(Flashcard | UserFlashcard)[]>([]);
-  const [studyIndex, setStudyIndex] = useState(0);
-  const [masteredCount, setMasteredCount] = useState(0);
+
+  // Study session runtime state
+  const [remaining, setRemaining] = useState<StudyCard[]>([]);
+  const [reviewAgain, setReviewAgain] = useState<StudyCard[]>([]);
+  const [mastered, setMastered] = useState<StudyCard[]>([]);
   const [studyComplete, setStudyComplete] = useState(false);
+  const [secondPassMsg, setSecondPassMsg] = useState(false);
+
+  const totalCount = remaining.length + reviewAgain.length + mastered.length;
 
   // Auth check
   useEffect(() => {
@@ -287,9 +324,9 @@ export default function FlashcardsPage() {
     });
   }, [categoryFilter, search]);
 
-  // Build study deck
+  // Build and start study deck
   function startStudy() {
-    let base: (Flashcard | UserFlashcard)[] = [];
+    let base: StudyCard[] = [];
 
     if (cardSetFilter === "all") {
       let mcat: Flashcard[] = MCAT_FLASHCARDS;
@@ -304,20 +341,48 @@ export default function FlashcardsPage() {
       base = [...base].sort(() => Math.random() - 0.5);
     }
 
-    setStudyDeck(base);
-    setStudyIndex(0);
-    setMasteredCount(0);
+    setRemaining(base);
+    setReviewAgain([]);
+    setMastered([]);
     setStudyComplete(false);
+    setSecondPassMsg(false);
     setStudyStarted(true);
   }
 
-  function advanceStudy(mastered: boolean) {
-    if (mastered) setMasteredCount((n) => n + 1);
-    if (studyIndex + 1 >= studyDeck.length) {
-      setStudyComplete(true);
-    } else {
-      setStudyIndex((i) => i + 1);
+  function handleGotIt() {
+    const [current, ...rest] = remaining;
+    const newMastered = [...mastered, current!];
+    setMastered(newMastered);
+    setRemaining(rest);
+
+    if (rest.length === 0) {
+      if (reviewAgain.length === 0) {
+        setStudyComplete(true);
+      } else {
+        triggerSecondPass(reviewAgain);
+      }
     }
+  }
+
+  function handleReviewAgain() {
+    const [current, ...rest] = remaining;
+    const newReviewAgain = [...reviewAgain, current!];
+    setReviewAgain(newReviewAgain);
+    setRemaining(rest);
+
+    if (rest.length === 0) {
+      triggerSecondPass(newReviewAgain);
+    }
+  }
+
+  function triggerSecondPass(cards: StudyCard[]) {
+    setSecondPassMsg(true);
+    setTimeout(() => {
+      setSecondPassMsg(false);
+      const shuffled = [...cards].sort(() => Math.random() - 0.5);
+      setRemaining(shuffled);
+      setReviewAgain([]);
+    }, 1500);
   }
 
   if (!ready) {
@@ -374,7 +439,6 @@ export default function FlashcardsPage() {
       {/* ── Tab 1: All Cards ── */}
       {tab === "all" && (
         <div className="flex flex-col gap-5">
-          {/* Filters */}
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -399,7 +463,6 @@ export default function FlashcardsPage() {
               </button>
             ))}
           </div>
-          {/* Search */}
           <input
             type="text"
             value={search}
@@ -407,7 +470,6 @@ export default function FlashcardsPage() {
             placeholder="Search by term…"
             className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring dark:bg-input/30"
           />
-          {/* Grid */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filteredAll.map((card) => (
               <BrowseCard
@@ -538,13 +600,13 @@ export default function FlashcardsPage() {
               <div className="flex flex-col gap-2">
                 <h2 className="text-xl font-bold">Session Complete!</h2>
                 <p className="text-muted-foreground">
-                  {masteredCount} of {studyDeck.length} cards mastered
+                  {mastered.length} of {totalCount} cards mastered
                 </p>
               </div>
               <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-teal-500"
-                  style={{ width: `${(masteredCount / studyDeck.length) * 100}%` }}
+                  style={{ width: totalCount > 0 ? `${(mastered.length / totalCount) * 100}%` : "0%" }}
                 />
               </div>
               <div className="flex gap-3">
@@ -564,17 +626,25 @@ export default function FlashcardsPage() {
                 </button>
               </div>
             </div>
-          ) : (
+          ) : secondPassMsg ? (
+            /* Second-pass transition message */
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <span className="text-3xl">🔄</span>
+              <p className="text-sm text-muted-foreground">
+                Nice work on the first pass! Now reviewing {reviewAgain.length} card{reviewAgain.length !== 1 ? "s" : ""} you marked for review…
+              </p>
+            </div>
+          ) : remaining.length > 0 ? (
             /* Active study */
-            <StudyCard
-              card={studyDeck[studyIndex]!}
-              index={studyIndex}
-              total={studyDeck.length}
-              mastered={masteredCount}
-              onGotIt={() => advanceStudy(true)}
-              onReviewAgain={() => advanceStudy(false)}
+            <FlipCard
+              card={remaining[0]!}
+              masteredCount={mastered.length}
+              toReviewCount={remaining.length + reviewAgain.length}
+              totalCount={totalCount}
+              onGotIt={handleGotIt}
+              onReviewAgain={handleReviewAgain}
             />
-          )}
+          ) : null}
         </div>
       )}
     </main>

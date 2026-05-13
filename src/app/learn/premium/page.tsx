@@ -296,6 +296,7 @@ function TermChip({
           className="absolute left-0 top-[calc(100%+6px)] z-50 w-64 rounded-xl border border-teal-800 bg-card p-3 shadow-xl"
           style={{ animation: "fade-in 0.2s ease forwards" }}
           role="dialog"
+          onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
@@ -324,7 +325,11 @@ function TermChip({
               ) : (
                 <button
                   type="button"
-                  onClick={handleAddToDeck}
+                  onMouseDown={async (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    await handleAddToDeck(e as unknown as React.MouseEvent);
+                  }}
                   disabled={deckState === "checking"}
                   className="text-[11px] text-teal-400 transition-colors hover:text-teal-300 disabled:opacity-40"
                 >
@@ -938,15 +943,10 @@ export default function LearnPremium() {
   const [selectedLevel, setSelectedLevel] = useState<1 | 2 | 3 | null>(null);
   const [isCaseStudy, setIsCaseStudy] = useState(false);
   const [drugs, setDrugs] = useState<DrugEntry[]>([
-    {
-      id: "drug-1",
-      name: "",
-      method: "Oral (swallowed)",
-      amount: "",
-      unit: "mg",
-    },
+    { id: "drug-1", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
+    { id: "drug-2", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
   ]);
-  const drugCounter = useRef(2);
+  const drugCounter = useRef(3);
   const { profile: savedProfile } = usePremiumProfile();
   const [personalNotes, setPersonalNotes] = useState("");
   const [treatmentContext, setTreatmentContext] = useState("");
