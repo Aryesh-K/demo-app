@@ -242,9 +242,8 @@ function EnzymeSection({ isPremium }: { isPremium: boolean }) {
           </svg>
 
           {/* CYP3A4 hexagon */}
-          <div className="relative flex flex-col items-center gap-2">
+          <div ref={popupRef} className="relative flex flex-col items-center gap-2">
             <button
-              ref={popupRef as React.RefObject<HTMLButtonElement>}
               type="button"
               onClick={() => setShowEnzymeInfo(true)}
               className="relative flex h-20 w-20 items-center justify-center transition-all hover:scale-105"
