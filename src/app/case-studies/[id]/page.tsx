@@ -1612,6 +1612,7 @@ export default function CaseStudyPage() {
   }
 
   async function handleSubmitWritten(qId: string, response: string) {
+    if (!cs) return;
     const wq = cs.questions.find((q) => q.id === qId) as WrittenQuestion | undefined;
     if (!wq) return;
     setWrittenGrading((prev) => ({
