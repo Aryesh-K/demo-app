@@ -1,5 +1,5 @@
 // ─── Drug database pre-fetch utility ─────────────────────────────────────────
-// Fetches RxNorm, FDA label, and NIH interaction data before AI calls.
+// Fetches RxNorm, FDA label, DailyMed, and PharmGKB data before AI calls.
 // All functions are safe: they never throw and always return null fields on failure.
 
 const TIMEOUT_MS = 3000;
@@ -27,6 +27,11 @@ interface FDALabelApiResponse {
   }>;
 }
 
+interface DailyMedResult {
+  dailyMedWarnings: string | null;
+  dailyMedInteractions: string | null;
+}
+
 // ─── Public types ──────────────────────────────────────────────────────────────
 
 export interface DrugData {
@@ -36,6 +41,9 @@ export interface DrugData {
   warnings: string | null;
   interactions: string | null;
   description: string | null;
+  dailyMedWarnings: string | null;
+  dailyMedInteractions: string | null;
+  pharmGKBData: string | null;
 }
 
 export interface NIHInteractionResult {
@@ -187,6 +195,130 @@ async function getFDALabel(drugName: string): Promise<FDAResult> {
   );
 }
 
+// ─── DailyMed ─────────────────────────────────────────────────────────────────
+
+async function getDailyMedData(drugName: string): Promise<DailyMedResult> {
+  const enc = encodeURIComponent(drugName);
+  console.log("[dailymed] Fetching:", drugName);
+  try {
+    const searchRes = await fetchWithTimeout(
+      `https://dailymed.nih.gov/dailymed/services/v2/spls.json?drug_name=${enc}&pagesize=1`,
+    );
+    console.log("[dailymed] Search status:", searchRes.status);
+    if (!searchRes.ok) return { dailyMedWarnings: null, dailyMedInteractions: null };
+
+    const searchData = (await searchRes.json()) as {
+      data?: Array<{ setid?: string; title?: string }>;
+    };
+    console.log("[dailymed] Search result:", JSON.stringify(searchData).slice(0, 200));
+
+    const setId = searchData.data?.[0]?.setid;
+    if (!setId) return { dailyMedWarnings: null, dailyMedInteractions: null };
+
+    const labelRes = await fetchWithTimeout(
+      `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/${setId}/sections.json`,
+    );
+    console.log("[dailymed] Label status:", labelRes.status);
+    if (!labelRes.ok) return { dailyMedWarnings: null, dailyMedInteractions: null };
+
+    const labelData = (await labelRes.json()) as {
+      data?: Array<{
+        section_code?: string;
+        section_name?: string;
+        text?: string;
+      }>;
+    };
+
+    const sections = labelData.data ?? [];
+
+    const warningsSection = sections.find(
+      (s) =>
+        s.section_code === "34071-1" ||
+        s.section_name?.toLowerCase().includes("warning"),
+    );
+    const interactionsSection = sections.find(
+      (s) =>
+        s.section_code === "34073-7" ||
+        s.section_name?.toLowerCase().includes("drug interaction"),
+    );
+
+    const dailyMedWarnings = warningsSection?.text?.slice(0, 600) ?? null;
+    const dailyMedInteractions = interactionsSection?.text?.slice(0, 600) ?? null;
+
+    console.log(
+      "[dailymed] Found warnings:",
+      !!dailyMedWarnings,
+      "interactions:",
+      !!dailyMedInteractions,
+    );
+
+    return { dailyMedWarnings, dailyMedInteractions };
+  } catch (err) {
+    console.log("[drug-data] CATCH ERROR in getDailyMedData:", err);
+    return { dailyMedWarnings: null, dailyMedInteractions: null };
+  }
+}
+
+// ─── PharmGKB ─────────────────────────────────────────────────────────────────
+
+async function getPharmGKBData(drugName: string): Promise<{ pharmGKBData: string | null }> {
+  const enc = encodeURIComponent(drugName);
+  console.log("[pharmgkb] Fetching:", drugName);
+  try {
+    const res = await fetchWithTimeout(
+      `https://api.pharmgkb.org/v1/data/chemical?name=${enc}&view=base`,
+    );
+    console.log("[pharmgkb] Status:", res.status);
+    if (!res.ok) return { pharmGKBData: null };
+
+    const data = (await res.json()) as {
+      data?: Array<{
+        id?: string;
+        name?: string;
+        clinicalAnnotationCount?: number;
+        variantAnnotationCount?: number;
+      }>;
+    };
+
+    const drug = data.data?.[0];
+    if (!drug?.id) return { pharmGKBData: null };
+
+    const ddiRes = await fetchWithTimeout(
+      `https://api.pharmgkb.org/v1/data/drugInteraction?entity1Id=${drug.id}&view=base`,
+    );
+
+    if (ddiRes.ok) {
+      const ddiData = (await ddiRes.json()) as {
+        data?: Array<{
+          entity1?: { name?: string };
+          entity2?: { name?: string };
+          description?: string;
+        }>;
+      };
+
+      const interactions = ddiData.data
+        ?.slice(0, 3)
+        .map(
+          (d) =>
+            `${d.entity1?.name ?? ""} + ${d.entity2?.name ?? ""}: ${d.description ?? ""}`,
+        )
+        .join("; ");
+
+      const pharmGKBData = interactions
+        ? `PharmGKB interactions for ${drug.name}: ${interactions}`.slice(0, 500)
+        : `PharmGKB: Drug found (${drug.name}), clinical annotations: ${drug.clinicalAnnotationCount ?? 0}`;
+
+      console.log("[pharmgkb] Found data:", !!pharmGKBData);
+      return { pharmGKBData };
+    }
+
+    return { pharmGKBData: null };
+  } catch (err) {
+    console.log("[drug-data] CATCH ERROR in getPharmGKBData:", err);
+    return { pharmGKBData: null };
+  }
+}
+
 // ─── Build prompt context string ──────────────────────────────────────────────
 
 export function buildDataContext(
@@ -194,18 +326,24 @@ export function buildDataContext(
   drug2Data: DrugData,
   _knownInteraction: NIHInteractionResult,
 ): string {
-  const nihLine = "Not available (deprecated)";
-
   return (
     `VERIFIED DRUG DATABASE DATA (use this to inform your analysis):\n\n` +
     `Drug A (${drug1Data.inputName}):\n` +
     `- FDA Warnings: ${drug1Data.warnings ?? "Not found"}\n` +
-    `- Known Interactions: ${drug1Data.interactions ?? "Not found"}\n\n` +
+    `- FDA Interactions: ${drug1Data.interactions ?? "Not found"}\n` +
+    `- DailyMed Warnings: ${drug1Data.dailyMedWarnings ?? "Not found"}\n` +
+    `- DailyMed Interactions: ${drug1Data.dailyMedInteractions ?? "Not found"}\n` +
+    `- PharmGKB Data: ${drug1Data.pharmGKBData ?? "Not found"}\n\n` +
     `Drug B (${drug2Data.inputName}):\n` +
     `- FDA Warnings: ${drug2Data.warnings ?? "Not found"}\n` +
-    `- Known Interactions: ${drug2Data.interactions ?? "Not found"}\n\n` +
-    `NIH Interaction Database: ${nihLine}\n\n` +
-    `Base your analysis on this data where available. If the database data conflicts with your training knowledge, prioritize the database data.\n\n`
+    `- FDA Interactions: ${drug2Data.interactions ?? "Not found"}\n` +
+    `- DailyMed Warnings: ${drug2Data.dailyMedWarnings ?? "Not found"}\n` +
+    `- DailyMed Interactions: ${drug2Data.dailyMedInteractions ?? "Not found"}\n` +
+    `- PharmGKB Data: ${drug2Data.pharmGKBData ?? "Not found"}\n\n` +
+    `NIH Interaction Database: Not available (deprecated)\n\n` +
+    `Base your analysis on this data where available. ` +
+    `If database data conflicts with your training knowledge, ` +
+    `prioritize the database data.\n\n`
   );
 }
 
@@ -221,14 +359,31 @@ export async function fetchDrugPairData(
       getRxNormData(drug2),
     ]);
 
-    const [fda1, fda2] = await Promise.all([
-      getFDALabel(drug1),
-      getFDALabel(drug2),
-    ]);
+    const [fda1, fda2, dailyMed1, dailyMed2, pharmGKB1, pharmGKB2] =
+      await Promise.all([
+        getFDALabel(drug1),
+        getFDALabel(drug2),
+        getDailyMedData(drug1),
+        getDailyMedData(drug2),
+        getPharmGKBData(drug1),
+        getPharmGKBData(drug2),
+      ]);
 
     return {
-      drug1Data: { inputName: drug1, ...rxNorm1, ...fda1 },
-      drug2Data: { inputName: drug2, ...rxNorm2, ...fda2 },
+      drug1Data: {
+        inputName: drug1,
+        ...rxNorm1,
+        ...fda1,
+        ...dailyMed1,
+        ...pharmGKB1,
+      },
+      drug2Data: {
+        inputName: drug2,
+        ...rxNorm2,
+        ...fda2,
+        ...dailyMed2,
+        ...pharmGKB2,
+      },
       knownInteraction: {
         hasInteraction: false,
         severity: null,
@@ -245,6 +400,9 @@ export async function fetchDrugPairData(
         warnings: null,
         interactions: null,
         description: null,
+        dailyMedWarnings: null,
+        dailyMedInteractions: null,
+        pharmGKBData: null,
       },
       drug2Data: {
         inputName: drug2,
@@ -253,6 +411,9 @@ export async function fetchDrugPairData(
         warnings: null,
         interactions: null,
         description: null,
+        dailyMedWarnings: null,
+        dailyMedInteractions: null,
+        pharmGKBData: null,
       },
       knownInteraction: {
         hasInteraction: false,
