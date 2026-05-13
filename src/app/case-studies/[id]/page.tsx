@@ -1667,7 +1667,7 @@ export default function CaseStudyPage() {
         <CompletionScreen
           score={score}
           maxScore={maxScore}
-          cs={cs}
+          cs={cs!}
           questionBreakdown={questionBreakdown}
         />
       );
@@ -1676,7 +1676,7 @@ export default function CaseStudyPage() {
     const section = cs.sections[activeSection];
     return (
       <div className="flex flex-col gap-6">
-        <PatientProfileCard cs={cs} collapseOnMount={activeSection > 0} />
+        <PatientProfileCard cs={cs!} collapseOnMount={activeSection > 0} />
 
         {section?.id === "background" && <BackgroundSection />}
         {section?.id === "enzyme" && <EnzymeSection isPremium={isPremium} />}
@@ -1685,7 +1685,7 @@ export default function CaseStudyPage() {
         {section?.id === "which-drugs" && <WhichDrugsSection isPremium={isPremium} />}
         {section?.id === "quiz" && (
           <QuizSection
-            cs={cs}
+            cs={cs!}
             answers={answers}
             submitted={submitted}
             dragOrder={dragOrder}
@@ -1750,7 +1750,7 @@ export default function CaseStudyPage() {
 
         {/* Sidebar */}
         <Sidebar
-          cs={cs}
+          cs={cs!}
           activeSection={activeSection}
           setActiveSection={handleSectionChange}
           completedSections={completedSections}
