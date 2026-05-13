@@ -1470,7 +1470,17 @@ export default function CaseStudyPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
-  const cs = CASE_STUDIES.find((c) => c.id === id) as CaseStudy | undefined;
+  const csFound = CASE_STUDIES.find((c) => c.id === id);
+
+  if (!csFound) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "18px" }}>
+        Case study not found.
+      </div>
+    );
+  }
+
+  const cs: CaseStudy = csFound;
 
   const [ready, setReady] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
@@ -1554,14 +1564,6 @@ export default function CaseStudyPage() {
     });
     if (allDone && cs.questions.length > 0) setShowCompletion(true);
   }, [cs, submitted, writtenGrading, isPremium]);
-
-  if (!cs) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground">Case study not found.</p>
-      </div>
-    );
-  }
 
   if (!ready) {
     return (
@@ -1667,7 +1669,7 @@ export default function CaseStudyPage() {
         <CompletionScreen
           score={score}
           maxScore={maxScore}
-          cs={cs!}
+          cs={cs}
           questionBreakdown={questionBreakdown}
         />
       );
@@ -1676,7 +1678,7 @@ export default function CaseStudyPage() {
     const section = cs.sections[activeSection];
     return (
       <div className="flex flex-col gap-6">
-        <PatientProfileCard cs={cs!} collapseOnMount={activeSection > 0} />
+        <PatientProfileCard cs={cs} collapseOnMount={activeSection > 0} />
 
         {section?.id === "background" && <BackgroundSection />}
         {section?.id === "enzyme" && <EnzymeSection isPremium={isPremium} />}
@@ -1685,7 +1687,7 @@ export default function CaseStudyPage() {
         {section?.id === "which-drugs" && <WhichDrugsSection isPremium={isPremium} />}
         {section?.id === "quiz" && (
           <QuizSection
-            cs={cs!}
+            cs={cs}
             answers={answers}
             submitted={submitted}
             dragOrder={dragOrder}
@@ -1750,7 +1752,7 @@ export default function CaseStudyPage() {
 
         {/* Sidebar */}
         <Sidebar
-          cs={cs!}
+          cs={cs}
           activeSection={activeSection}
           setActiveSection={handleSectionChange}
           completedSections={completedSections}
