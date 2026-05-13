@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { isLikelyValidDrug } from "~/lib/drug-suggestions";
+import { ConfidenceScore } from "~/components/confidence-score";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -37,6 +38,11 @@ interface ApiResult {
   interaction_type: "safety" | "efficacy" | "both";
   mechanism: string;
   simple_explanation: string;
+  confidence_score?: number;
+  fda_found?: boolean;
+  daily_med_found?: boolean;
+  pharm_gkb_found?: boolean;
+  rxnorm_found?: boolean;
 }
 
 // ─── Risk config ──────────────────────────────────────────────────────────────
@@ -342,6 +348,16 @@ function Results({
           </span>
         </div>
       )}
+
+      <ConfidenceScore
+        score={result.confidence_score ?? 70}
+        databasesFound={{
+          fda: !!(result.fda_found),
+          dailyMed: !!(result.daily_med_found),
+          pharmGKB: !!(result.pharm_gkb_found),
+          rxNorm: !!(result.rxnorm_found),
+        }}
+      />
 
       {/* What's happening */}
       <div className="flex flex-col gap-2">

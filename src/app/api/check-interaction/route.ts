@@ -177,7 +177,8 @@ export async function POST(req: NextRequest) {
     `  "risk_level": "high" | "moderate" | "low",\n` +
     `  "interaction_type": "safety" | "efficacy" | "both",\n` +
     `  "mechanism": "1-2 sentence biochemical explanation",\n` +
-    `  "simple_explanation": "2-3 sentence plain English explanation at a middle school reading level"\n` +
+    `  "simple_explanation": "2-3 sentence plain English explanation at a middle school reading level",\n` +
+    `  "confidence_score": number from 0-100 (90-100: well-documented in FDA labels, clinical literature, and multiple databases; 70-89: recognized but evidence varies across sources; 50-69: plausible based on mechanism but limited direct documentation; 0-49: theoretical or based primarily on AI inference with minimal database support)\n` +
     `}`;
 
   let apiResponse: Response;
@@ -273,6 +274,7 @@ export async function POST(req: NextRequest) {
       interaction_type: string;
       mechanism: string;
       simple_explanation: string;
+      confidence_score?: number;
     };
 
     // Try standard parse first
@@ -289,6 +291,7 @@ export async function POST(req: NextRequest) {
       const simpMatch = cleaned.match(
         /"simple_explanation"\s*:\s*"([\s\S]+?)(?="\s*}|",\s*")/,
       );
+      const confMatch = cleaned.match(/"confidence_score"\s*:\s*(\d+)/);
 
       if (!riskMatch || !simpMatch) throw new Error("Could not extract fields");
 
@@ -297,6 +300,7 @@ export async function POST(req: NextRequest) {
         interaction_type: typeMatch ? typeMatch[1] : "safety",
         mechanism: mechMatch ? mechMatch[1] : "",
         simple_explanation: simpMatch[1],
+        confidence_score: confMatch ? parseInt(confMatch[1], 10) : 70,
       };
     }
 
@@ -335,6 +339,16 @@ export async function POST(req: NextRequest) {
       interaction_type,
       mechanism: result.mechanism ?? "",
       simple_explanation: result.simple_explanation,
+      confidence_score:
+        typeof result.confidence_score === "number"
+          ? Math.min(100, Math.max(0, result.confidence_score))
+          : 70,
+      fda_found: !!(drug1Data.warnings || drug2Data.warnings),
+      daily_med_found: !!(
+        drug1Data.dailyMedWarnings || drug2Data.dailyMedWarnings
+      ),
+      pharm_gkb_found: !!(drug1Data.pharmGKBData || drug2Data.pharmGKBData),
+      rxnorm_found: !!(drug1Data.rxcui || drug2Data.rxcui),
     });
   } catch (err) {
     console.error("[check-interaction] Failed to parse:", err, "raw:", content);

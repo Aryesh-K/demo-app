@@ -217,7 +217,8 @@ export async function POST(req: NextRequest) {
     `      ]\n` +
     `    }\n` +
     `  ],\n` +
-    `  "overall_summary": "2-3 sentences summarizing the most important biological finding at ${levelName} level. No medical advice."\n` +
+    `  "overall_summary": "2-3 sentences summarizing the most important biological finding at ${levelName} level. No medical advice.",\n` +
+    `  "confidence_score": number from 0-100 (90-100: well-documented in FDA labels, clinical literature, and multiple databases; 70-89: recognized but evidence varies across sources; 50-69: plausible based on mechanism but limited direct documentation; 0-49: theoretical or based primarily on AI inference with minimal database support)\n` +
     `}`;
 
   let apiResponse: Response;
@@ -302,6 +303,7 @@ export async function POST(req: NextRequest) {
     type ParsedResult = {
       combinations: ParsedCombination[];
       overall_summary: string;
+      confidence_score?: number;
     };
 
     let result: ParsedResult;
@@ -315,6 +317,7 @@ export async function POST(req: NextRequest) {
       const summaryMatch = cleaned.match(
         /"overall_summary"\s*:\s*"([\s\S]+?)(?=",\s*"|"\s*})/,
       );
+      const confMatch = cleaned.match(/"confidence_score"\s*:\s*(\d+)/);
 
       let combs: ParsedCombination[] = [];
       const combsMatch = cleaned.match(
@@ -335,6 +338,7 @@ export async function POST(req: NextRequest) {
       result = {
         combinations: combs,
         overall_summary: summaryMatch ? summaryMatch[1] : "",
+        confidence_score: confMatch ? parseInt(confMatch[1], 10) : 70,
       };
     }
 
@@ -386,6 +390,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       combinations,
       overall_summary: result.overall_summary ?? "",
+      confidence_score:
+        typeof result.confidence_score === "number"
+          ? Math.min(100, Math.max(0, result.confidence_score))
+          : 70,
+      fda_found: false,
+      daily_med_found: false,
+      pharm_gkb_found: false,
+      rxnorm_found: false,
     });
   } catch (err) {
     console.error(

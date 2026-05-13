@@ -164,7 +164,8 @@ export async function POST(req: NextRequest) {
     `  "simple_explanation": "5-7 sentences at a middle school reading level. Follow this exact structure: Sentence 1-2: What does Drug A normally do in the body on its own? Explain its job in simple terms. Sentence 3-4: What does Drug B normally do in the body on its own? Explain its job in simple terms. Sentence 5-6: What goes wrong when you take both together? What is the body overwhelmed by? Sentence 7: What does the person actually feel or experience physically? Never use technical terms without immediately explaining them in plain language. Write as if explaining to a curious 13 year old with no science background. Use everyday analogies.",\n` +
     `  "intermediate_explanation": "4-6 sentences for an A&P or AP Biology student. Explain what happens at the organ system level — which organ processes the drugs (liver, kidneys, GI tract, CNS), how the physiological response manifests, what symptoms or system-level effects occur. Reference specific anatomical structures and physiological processes. Trace the effect from molecule to organ to whole-body response.",\n` +
     `  "simple_key_terms": ["term1", "term2"],\n` +
-    `  "intermediate_key_terms": ["term1", "term2", "term3", "term4"]\n` +
+    `  "intermediate_key_terms": ["term1", "term2", "term3", "term4"],\n` +
+    `  "confidence_score": number from 0-100 (90-100: well-documented in FDA labels, clinical literature, and multiple databases; 70-89: recognized but evidence varies across sources; 50-69: plausible based on mechanism but limited direct documentation; 0-49: theoretical or based primarily on AI inference with minimal database support)\n` +
     `}`;
 
   let apiResponse: Response;
@@ -252,6 +253,7 @@ export async function POST(req: NextRequest) {
       intermediate_explanation: string;
       simple_key_terms: string[];
       intermediate_key_terms: string[];
+      confidence_score?: number;
     };
 
     let result: ParsedResult;
@@ -268,6 +270,7 @@ export async function POST(req: NextRequest) {
       const interMatch = cleaned.match(
         /"intermediate_explanation"\s*:\s*"([\s\S]+?)(?=",\s*"|"\s*})/,
       );
+      const confMatch = cleaned.match(/"confidence_score"\s*:\s*(\d+)/);
 
       if (!riskMatch || !simpMatch) throw new Error("Could not extract fields");
 
@@ -279,6 +282,7 @@ export async function POST(req: NextRequest) {
         intermediate_explanation: interMatch ? interMatch[1] : "",
         simple_key_terms: [],
         intermediate_key_terms: [],
+        confidence_score: confMatch ? parseInt(confMatch[1], 10) : 70,
       };
     }
 
@@ -318,6 +322,16 @@ export async function POST(req: NextRequest) {
       intermediate_key_terms: Array.isArray(result.intermediate_key_terms)
         ? result.intermediate_key_terms
         : [],
+      confidence_score:
+        typeof result.confidence_score === "number"
+          ? Math.min(100, Math.max(0, result.confidence_score))
+          : 70,
+      fda_found: !!(drug1Data.warnings || drug2Data.warnings),
+      daily_med_found: !!(
+        drug1Data.dailyMedWarnings || drug2Data.dailyMedWarnings
+      ),
+      pharm_gkb_found: !!(drug1Data.pharmGKBData || drug2Data.pharmGKBData),
+      rxnorm_found: !!(drug1Data.rxcui || drug2Data.rxcui),
     });
   } catch (err) {
     console.error("[learn-interaction] Failed to parse:", err, "raw:", content);

@@ -163,6 +163,7 @@ export async function POST(req: NextRequest) {
     `Return this exact JSON:\n` +
     `{\n` +
     `  "overall_risk": "high" | "moderate" | "low",\n` +
+    `  "confidence_score": number from 0-100 (90-100: well-documented in FDA labels, clinical literature, and multiple databases; 70-89: recognized but evidence varies across sources; 50-69: plausible based on mechanism but limited direct documentation; 0-49: theoretical or based primarily on AI inference with minimal database support),\n` +
     `  "combinations": [\n` +
     `    {\n` +
     `      "drug_a": "name",\n` +
@@ -270,6 +271,7 @@ export async function POST(req: NextRequest) {
       combinations: ParsedCombination[];
       overall_summary: string;
       recommendation: string;
+      confidence_score?: number;
     };
 
     let result: ParsedResult;
@@ -282,6 +284,7 @@ export async function POST(req: NextRequest) {
         /"overall_summary"\s*:\s*"([\s\S]+?)(?=",\s*"|"\s*})/,
       );
       const recMatch = cleaned.match(/"recommendation"\s*:\s*"([^"]+)"/);
+      const confMatch = cleaned.match(/"confidence_score"\s*:\s*(\d+)/);
 
       let combs: ParsedCombination[] = [];
       const combsText = cleaned.match(
@@ -302,6 +305,7 @@ export async function POST(req: NextRequest) {
         combinations: combs,
         overall_summary: summaryMatch ? summaryMatch[1] : "",
         recommendation: recMatch ? recMatch[1] : "Consult your doctor",
+        confidence_score: confMatch ? parseInt(confMatch[1], 10) : 70,
       };
     }
 
@@ -364,11 +368,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const fda_found = pairDataResults.some(
+      (pd) => !!(pd.drug1Data.warnings || pd.drug2Data.warnings),
+    );
+    const daily_med_found = pairDataResults.some(
+      (pd) =>
+        !!(pd.drug1Data.dailyMedWarnings || pd.drug2Data.dailyMedWarnings),
+    );
+    const pharm_gkb_found = pairDataResults.some(
+      (pd) => !!(pd.drug1Data.pharmGKBData || pd.drug2Data.pharmGKBData),
+    );
+    const rxnorm_found = pairDataResults.some(
+      (pd) => !!(pd.drug1Data.rxcui || pd.drug2Data.rxcui),
+    );
+
     return NextResponse.json({
       overall_risk,
       combinations,
       overall_summary: result.overall_summary ?? "",
       recommendation,
+      confidence_score:
+        typeof result.confidence_score === "number"
+          ? Math.min(100, Math.max(0, result.confidence_score))
+          : 70,
+      fda_found,
+      daily_med_found,
+      pharm_gkb_found,
+      rxnorm_found,
     });
   } catch (err) {
     console.error(

@@ -46,11 +46,24 @@ function CardContent({ id }: { id: number }) {
               explanations tailored to your knowledge level
             </span>
           </li>
+          <li className="flex gap-2">
+            <span className="mt-px shrink-0 text-teal-500">▸</span>
+            <span>
+              <span className="font-semibold text-slate-300">
+                History of Drug Interactions
+              </span>{" "}
+              — an editorial deep-dive into the discoveries, tragedies, and
+              breakthroughs that shaped modern pharmacology. Explore 10 eras of
+              drug interaction history from ancient observations to AI-powered
+              detection, with real historical photographs, primary sources, and
+              newspaper archives.
+            </span>
+          </li>
         </ul>
         <p>
-          Free tier covers OTC medications and alcohol. Premium unlocks
-          prescription drugs, supplements, personalized health profiles, and
-          curriculum-aligned educational content.
+          Free tier covers OTC medications, alcohol, and the full History
+          section. Premium unlocks prescription drugs, supplements, personalized
+          health profiles, and curriculum-aligned educational content.
         </p>
       </div>
     );

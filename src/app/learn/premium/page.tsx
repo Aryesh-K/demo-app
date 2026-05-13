@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import BodyMap from "~/components/body-map";
+import { ConfidenceScore } from "~/components/confidence-score";
 import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { isLikelyValidDrug } from "~/lib/drug-suggestions";
 import { usePremiumProfile } from "~/hooks/usePremiumProfile";
@@ -146,6 +147,11 @@ interface Combination {
 interface ApiResult {
   combinations: Combination[];
   overall_summary: string;
+  confidence_score?: number;
+  fda_found?: boolean;
+  daily_med_found?: boolean;
+  pharm_gkb_found?: boolean;
+  rxnorm_found?: boolean;
 }
 
 // ─── Classification emojis ────────────────────────────────────────────────────
@@ -693,6 +699,16 @@ function Results({ result, level }: { result: ApiResult; level: 1 | 2 | 3 }) {
           </p>
         </div>
       )}
+
+      <ConfidenceScore
+        score={result.confidence_score ?? 70}
+        databasesFound={{
+          fda: !!(result.fda_found),
+          dailyMed: !!(result.daily_med_found),
+          pharmGKB: !!(result.pharm_gkb_found),
+          rxNorm: !!(result.rxnorm_found),
+        }}
+      />
 
       {/* Combinations */}
       {result.combinations.length > 0 && (
