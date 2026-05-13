@@ -242,7 +242,9 @@ function TermChip({
   userId: string | null;
 }) {
   const [deckState, setDeckState] = useState<"idle" | "checking" | "added" | "exists">("idle");
+  const popupRef = useRef<HTMLDivElement>(null);
 
+  // Check deck status when popup opens
   useEffect(() => {
     if (!isOpen || !userId || !definition) return;
     setDeckState("checking");
@@ -257,6 +259,24 @@ function TermChip({
         setDeckState(data ? "exists" : "idle");
       });
   }, [isOpen, userId, term, definition]);
+
+  // Close popup on outside mousedown, delayed to avoid immediate close on open
+  // biome-ignore lint/react-hooks/exhaustive-deps: onToggle identity is irrelevant here
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        onToggle(e as unknown as React.MouseEvent);
+      }
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handler);
+    }, 100);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [isOpen]);
 
   async function handleAddToDeck(e: React.MouseEvent) {
     e.stopPropagation();
@@ -293,10 +313,10 @@ function TermChip({
 
       {isOpen && (
         <div
+          ref={popupRef}
           className="absolute left-0 top-[calc(100%+6px)] z-50 w-64 rounded-xl border border-teal-800 bg-card p-3 shadow-xl"
           style={{ animation: "fade-in 0.2s ease forwards" }}
           role="dialog"
-          onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
@@ -325,10 +345,9 @@ function TermChip({
               ) : (
                 <button
                   type="button"
-                  onMouseDown={async (e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    e.preventDefault();
-                    await handleAddToDeck(e as unknown as React.MouseEvent);
+                    await handleAddToDeck(e);
                   }}
                   disabled={deckState === "checking"}
                   className="text-[11px] text-teal-400 transition-colors hover:text-teal-300 disabled:opacity-40"
@@ -714,26 +733,6 @@ function Results({ result, level, userId }: { result: ApiResult; level: 1 | 2 | 
   );
   const allLow = nonLowCombos.length === 0 && lowCombos.length > 0;
 
-  function closeAll() {
-    setOpenKey(null);
-  }
-
-  // Close open popup when clicking outside or pressing Escape
-  useEffect(() => {
-    function handleDoc(e: MouseEvent | KeyboardEvent) {
-      if (e instanceof KeyboardEvent) {
-        if (e.key === "Escape") closeAll();
-      } else {
-        closeAll();
-      }
-    }
-    document.addEventListener("mousedown", handleDoc);
-    document.addEventListener("keydown", handleDoc);
-    return () => {
-      document.removeEventListener("mousedown", handleDoc);
-      document.removeEventListener("keydown", handleDoc);
-    };
-  });
 
   return (
     <div className="flex flex-col gap-6">

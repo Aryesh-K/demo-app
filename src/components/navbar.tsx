@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "~/lib/supabase/client";
 import { cn } from "~/lib/utils";
@@ -43,28 +43,28 @@ function buildDropdownItems(
 
   if (auth.status === "free") {
     const items: DropdownItem[] = [
-      { href: `${base}/free`, label: "✓ Free", locked: false },
+      { href: `${base}/free`, label: "Free", locked: false },
     ];
+    items.push({ href: "/account", label: "🔒 Premium", locked: true });
     if (mode === "learn") {
       items.push({ href: "/account", label: "🔒 MCAT Flashcards", locked: true });
     }
-    items.push({ href: "/account", label: "🔒 Premium", locked: true });
     return items;
   }
 
   // premium
   const items: DropdownItem[] = [
-    { href: `${base}/free`, label: "✓ Free", locked: false },
+    { href: `${base}/free`, label: "Free", locked: false },
   ];
-  if (mode === "learn") {
-    items.push({ href: "/flashcards", label: "🃏 MCAT Flashcards", locked: false, premiumColor: "teal" });
-  }
   items.push({
     href: `${base}/premium`,
-    label: "✓ Premium",
+    label: "Premium",
     locked: false,
     premiumColor,
   });
+  if (mode === "learn") {
+    items.push({ href: "/flashcards", label: "🃏 MCAT Flashcards", locked: false, premiumColor: "teal" });
+  }
   return items;
 }
 
@@ -141,34 +141,10 @@ function NavDropdown({
   );
 }
 
-function AvatarButton() {
-  return (
-    <Link
-      href="/account"
-      className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#0d1b2a] ring-2 ring-teal-500"
-      aria-label="Account"
-    >
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        aria-hidden="true"
-      >
-        <circle cx="10" cy="7" r="4" fill="#9ca3af" />
-        <path
-          d="M2 18c0-4 3.582-7 8-7s8 3 8 7"
-          stroke="#9ca3af"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </svg>
-    </Link>
-  );
-}
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
 
   useEffect(() => {
@@ -263,7 +239,25 @@ export function Navbar() {
             <div className="h-[38px] w-[38px]" />
           )
         ) : (
-          <AvatarButton />
+          <button
+            type="button"
+            onClick={() => router.push("/account")}
+            style={{
+              background: "none",
+              border: "1px solid rgba(239,159,39,0.5)",
+              borderRadius: "8px",
+              padding: "6px 12px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              color: "#EF9F27",
+              fontSize: "14px",
+              fontWeight: 600,
+            }}
+          >
+            👑 My Account
+          </button>
         )}
       </div>
     </nav>
