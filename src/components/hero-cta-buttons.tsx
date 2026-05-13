@@ -52,6 +52,8 @@ export function HeroCtaButtons() {
             border: "1px solid rgba(255,255,255,0.25)",
             color: "rgba(255,255,255,0.7)",
             background: "transparent",
+            whiteSpace: "nowrap",
+            minWidth: "180px",
           }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLAnchorElement).style.borderColor =
