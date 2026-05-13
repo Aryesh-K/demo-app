@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import BodyMap from "~/components/body-map";
-import { ConfidenceScore } from "~/components/confidence-score";
 import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { isLikelyValidDrug } from "~/lib/drug-suggestions";
 import { usePremiumProfile } from "~/hooks/usePremiumProfile";
@@ -148,11 +147,6 @@ interface Combination {
 interface ApiResult {
   combinations: Combination[];
   overall_summary: string;
-  confidence_score?: number;
-  fda_found?: boolean;
-  daily_med_found?: boolean;
-  pharm_gkb_found?: boolean;
-  rxnorm_found?: boolean;
 }
 
 // ─── Classification emojis ────────────────────────────────────────────────────
@@ -231,7 +225,8 @@ function TermChip({
   isOpen,
   onToggle,
   variant = "pill",
-  userId,
+  isAdded,
+  onAdd,
 }: {
   displayText: string;
   term: string;
@@ -239,26 +234,10 @@ function TermChip({
   isOpen: boolean;
   onToggle: (e: React.MouseEvent) => void;
   variant?: "inline" | "pill";
-  userId: string | null;
+  isAdded: boolean;
+  onAdd: () => void;
 }) {
-  const [deckState, setDeckState] = useState<"idle" | "checking" | "added" | "exists">("idle");
   const popupRef = useRef<HTMLDivElement>(null);
-
-  // Check deck status when popup opens
-  useEffect(() => {
-    if (!isOpen || !userId || !definition) return;
-    setDeckState("checking");
-    const supabase = createClient();
-    supabase
-      .from("user_flashcards")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("term", term)
-      .maybeSingle()
-      .then(({ data }) => {
-        setDeckState(data ? "exists" : "idle");
-      });
-  }, [isOpen, userId, term, definition]);
 
   // Close popup on outside mousedown, delayed to avoid immediate close on open
   // biome-ignore lint/react-hooks/exhaustive-deps: onToggle identity is irrelevant here
@@ -277,19 +256,6 @@ function TermChip({
       document.removeEventListener("mousedown", handler);
     };
   }, [isOpen]);
-
-  async function handleAddToDeck(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!userId) return;
-    const supabase = createClient();
-    await supabase.from("user_flashcards").insert({
-      user_id: userId,
-      term,
-      definition,
-      source: "analysis",
-    });
-    setDeckState("added");
-  }
 
   return (
     <span className="relative inline" style={{ zIndex: isOpen ? 51 : "auto" }}>
@@ -336,21 +302,20 @@ function TermChip({
           <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
             {definition || "No definition available."}
           </span>
-          {userId && definition && (
+          {definition && (
             <div className="mt-2.5 border-t border-border pt-2.5">
-              {deckState === "exists" || deckState === "added" ? (
+              {isAdded ? (
                 <p className="text-[11px] text-muted-foreground">
-                  ✓ {deckState === "added" ? "Added to deck" : "Already in your deck"}
+                  ✓ Already in your deck
                 </p>
               ) : (
                 <button
                   type="button"
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
-                    await handleAddToDeck(e);
+                    onAdd();
                   }}
-                  disabled={deckState === "checking"}
-                  className="text-[11px] text-teal-400 transition-colors hover:text-teal-300 disabled:opacity-40"
+                  className="text-[11px] text-teal-400 transition-colors hover:text-teal-300"
                 >
                   ➕ Add to MCAT Deck
                 </button>
@@ -719,7 +684,7 @@ function CaseStudyPanel({
 
 // ─── Results ──────────────────────────────────────────────────────────────────
 
-function Results({ result, level, userId }: { result: ApiResult; level: 1 | 2 | 3; userId: string | null }) {
+function Results({ result, level, addedTerms, onAddTerm }: { result: ApiResult; level: 1 | 2 | 3; addedTerms: Set<string>; onAddTerm: (term: string, definition: string) => void }) {
   // Track which term chip is open by its [comboIndex, termIndex] encoded as a string
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [showLow, setShowLow] = useState(false);
@@ -754,16 +719,6 @@ function Results({ result, level, userId }: { result: ApiResult; level: 1 | 2 | 
           </p>
         </div>
       )}
-
-      <ConfidenceScore
-        score={result.confidence_score ?? 70}
-        databasesFound={{
-          fda: !!(result.fda_found),
-          dailyMed: !!(result.daily_med_found),
-          pharmGKB: !!(result.pharm_gkb_found),
-          rxNorm: !!(result.rxnorm_found),
-        }}
-      />
 
       {/* Combinations */}
       {result.combinations.length > 0 && (
@@ -870,7 +825,8 @@ function Results({ result, level, userId }: { result: ApiResult; level: 1 | 2 | 
                           setOpenKey(openKey === chipKey ? null : chipKey);
                         }}
                         variant="inline"
-                        userId={userId}
+                        isAdded={addedTerms.has(seg.termDef.term)}
+                        onAdd={() => onAddTerm(seg.termDef.term, seg.termDef.definition)}
                       />
                     );
                   })}
@@ -915,7 +871,8 @@ function Results({ result, level, userId }: { result: ApiResult; level: 1 | 2 | 
                             setOpenKey(openKey === pillKey ? null : pillKey);
                           }}
                           variant="pill"
-                          userId={userId}
+                          isAdded={addedTerms.has(termObj.term)}
+                          onAdd={() => onAddTerm(termObj.term, termObj.definition)}
                         />
                       );
                     })}
@@ -962,15 +919,42 @@ export default function LearnPremium() {
   const [_submittedCount, setSubmittedCount] = useState(0);
   const [submittedLevel, setSubmittedLevel] = useState<1 | 2 | 3 | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [addedTerms, setAddedTerms] = useState<Set<string>>(new Set());
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUserId(user.id);
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("user_flashcards")
+        .select("term")
+        .eq("user_id", user.id);
+      if (data) setAddedTerms(new Set(data.map((r: { term: string }) => r.term)));
     });
   }, []);
+
+  async function handleAddToFlashcards(term: string, definition: string) {
+    console.log("[MCAT] handleAddToFlashcards called", { term, definition });
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.log("[MCAT] no user, aborting");
+      return;
+    }
+    const { error } = await supabase.from("user_flashcards").insert({
+      user_id: user.id,
+      term,
+      definition,
+      source: "analysis",
+    });
+    if (error) {
+      console.log("[MCAT] insert error", error);
+      return;
+    }
+    console.log("[MCAT] inserted successfully");
+    setAddedTerms((prev) => new Set([...prev, term]));
+  }
 
   useEffect(() => {
     if (savedProfile?.notes) setPersonalNotes(savedProfile.notes);
@@ -1442,7 +1426,7 @@ export default function LearnPremium() {
       {/* Results */}
       {phase === "results" && apiResult && submittedLevel && (
         <>
-          <Results result={apiResult} level={submittedLevel} userId={userId} />
+          <Results result={apiResult} level={submittedLevel} addedTerms={addedTerms} onAddTerm={handleAddToFlashcards} />
           <Button
             type="button"
             onClick={handleNewAnalysis}
