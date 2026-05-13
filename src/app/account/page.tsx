@@ -339,7 +339,24 @@ function PremiumInfoTab({
 }) {
   const [age, setAge] = useState(profile.age ?? "");
   const [conditions, setConditions] = useState(profile.conditions ?? "");
-  const [medications, setMedications] = useState(profile.medications ?? "");
+  const [medicationList, setMedicationList] = useState<
+    Array<{ name: string; dose: string }>
+  >(() => {
+    const str = profile.medications ?? "";
+    const loaded = str
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => {
+        const parts = s.split(" ");
+        const last = parts[parts.length - 1] ?? "";
+        const hasDose = /\d/.test(last);
+        return hasDose
+          ? { name: parts.slice(0, -1).join(" "), dose: last }
+          : { name: s, dose: "" };
+      });
+    return loaded.length > 0 ? loaded : [{ name: "", dose: "" }];
+  });
   const [allergies, setAllergies] = useState(profile.allergies ?? "");
   const [notes, setNotes] = useState(profile.notes ?? "");
   const [saving, setSaving] = useState(false);
@@ -348,6 +365,12 @@ function PremiumInfoTab({
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    const medications = medicationList
+      .filter((m) => m.name.trim())
+      .map((m) =>
+        m.dose.trim() ? `${m.name.trim()} ${m.dose.trim()}` : m.name.trim(),
+      )
+      .join(", ");
     const supabase = createClient();
     const { error } = await supabase
       .from("profiles")
@@ -397,16 +420,58 @@ function PremiumInfoTab({
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="medications">Current Medications</Label>
-        <textarea
-          id="medications"
-          value={medications}
-          onChange={(e) => setMedications(e.target.value)}
-          rows={3}
-          placeholder="e.g. Metformin 500mg, Lisinopril 10mg"
-          className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30"
-        />
+      <div className="flex flex-col gap-2">
+        <Label>Current Medications</Label>
+        {medicationList.map((med, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <Input
+              value={med.name}
+              onChange={(e) =>
+                setMedicationList((prev) =>
+                  prev.map((m, i) =>
+                    i === idx ? { ...m, name: e.target.value } : m,
+                  ),
+                )
+              }
+              placeholder="e.g. Metformin"
+              className="flex-1"
+            />
+            <Input
+              value={med.dose}
+              onChange={(e) =>
+                setMedicationList((prev) =>
+                  prev.map((m, i) =>
+                    i === idx ? { ...m, dose: e.target.value } : m,
+                  ),
+                )
+              }
+              placeholder="e.g. 500mg"
+              className="w-28"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                setMedicationList((prev) => prev.filter((_, i) => i !== idx))
+              }
+              disabled={medicationList.length === 1}
+              aria-label="Remove medication"
+              className="shrink-0 rounded px-1 text-sm text-destructive/70 transition-colors hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        {medicationList.length < 10 && (
+          <button
+            type="button"
+            onClick={() =>
+              setMedicationList((prev) => [...prev, { name: "", dose: "" }])
+            }
+            className="w-fit rounded-md border border-teal-700 px-3 py-1.5 text-xs text-teal-400 transition-colors hover:bg-teal-950/40 hover:text-teal-300"
+          >
+            + Add Medication
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -421,13 +486,13 @@ function PremiumInfoTab({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="notes">Extra Notes</Label>
+        <Label htmlFor="notes">Personal Notes</Label>
         <textarea
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
-          placeholder="Anything else relevant to your health profile"
+          placeholder="Anything about your health, lifestyle, or medical history that might be relevant to drug interaction analyses. e.g. athletic, works night shifts, recent surgery, high stress"
           className="w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30"
         />
       </div>
@@ -447,8 +512,8 @@ function PremiumInfoTab({
       </Button>
 
       <p className="text-center text-xs text-muted-foreground">
-        This information is used to personalize your Premium interaction
-        analyses. It is stored securely and never shared.
+        Personal notes are automatically included in every Premium interaction
+        analysis.
       </p>
     </form>
   );

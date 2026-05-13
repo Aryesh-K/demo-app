@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import BodyMap from "~/components/body-map";
 import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { isLikelyValidDrug } from "~/lib/drug-suggestions";
+import { usePremiumProfile } from "~/hooks/usePremiumProfile";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -877,9 +878,11 @@ export default function LearnPremium() {
     },
   ]);
   const drugCounter = useRef(2);
+  const { profile: savedProfile } = usePremiumProfile();
+  const [personalNotes, setPersonalNotes] = useState("");
   const [treatmentContext, setTreatmentContext] = useState("");
   const [focusArea, setFocusArea] = useState("");
-  const [notes, setNotes] = useState("");
+  const [drugNotes, setDrugNotes] = useState("");
   const [caseStudyProfile, setCaseStudyProfile] = useState<HealthProfile>(
     INITIAL_HEALTH_PROFILE,
   );
@@ -892,6 +895,10 @@ export default function LearnPremium() {
   const [submittedLevel, setSubmittedLevel] = useState<1 | 2 | 3 | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (savedProfile?.notes) setPersonalNotes(savedProfile.notes);
+  }, [savedProfile]);
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
@@ -978,7 +985,8 @@ export default function LearnPremium() {
         health_context: healthContext,
         level: selectedLevel,
         is_case_study: isCaseStudy,
-        notes,
+        personal_notes: personalNotes,
+        drug_notes: isCaseStudy ? undefined : drugNotes,
         focus_area: focusArea.trim() || undefined,
       }),
     })
@@ -1059,7 +1067,7 @@ export default function LearnPremium() {
     drugCounter.current = 2;
     setTreatmentContext("");
     setFocusArea("");
-    setNotes("");
+    setDrugNotes("");
     setCaseStudyProfile(INITIAL_HEALTH_PROFILE);
     setPhase("idle");
     setAnimFading(false);
@@ -1296,22 +1304,26 @@ export default function LearnPremium() {
                 />
               </div>
 
-              {/* Notes */}
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="notes">Notes</Label>
-                <p className="text-xs text-muted-foreground">
-                  Timing, intervals, and scheduling details for more accurate
-                  analysis
-                </p>
-              </div>
-              <textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. Drug A taken at 8am, Drug B at 2pm, Drug C at bedtime — all with food"
-                rows={3}
-                className={TEXTAREA_CLS}
-              />
+              {/* Drug Notes — only shown when not in case study mode */}
+              {!isCaseStudy && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="drug-notes">Drug Notes</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Add timing or scheduling details specific to this
+                      analysis only
+                    </p>
+                  </div>
+                  <textarea
+                    id="drug-notes"
+                    value={drugNotes}
+                    onChange={(e) => setDrugNotes(e.target.value)}
+                    placeholder="Timing, intervals, and scheduling details specific to this check. e.g. Drug A taken at 8am, Drug B at 2pm, all with food"
+                    rows={3}
+                    className={TEXTAREA_CLS}
+                  />
+                </>
+              )}
 
               {/* Validation error */}
               {validationError && (

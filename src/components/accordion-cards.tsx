@@ -59,7 +59,7 @@ function CardContent({ id }: { id: number }) {
   if (id === 1) {
     return (
       <div className="flex flex-col gap-2 text-sm leading-relaxed text-slate-400">
-        <p>Every interaction analysis pulls from three trusted sources:</p>
+        <p>Every interaction analysis pulls from four trusted sources:</p>
         <ul className="flex flex-col gap-1.5 pl-0.5">
           <li className="flex gap-2">
             <span className="mt-px shrink-0 text-teal-500">▸</span>
@@ -72,8 +72,24 @@ function CardContent({ id }: { id: number }) {
             <span className="mt-px shrink-0 text-teal-500">▸</span>
             <span>
               <span className="font-semibold text-slate-300">RxNorm</span> —
-              NIH&apos;s standardized drug naming database that maps brand and
-              generic names to ensure accurate matching
+              NIH&apos;s standardized drug naming database that normalizes brand
+              and generic names to ensure accurate matching
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="mt-px shrink-0 text-teal-500">▸</span>
+            <span>
+              <span className="font-semibold text-slate-300">DailyMed</span> —
+              the FDA&apos;s most comprehensive label database, with detailed
+              warnings and interaction sections updated directly by manufacturers
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="mt-px shrink-0 text-teal-500">▸</span>
+            <span>
+              <span className="font-semibold text-slate-300">PharmGKB</span> —
+              Stanford&apos;s pharmacogenomics knowledgebase containing curated
+              drug interaction and gene-drug association data
             </span>
           </li>
           <li className="flex gap-2">
@@ -83,7 +99,7 @@ function CardContent({ id }: { id: number }) {
                 Groq AI (Llama 3.3 70B)
               </span>{" "}
               — one of the most advanced language models available, used to
-              synthesize database findings into clear, level-appropriate
+              synthesize all database findings into clear, level-appropriate
               explanations
             </span>
           </li>
@@ -105,6 +121,15 @@ function CardContent({ id }: { id: number }) {
           AI goes further:
         </p>
         <ul className="flex flex-col gap-1.5 pl-0.5">
+          <li className="flex gap-2">
+            <span className="mt-px shrink-0 text-teal-500">▸</span>
+            <span>
+              Four-database verification — every analysis cross-references FDA
+              labels, DailyMed structured drug data, NIH RxNorm, and
+              Stanford&apos;s PharmGKB pharmacogenomics database for maximum
+              accuracy
+            </span>
+          </li>
           <li className="flex gap-2">
             <span className="mt-px shrink-0 text-teal-500">▸</span>
             <span>

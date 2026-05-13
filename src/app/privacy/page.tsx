@@ -95,7 +95,9 @@ export default function PrivacyPage() {
               "Supabase — database and authentication",
               "Groq AI — AI language model for generating interaction explanations",
               "OpenFDA — public FDA drug database (no personal data sent)",
+              "DailyMed — FDA's structured drug label database (no personal data sent)",
               "NIH RxNorm — public drug naming database (no personal data sent)",
+              "PharmGKB/ClinPGx — Stanford's pharmacogenomics database (no personal data sent)",
               "Stripe — payment processing for Premium (we never see or store your full card details)",
               "PostHog — anonymized usage analytics",
             ]}

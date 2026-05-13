@@ -21,6 +21,8 @@ interface RequestBody {
   goal?: string;
   isCaseStudy?: boolean;
   caseStudyData?: CaseStudyData;
+  personal_notes?: string;
+  drug_notes?: string;
 }
 
 interface GroqResponse {
@@ -143,7 +145,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { drugs, level, goal, isCaseStudy, caseStudyData } = body;
+  const { drugs, level, goal, isCaseStudy, caseStudyData, personal_notes, drug_notes } = body;
 
   if (!Array.isArray(drugs) || drugs.length < 2) {
     return NextResponse.json(
@@ -185,11 +187,22 @@ export async function POST(req: NextRequest) {
     caseStudyBlock = `\n${lines.join("\n")}\n`;
   }
 
+  const personalNotesLine =
+    personal_notes?.trim() && !isCaseStudy
+      ? `User health notes: ${personal_notes.trim()}\n`
+      : "";
+  const drugNotesLine =
+    drug_notes?.trim() && !isCaseStudy
+      ? `Drug timing/scheduling notes for this check: ${drug_notes.trim()}\n`
+      : "";
+
   const userPrompt =
     `You are teaching a ${levelName} class.\n` +
     `DO NOT give medical advice. DO NOT tell anyone to see a doctor. Write like a teacher/professor.\n\n` +
     `Substances to analyze:\n${drugLines}\n` +
     goalLine +
+    personalNotesLine +
+    drugNotesLine +
     caseStudyBlock +
     `\nReturn ONLY this JSON, no other text:\n` +
     `{\n` +

@@ -563,7 +563,9 @@ function HealthProfilePanel({
                 </span>
                 <Toggle
                   on={field.included}
-                  onToggle={() => onChange(key, { included: !field.included })}
+                  onToggle={() =>
+                    onChange(key, { included: !field.included })
+                  }
                 />
               </div>
             </div>
@@ -585,6 +587,9 @@ function HealthProfilePanel({
           </div>
         );
       })}
+      <p className="text-xs italic text-muted-foreground">
+        Personal notes from your account profile are automatically included.
+      </p>
     </div>
   );
 }
@@ -797,7 +802,8 @@ export default function CheckPremium() {
   ]);
   const drugCounter = useRef(3);
   const [treatmentContext, setTreatmentContext] = useState("");
-  const [notes, setNotes] = useState("");
+  const [personalNotes, setPersonalNotes] = useState("");
+  const [drugNotes, setDrugNotes] = useState("");
   const [healthProfile, setHealthProfile] = useState<HealthProfile>(
     INITIAL_HEALTH_PROFILE,
   );
@@ -808,8 +814,8 @@ export default function CheckPremium() {
       savedProfile.age ||
       savedProfile.conditions ||
       savedProfile.medications ||
-      savedProfile.allergies ||
-      savedProfile.notes;
+      savedProfile.allergies;
+    if (savedProfile.notes) setPersonalNotes(savedProfile.notes);
     if (!hasData) return;
     setHealthProfile((prev) => ({
       age: { value: savedProfile.age, included: prev.age.included },
@@ -826,7 +832,6 @@ export default function CheckPremium() {
         included: prev.allergies.included,
       },
     }));
-    if (savedProfile.notes) setNotes(savedProfile.notes);
     setAutoFilled(true);
   }, [savedProfile]);
 
@@ -911,7 +916,8 @@ export default function CheckPremium() {
         drugs: drugsPayload,
         treatment_context: treatmentContext,
         health_context: healthContext,
-        notes,
+        personal_notes: personalNotes,
+        drug_notes: drugNotes,
       }),
     })
       .then(async (r) => {
@@ -997,7 +1003,7 @@ export default function CheckPremium() {
     ]);
     drugCounter.current = 3;
     setTreatmentContext("");
-    setNotes("");
+    setDrugNotes("");
     setPhase("idle");
     setApiResult(null);
     setApiError(null);
@@ -1088,19 +1094,18 @@ export default function CheckPremium() {
             />
           </div>
 
-          {/* Notes */}
+          {/* Drug Notes */}
           <div className="flex flex-col gap-1">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="drug-notes">Drug Notes</Label>
             <p className="text-xs text-muted-foreground">
-              Timing, intervals, and scheduling details for more accurate
-              analysis
+              Add timing or scheduling details specific to this analysis only
             </p>
           </div>
           <textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="e.g. Drug A taken at 8am, Drug B at 2pm, Drug C at bedtime — all with food"
+            id="drug-notes"
+            value={drugNotes}
+            onChange={(e) => setDrugNotes(e.target.value)}
+            placeholder="Timing, intervals, and scheduling details specific to this check. e.g. Drug A taken at 8am, Drug B at 2pm, all with food"
             rows={3}
             className={TEXTAREA_CLS}
           />

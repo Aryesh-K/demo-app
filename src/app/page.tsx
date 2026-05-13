@@ -85,6 +85,7 @@ export default function Home() {
               >
                 <p className="text-sm text-slate-400">
                   Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm
+                  &nbsp;·&nbsp; 💊 DailyMed &nbsp;·&nbsp; 🧬 PharmGKB
                   &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for
                   students and patients
                 </p>
