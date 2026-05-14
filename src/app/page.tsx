@@ -41,6 +41,7 @@ const premiumStudentsFeatures = [
   "Clickable term definitions — tap any highlighted word for an instant explanation calibrated to your curriculum level",
   "🃏 MCAT Pharmacology Flashcard Bank — 100 pre-loaded cards across pharmacokinetics, pharmacodynamics, and drug interactions. Add terms directly from your analyses.",
   "🔬 Interactive Case Studies — work through real patient scenarios with animated diagrams, drag-and-drop exercises, and AI-graded written responses. Built for AP Biology and Pre-Med students.",
+  "✈️ International Travel Mode — identify foreign medications by name in any language, map them to their US equivalents, and check interactions against your saved medications. Built for travelers and expats.",
 ];
 
 function FeatureList({ items }: { items: string[] }) {
@@ -89,7 +90,7 @@ export default function Home() {
                   Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm
                   &nbsp;·&nbsp; 💊 DailyMed &nbsp;·&nbsp; 🧬 PharmGKB
                   &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for
-                  students and patients
+                  students and patients &nbsp;·&nbsp; ✈️ International Drug Identification
                 </p>
               </div>
             </div>

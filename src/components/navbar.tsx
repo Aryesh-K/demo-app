@@ -46,6 +46,9 @@ function buildDropdownItems(
       { href: `${base}/free`, label: "Free", locked: false },
     ];
     items.push({ href: "/account", label: "Premium 🔒", locked: true });
+    if (mode === "check") {
+      items.push({ href: "/account", label: "✈️ Travel Mode 🔒", locked: true });
+    }
     if (mode === "learn") {
       items.push({ href: "/account", label: "MCAT Flashcards 🔒", locked: true });
       items.push({ href: "/case-studies", label: "Case Studies 🔒", locked: true });
@@ -63,6 +66,9 @@ function buildDropdownItems(
     locked: false,
     premiumColor,
   });
+  if (mode === "check") {
+    items.push({ href: "/check/travel", label: "✈️ Travel Mode 👑", locked: false, premiumColor: "gold" });
+  }
   if (mode === "learn") {
     items.push({ href: "/flashcards", label: "MCAT Flashcards 👑", locked: false, premiumColor: "teal" });
     items.push({ href: "/case-studies", label: "Case Studies 👑", locked: false, premiumColor: "teal" });
