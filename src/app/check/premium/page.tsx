@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
-import { ConfidenceScore } from "~/components/confidence-score";
 import { SeveritySpectrum } from "~/components/severity-spectrum";
 import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { isLikelyValidDrug } from "~/lib/drug-suggestions";
@@ -598,8 +597,6 @@ function Results({ result }: { result: ApiResult }) {
     <div className="flex flex-col gap-6">
       {/* Overall risk banner */}
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
-        <SeveritySpectrum riskLevel={result.overall_risk} />
-
         {/* Recommendation badge */}
         <span
           className={cn(
@@ -616,16 +613,6 @@ function Results({ result }: { result: ApiResult }) {
           {result.overall_summary}
         </p>
       </div>
-
-      <ConfidenceScore
-        score={result.confidence_score ?? 70}
-        databasesFound={{
-          fda: !!(result.fda_found),
-          dailyMed: !!(result.daily_med_found),
-          pharmGKB: !!(result.pharm_gkb_found),
-          rxNorm: !!(result.rxnorm_found),
-        }}
-      />
 
       {/* Combinations */}
       {sorted.length > 0 && (
