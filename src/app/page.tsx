@@ -31,15 +31,16 @@ const premiumPublicFeatures = [
 ];
 
 const premiumStudentsFeatures = [
-  "🃏 MCAT Pharmacology Flashcard Bank — 100+ cards across pharmacokinetics, pharmacodynamics, and drug interactions. Add terms directly from your analyses to your personal deck.",
-  "🔬 Interactive Case Study Simulations — animated patient scenarios with drag-and-drop exercises and AI-graded written responses",
-  "Three curriculum levels: Honors Biology, AP Biology, and Pre-Med/MCAT",
   "Advanced biochemical pathway explanations",
   "Interaction classification (CYP450, serotonin, CNS depression)",
   "Immersive 3D interactive models tailored to selected explanation level 🧪 Beta",
+  "Curriculum-aligned explanations for middle school/honors biology, AP Biology, and pre-med students",
   "Chemical substance analysis — explore toxicological interactions involving cyanide, heavy metals, industrial chemicals, and more",
+  "Case study mode — analyze interactions for a specific patient profile",
   "Organ and biochemical process focus — direct the AI to emphasize specific systems like cardiac function, cellular respiration, or liver metabolism",
   "Clickable term definitions — tap any highlighted word for an instant explanation calibrated to your curriculum level",
+  "🃏 MCAT Pharmacology Flashcard Bank — 100 pre-loaded cards across pharmacokinetics, pharmacodynamics, and drug interactions. Add terms directly from your analyses.",
+  "🔬 Interactive Case Studies — work through real patient scenarios with animated diagrams, drag-and-drop exercises, and AI-graded written responses. Built for AP Biology and Pre-Med students.",
 ];
 
 function FeatureList({ items }: { items: string[] }) {
@@ -74,9 +75,6 @@ export default function Home() {
                 Know before you take. Understand the science behind your
                 medications.
               </p>
-              <p className="max-w-md text-sm text-slate-400">
-                Trusted by pre-med students preparing for the MCAT &middot; Built for AP Biology, A&amp;P, and Pre-Med curricula
-              </p>
 
               <HeroCtaButtons />
 
@@ -91,7 +89,7 @@ export default function Home() {
                   Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm
                   &nbsp;·&nbsp; 💊 DailyMed &nbsp;·&nbsp; 🧬 PharmGKB
                   &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for
-                  students and patients &nbsp;·&nbsp; 🎓 Aligned with MCAT Biochemistry &amp; Pharmacology
+                  students and patients
                 </p>
               </div>
             </div>
@@ -131,7 +129,7 @@ export default function Home() {
                   </div>
                   <div className="border-b border-green-700 bg-green-800 px-6 py-5 text-white">
                     <p className="font-semibold">
-                      Built for Pre-Med &amp; MCAT Prep 🎓
+                      For Students &amp; Educators
                     </p>
                   </div>
 

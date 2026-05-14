@@ -162,4 +162,122 @@ export const CASE_STUDIES: CaseStudy[] = [
       },
     ],
   },
+  {
+    id: "cellular-respiration",
+    title: "The Poisoned Cell",
+    subtitle: "How cyanide stops the most fundamental process keeping you alive",
+    patientName: "James",
+    patientAge: 34,
+    patientSex: "Male",
+    patientConditions: "None — previously healthy",
+    patientMedications: "None",
+    patientScenario:
+      "James, 34, is a factory worker who collapsed on the job after exposure to an industrial chemical. Paramedics find him unresponsive with rapid breathing, bright red skin, and a faint smell of almonds. His blood oxygen reads normal on the pulse oximeter — yet his cells are suffocating. How is this possible?",
+    learningObjectives: [
+      "Trace the steps of cellular respiration from glycolysis through the electron transport chain",
+      "Explain the role of ATP as cellular energy currency",
+      "Understand how the electron transport chain creates a proton gradient",
+      "Explain how cyanide disrupts Complex IV and why oxygen levels appear normal",
+      "Connect molecular-level disruption to whole-body symptoms",
+    ],
+    targetLevel: "Honors Biology / AP Biology",
+    estimatedMinutes: 30,
+    historyEraId: null,
+    historyEraTitle: null,
+    sections: [
+      { id: "background", title: "Background", type: "content" },
+      { id: "glycolysis", title: "Glycolysis", type: "interactive" },
+      { id: "krebs", title: "Krebs Cycle", type: "interactive" },
+      { id: "etc", title: "Electron Transport Chain", type: "interactive" },
+      { id: "poison", title: "The Poison", type: "interactive" },
+      { id: "quiz", title: "Review & Quiz", type: "quiz" },
+    ],
+    questions: [
+      {
+        id: "cr-mcq-1",
+        type: "mcq",
+        question: "Where in the cell does glycolysis occur?",
+        options: [
+          "Inside the mitochondria",
+          "In the cytoplasm",
+          "On the inner mitochondrial membrane",
+          "In the nucleus",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Glycolysis occurs in the cytoplasm and does not require oxygen. It is the only stage of cellular respiration that happens outside the mitochondria, which is why it can occur under both aerobic and anaerobic conditions.",
+        points: 2,
+      },
+      {
+        id: "cr-mcq-2",
+        type: "mcq",
+        question: "What is the final electron acceptor at the end of the electron transport chain?",
+        options: [
+          "Carbon dioxide (CO₂)",
+          "NADH",
+          "Oxygen (O₂)",
+          "ATP",
+        ],
+        correctIndex: 2,
+        explanation:
+          "Oxygen is the final electron acceptor at Complex IV. It accepts electrons and combines with hydrogen ions to form water. This is why we breathe oxygen — not primarily to carry it in our blood, but to accept electrons at the end of the ETC.",
+        points: 2,
+      },
+      {
+        id: "cr-mcq-3",
+        type: "mcq",
+        question: "Why does James's pulse oximeter show normal blood oxygen despite his cells dying?",
+        options: [
+          "The pulse oximeter is malfunctioning",
+          "Cyanide destroys oxygen in the bloodstream",
+          "Cyanide blocks the ETC so cells cannot USE oxygen — it remains in the blood unused",
+          "James's lungs are absorbing extra oxygen to compensate",
+        ],
+        correctIndex: 2,
+        explanation:
+          "Cyanide blocks Complex IV, meaning cells cannot accept and use oxygen even though it is present. The blood remains fully oxygenated — hemoglobin carries oxygen normally — but the cells cannot consume it. The pulse oximeter measures oxygen in blood, not oxygen use by cells, so it reads normal.",
+        points: 2,
+      },
+      {
+        id: "cr-mcq-4",
+        type: "mcq",
+        question: "Which protein complex in the electron transport chain does cyanide directly block?",
+        options: [
+          "Complex I",
+          "Complex II",
+          "Complex III",
+          "Complex IV (Cytochrome c oxidase)",
+        ],
+        correctIndex: 3,
+        explanation:
+          "Cyanide binds with extremely high affinity to Complex IV, also called cytochrome c oxidase. By blocking the final step of electron transfer to oxygen, cyanide causes the entire chain to back up and halt, collapsing the proton gradient and stopping ATP synthesis.",
+        points: 2,
+      },
+      {
+        id: "cr-dragdrop-1",
+        type: "dragdrop",
+        instruction: "Put these stages of cellular respiration in the correct order:",
+        items: [
+          "ATP synthase uses the proton gradient to produce ATP",
+          "Glucose is split into pyruvate in the cytoplasm",
+          "NADH and FADH₂ donate electrons to the ETC",
+          "Pyruvate enters the mitochondria and is processed by the Krebs cycle",
+          "Electrons flow through Complexes I–IV, pumping H⁺ ions",
+        ],
+        correctOrder: [1, 3, 2, 4, 0],
+        explanation:
+          "Correct order: Glycolysis (glucose → pyruvate in cytoplasm) → Krebs cycle (pyruvate processed in mitochondria, producing NADH/FADH₂) → NADH/FADH₂ donate electrons to the ETC → electrons flow through complexes, pumping H⁺ → ATP synthase uses the gradient to produce ATP.",
+        points: 3,
+      },
+      {
+        id: "cr-written-1",
+        type: "written",
+        question:
+          "Explain to a classmate why James's pulse oximeter shows normal oxygen levels but his cells are still dying. Your explanation should include what cyanide does to the electron transport chain, why this stops ATP production, and why blood oxygen appears normal. Write clearly enough that a classmate who missed class could understand.",
+        gradingCriteria:
+          "Award points based on: (1) correct identification that cyanide blocks Complex IV specifically, (2) correct explanation that oxygen cannot be used by cells even though it is present in blood, (3) correct connection between ETC blockage and ATP synthesis failure, (4) correct explanation of why pulse oximeter reads normal (measures blood O2 not cellular O2 use), (5) clarity and accuracy of overall explanation. Score 1-5.",
+        points: 5,
+      },
+    ],
+  },
 ];

@@ -37,14 +37,6 @@ const FACTS = [
     fact: "MAO inhibitors, once a common antidepressant, can cause a fatal hypertensive crisis when combined with aged cheese, wine, or common cold medicines.",
     source: "British Journal of Clinical Pharmacology",
   },
-  {
-    fact: "CYP3A4 metabolizes ~50% of all prescription drugs — a favorite MCAT topic that shows up across pharmacokinetics, drug interactions, and clinical biochemistry. 💊",
-    source: "National Institutes of Health",
-  },
-  {
-    fact: "Pharmacokinetics and drug interactions appear on every MCAT exam — studying them in real clinical context helps you retain mechanisms, not just memorize facts. 🧬",
-    source: "Association of American Medical Colleges",
-  },
 ];
 
 const COUNT = FACTS.length;

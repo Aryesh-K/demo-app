@@ -41,6 +41,22 @@ const ANIM_CSS = `
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes cr-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes cr-flow-right {
+  0%   { transform: translateX(0px); opacity: 0; }
+  8%   { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateX(340px); opacity: 0; }
+}
+@keyframes cr-pump-up {
+  0%   { transform: translateY(0px); opacity: 0; }
+  8%   { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateY(-32px); opacity: 0; }
+}
 `;
 
 // ─── Patient profile card ─────────────────────────────────────────────────────
@@ -891,6 +907,464 @@ function WhichDrugsSection({ isPremium }: { isPremium: boolean }) {
   );
 }
 
+// ─── CR Section: Background ───────────────────────────────────────────────────
+
+function CRBackgroundSection() {
+  return (
+    <div className="flex flex-col gap-6" style={{ animation: "cs-fade-in 0.3s ease forwards" }}>
+      <h2 className="text-2xl font-bold">What is Cellular Respiration?</h2>
+      <p className="leading-relaxed text-muted-foreground">
+        Every movement you make, every thought you have, every heartbeat — all powered by a
+        molecule called <strong className="text-foreground">ATP</strong> (adenosine
+        triphosphate). Your cells produce ATP by breaking down glucose through a process called
+        cellular respiration. Without a continuous supply of ATP, cells begin to die within
+        seconds.
+      </p>
+      {/* Mitochondria SVG */}
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5">
+        <svg width="340" height="140" viewBox="0 0 340 140">
+          <ellipse cx="170" cy="68" rx="130" ry="50" fill="rgba(30,41,59,0.9)" stroke="rgb(100,116,139)" strokeWidth="2"/>
+          <path d="M58,68 Q74,48 90,68 Q106,88 122,68 Q138,48 154,68 Q170,88 186,68 Q202,48 218,68 Q234,88 250,68 Q262,53 270,68"
+                fill="none" stroke="rgba(20,184,166,0.75)" strokeWidth="2.5"/>
+          <path d="M58,68 Q74,88 90,68 Q106,48 122,68 Q138,88 154,68 Q170,48 186,68 Q202,88 218,68 Q234,48 250,68 Q262,83 270,68"
+                fill="none" stroke="rgba(20,184,166,0.4)" strokeWidth="1.5" strokeDasharray="4,3"/>
+          <text x="170" y="122" textAnchor="middle" fontSize="11" fill="rgb(148,163,184)">Mitochondria — ATP factory of the cell</text>
+          <rect x="12" y="56" width="32" height="22" rx="5" fill="rgba(234,179,8,0.75)"/>
+          <text x="28" y="70" textAnchor="middle" fontSize="8" fill="white" fontWeight="bold">Glucose</text>
+          <text x="47" y="70" fontSize="13" fill="rgba(148,163,184,0.7)">→</text>
+          <text x="291" y="70" fontSize="13" fill="rgba(148,163,184,0.7)">→</text>
+          <rect x="302" y="56" width="30" height="22" rx="11" fill="rgba(59,130,246,0.75)" style={{ animation: "cs-pulse-teal 2s ease-in-out infinite" }}/>
+          <text x="317" y="70" textAnchor="middle" fontSize="9" fill="white" fontWeight="bold">ATP</text>
+        </svg>
+        <p className="text-xs text-muted-foreground">Glucose enters → ATP energy exits</p>
+      </div>
+      <p className="leading-relaxed text-muted-foreground">
+        Cellular respiration has three main stages:{" "}
+        <strong className="text-foreground">Glycolysis</strong> (in the cytoplasm),
+        the <strong className="text-foreground">Krebs Cycle</strong> (in the mitochondrial
+        matrix), and the <strong className="text-foreground">Electron Transport Chain</strong>{" "}
+        (on the inner mitochondrial membrane). Each stage feeds into the next.
+      </p>
+      {/* Stage overview row */}
+      <div className="flex items-stretch gap-2">
+        {[
+          { n: "1", name: "Glycolysis", loc: "Cytoplasm", out: "2 ATP", bdr: "border-yellow-700", bg: "bg-yellow-950/20", txt: "text-yellow-300" },
+          { n: "2", name: "Krebs Cycle", loc: "Mitochondrial matrix", out: "NADH · FADH₂", bdr: "border-orange-700", bg: "bg-orange-950/20", txt: "text-orange-300" },
+          { n: "3", name: "ETC + ATP Synthase", loc: "Inner membrane", out: "~32 ATP", bdr: "border-teal-700", bg: "bg-teal-950/20", txt: "text-teal-300" },
+        ].map((s) => (
+          <div key={s.n} className={`flex flex-1 flex-col gap-1 rounded-xl border p-3 ${s.bdr} ${s.bg}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${s.txt}`}>Stage {s.n}</span>
+            <span className="text-sm font-semibold text-foreground">{s.name}</span>
+            <span className="text-[11px] text-muted-foreground">{s.loc}</span>
+            <span className={`mt-auto pt-2 text-xs font-medium ${s.txt}`}>{s.out}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── CR Section: Glycolysis ────────────────────────────────────────────────────
+
+function CRGlycolysisSection() {
+  return (
+    <div className="flex flex-col gap-6" style={{ animation: "cs-fade-in 0.3s ease forwards" }}>
+      <h2 className="text-2xl font-bold">Glycolysis: Splitting Glucose</h2>
+      <p className="leading-relaxed text-muted-foreground">
+        Glycolysis happens in the cytoplasm — no mitochondria needed. A glucose molecule
+        (6 carbons) is split into two pyruvate molecules (3 carbons each). The process has
+        three phases:
+      </p>
+      {/* Phase cards */}
+      <div className="flex flex-col gap-3">
+        {[
+          { icon: "🔋", phase: "Phase 1", title: "Energy Investment", body: "2 ATP are spent to activate glucose. Think of it as starting a fire — you need a spark first.", bdr: "border-red-800", bg: "bg-red-950/20", txt: "text-red-300" },
+          { icon: "⚡", phase: "Phase 2", title: "Cleavage", body: "The 6-carbon glucose molecule splits into two 3-carbon pyruvate molecules.", bdr: "border-yellow-700", bg: "bg-yellow-950/20", txt: "text-yellow-300" },
+          { icon: "✅", phase: "Phase 3", title: "Energy Payoff", body: "4 ATP and 2 NADH are produced. Net gain: 2 ATP, 2 NADH, and 2 pyruvate molecules.", bdr: "border-green-700", bg: "bg-green-950/20", txt: "text-green-300" },
+        ].map((p) => (
+          <div key={p.phase} className={`flex items-start gap-3 rounded-xl border p-4 ${p.bdr} ${p.bg}`}>
+            <span className="mt-0.5 text-xl">{p.icon}</span>
+            <div>
+              <p className={`font-semibold ${p.txt}`}>{p.phase}: {p.title}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{p.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Net gain */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="mb-3 text-sm font-semibold text-foreground">Net Gain from Glycolysis (per glucose)</p>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg bg-muted p-3">
+            <p className="text-xl font-bold text-red-400">−2</p>
+            <p className="mt-1 text-xs text-muted-foreground">ATP invested</p>
+          </div>
+          <div className="rounded-lg bg-muted p-3">
+            <p className="text-xl font-bold text-green-400">+4</p>
+            <p className="mt-1 text-xs text-muted-foreground">ATP produced</p>
+          </div>
+          <div className="rounded-lg border border-teal-700 bg-teal-950/20 p-3">
+            <p className="text-xl font-bold text-teal-400">+2</p>
+            <p className="mt-1 text-xs text-muted-foreground">Net ATP</p>
+          </div>
+        </div>
+        <div className="mt-2 rounded-lg bg-muted p-3 text-center text-sm text-muted-foreground">
+          Also produces:{" "}
+          <span className="font-medium text-yellow-300">2 NADH</span> (→ ETC later) and{" "}
+          <span className="font-medium text-orange-300">2 Pyruvate</span> (→ Krebs Cycle)
+        </div>
+      </div>
+      {/* Key fact */}
+      <div className="rounded-xl border border-blue-800 bg-blue-950/20 p-4">
+        <p className="text-sm font-semibold text-blue-300">🔑 Glycolysis Does Not Require Oxygen</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Glycolysis is the only stage that can occur without oxygen. This is the basis of
+          anaerobic respiration — during intense exercise, cells produce lactate from pyruvate
+          when oxygen runs short. It is far less efficient: just 2 ATP versus the ~36 ATP
+          from full aerobic respiration.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── CR Section: Krebs Cycle ──────────────────────────────────────────────────
+
+function CRKrebsSection() {
+  return (
+    <div className="flex flex-col gap-6" style={{ animation: "cs-fade-in 0.3s ease forwards" }}>
+      <h2 className="text-2xl font-bold">The Krebs Cycle: Harvesting Electrons</h2>
+      <p className="leading-relaxed text-muted-foreground">
+        Each pyruvate from glycolysis enters the mitochondria and is converted to a 2-carbon
+        molecule called <strong className="text-foreground">Acetyl-CoA</strong>, releasing one
+        CO₂. Acetyl-CoA then enters the Krebs cycle — a circular series of reactions that
+        extracts electrons and loads them onto carrier molecules (NADH, FADH₂) to power the ETC.
+      </p>
+      {/* Cycle SVG */}
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5">
+        <svg width="310" height="280" viewBox="0 0 310 280">
+          {/* Cycle ring */}
+          <circle cx="155" cy="148" r="74" fill="none" stroke="rgba(20,184,166,0.35)" strokeWidth="2" strokeDasharray="6,4"/>
+          {/* Center */}
+          <ellipse cx="155" cy="148" rx="40" ry="26" fill="rgba(20,184,166,0.12)" stroke="rgba(20,184,166,0.5)" strokeWidth="1.5"/>
+          <text x="155" y="144" textAnchor="middle" fontSize="10" fill="rgb(94,234,212)" fontWeight="bold">Krebs</text>
+          <text x="155" y="156" textAnchor="middle" fontSize="10" fill="rgb(94,234,212)" fontWeight="bold">Cycle</text>
+          {/* Orbiting molecule */}
+          <g style={{ transformOrigin: "155px 148px", animation: "cr-spin 6s linear infinite" }}>
+            <circle cx="155" cy="74" r="8" fill="rgba(234,179,8,0.9)" stroke="rgba(234,179,8,0.4)" strokeWidth="1.5"/>
+          </g>
+          {/* Acetyl-CoA input */}
+          <path d="M155,6 L155,66" stroke="rgba(234,179,8,0.55)" strokeWidth="1.5" strokeDasharray="3,2"/>
+          <polygon points="150,64 160,64 155,74" fill="rgba(234,179,8,0.65)"/>
+          <text x="155" y="5" textAnchor="middle" fontSize="9" fill="rgba(234,179,8,0.9)" fontWeight="bold">Acetyl-CoA</text>
+          {/* CO₂ exits — left */}
+          <path d="M90,112 L52,92" stroke="rgba(148,163,184,0.45)" strokeWidth="1.5" strokeDasharray="3,2"/>
+          <text x="28" y="89" textAnchor="middle" fontSize="9" fill="rgba(148,163,184,0.85)">CO₂ ×2</text>
+          {/* NADH exits — right */}
+          <path d="M224,130 L268,112" stroke="rgba(234,179,8,0.5)" strokeWidth="1.5" strokeDasharray="3,2"/>
+          <text x="282" y="109" textAnchor="start" fontSize="9" fill="rgba(234,179,8,0.9)">NADH ×3</text>
+          {/* FADH₂ exits — bottom right */}
+          <path d="M218,178 L258,202" stroke="rgba(251,146,60,0.5)" strokeWidth="1.5" strokeDasharray="3,2"/>
+          <text x="260" y="207" textAnchor="start" fontSize="9" fill="rgba(251,146,60,0.9)">FADH₂ ×1</text>
+          {/* ATP exits — bottom */}
+          <path d="M155,222 L155,258" stroke="rgba(96,165,250,0.5)" strokeWidth="1.5" strokeDasharray="3,2"/>
+          <text x="155" y="270" textAnchor="middle" fontSize="9" fill="rgba(96,165,250,0.9)">ATP ×1</text>
+        </svg>
+        <p className="text-xs text-muted-foreground">Per turn of the cycle — runs twice per glucose molecule</p>
+      </div>
+      {/* Output tally */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="mb-3 text-sm font-semibold text-foreground">Total outputs per glucose (2 full turns)</p>
+        <div className="grid grid-cols-4 gap-2 text-center">
+          {[
+            { val: "6", label: "CO₂ released", color: "text-slate-400" },
+            { val: "6", label: "NADH produced", color: "text-yellow-300" },
+            { val: "2", label: "FADH₂ produced", color: "text-orange-300" },
+            { val: "2", label: "ATP produced", color: "text-blue-300" },
+          ].map((o) => (
+            <div key={o.label} className="rounded-lg bg-muted p-2">
+              <p className={`text-xl font-bold ${o.color}`}>{o.val}</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">{o.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Key insight */}
+      <div className="rounded-xl border border-yellow-800 bg-yellow-950/20 p-4">
+        <p className="text-sm font-semibold text-yellow-300">💡 The Krebs Cycle&apos;s Real Job</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          The Krebs cycle produces very little ATP directly. Its real job is loading up NADH
+          and FADH₂ — electron carriers that will deliver their energy to the ETC, where most
+          of the cell&apos;s ATP is made. Think of NADH and FADH₂ as rechargeable batteries
+          being charged here to be spent in the next stage.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── CR Section: Electron Transport Chain ─────────────────────────────────────
+
+function CRETCSection() {
+  return (
+    <div className="flex flex-col gap-6" style={{ animation: "cs-fade-in 0.3s ease forwards" }}>
+      <h2 className="text-2xl font-bold">The Electron Transport Chain: The ATP Factory</h2>
+      <p className="leading-relaxed text-muted-foreground">
+        This is where approximately 90% of cellular ATP is made. The inner mitochondrial
+        membrane is studded with four protein complexes (I–IV) and ATP synthase. NADH and
+        FADH₂ donate their electrons here — those electrons release energy as they flow
+        through the complexes, pumping H⁺ ions that drive ATP synthesis.
+      </p>
+      {/* ETC SVG */}
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-4">
+        <svg width="440" height="210" viewBox="0 0 440 210">
+          {/* Zone labels */}
+          <text x="220" y="13" textAnchor="middle" fontSize="9" fill="rgba(251,146,60,0.7)">Intermembrane Space — High H⁺ concentration</text>
+          <text x="220" y="204" textAnchor="middle" fontSize="9" fill="rgba(148,163,184,0.6)">Matrix — Low H⁺ concentration</text>
+          {/* Membrane band */}
+          <rect x="10" y="95" width="420" height="28" rx="3" fill="rgba(30,41,59,0.95)" stroke="rgba(100,116,139,0.45)" strokeWidth="1.5"/>
+          {/* Complex I */}
+          <rect x="22" y="30" width="58" height="65" rx="5" fill="rgba(20,184,166,0.15)" stroke="rgba(20,184,166,0.65)" strokeWidth="1.5"/>
+          <text x="51" y="56" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">Complex</text>
+          <text x="51" y="67" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">I</text>
+          <text x="51" y="145" textAnchor="middle" fontSize="8" fill="rgba(234,179,8,0.8)">NADH in</text>
+          {/* Complex II */}
+          <rect x="104" y="50" width="46" height="45" rx="5" fill="rgba(20,184,166,0.12)" stroke="rgba(20,184,166,0.5)" strokeWidth="1.5"/>
+          <text x="127" y="70" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">II</text>
+          <text x="127" y="145" textAnchor="middle" fontSize="8" fill="rgba(251,146,60,0.8)">FADH₂ in</text>
+          {/* Complex III */}
+          <rect x="176" y="35" width="56" height="60" rx="5" fill="rgba(20,184,166,0.15)" stroke="rgba(20,184,166,0.65)" strokeWidth="1.5"/>
+          <text x="204" y="60" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">Complex</text>
+          <text x="204" y="71" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">III</text>
+          {/* Complex IV */}
+          <rect x="258" y="22" width="62" height="73" rx="5" fill="rgba(20,184,166,0.15)" stroke="rgba(20,184,166,0.65)" strokeWidth="1.5"/>
+          <text x="289" y="50" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">Complex</text>
+          <text x="289" y="61" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">IV</text>
+          <text x="289" y="74" textAnchor="middle" fontSize="7" fill="rgba(94,234,212,0.7)">+O₂→H₂O</text>
+          <text x="289" y="145" textAnchor="middle" fontSize="8" fill="rgba(148,163,184,0.7)">O₂ in</text>
+          {/* ATP Synthase — stalk + cap */}
+          <rect x="360" y="95" width="42" height="35" rx="4" fill="rgba(59,130,246,0.15)" stroke="rgba(96,165,250,0.6)" strokeWidth="1.5"/>
+          <ellipse cx="381" cy="84" rx="28" ry="14" fill="rgba(59,130,246,0.15)" stroke="rgba(96,165,250,0.55)" strokeWidth="1.5"/>
+          <text x="381" y="81" textAnchor="middle" fontSize="8" fill="rgb(147,197,253)">ATP</text>
+          <text x="381" y="91" textAnchor="middle" fontSize="8" fill="rgb(147,197,253)">Synthase</text>
+          <text x="381" y="145" textAnchor="middle" fontSize="8" fill="rgba(96,165,250,0.8)">ATP out</text>
+          {/* Electron flow — animated dots */}
+          {[0, 1, 2].map((i) => (
+            <g key={i} style={{ animation: `cr-flow-right 2.8s ease-in-out ${i * 0.9}s infinite` }}>
+              <circle cx="30" cy="62" r="5" fill="rgba(234,179,8,0.9)"/>
+            </g>
+          ))}
+          {/* H⁺ pumping indicators */}
+          {[51, 204, 289].map((x, i) => (
+            <g key={x} style={{ animation: `cr-pump-up 2.2s ease-in-out ${i * 0.5}s infinite` }}>
+              <circle cx={x} cy="94" r="5" fill="rgba(251,146,60,0.85)"/>
+              <text x={x} y="92" textAnchor="middle" fontSize="6" fill="white">H⁺</text>
+            </g>
+          ))}
+          {/* Accumulated H⁺ and chemiosmosis arrow */}
+          <text x="160" y="28" textAnchor="middle" fontSize="9" fill="rgba(251,146,60,0.65)">H⁺  H⁺  H⁺  H⁺  H⁺</text>
+          <path d="M381,95 L381,70" stroke="rgba(251,146,60,0.5)" strokeWidth="1.5" strokeDasharray="3,2"/>
+          <polygon points="376,68 386,68 381,58" fill="rgba(251,146,60,0.55)"/>
+          <text x="381" y="55" textAnchor="middle" fontSize="8" fill="rgba(251,146,60,0.75)">H⁺ flows back</text>
+          <text x="381" y="175" textAnchor="middle" fontSize="8" fill="rgba(96,165,250,0.75)">→ ~32 ATP</text>
+        </svg>
+        <p className="text-xs text-muted-foreground">Electrons (yellow) flow right → H⁺ (orange) pumps up → returns through ATP synthase → ATP</p>
+      </div>
+      {/* Chemiosmosis explanation */}
+      <div className="rounded-xl border border-orange-800 bg-orange-950/20 p-4">
+        <p className="text-sm font-semibold text-orange-300">⚡ The Proton Gradient (Chemiosmosis)</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          As electrons flow through the complexes, H⁺ ions are pumped from the matrix into
+          the intermembrane space, building a concentration gradient — like water behind a
+          dam. When H⁺ flows back through ATP synthase, the energy spins its rotor and
+          drives ATP production. This is called <strong className="text-foreground">chemiosmosis</strong>.
+        </p>
+      </div>
+      {/* Output */}
+      <div className="rounded-xl border border-teal-800 bg-teal-950/20 p-4">
+        <p className="mb-3 text-sm font-semibold text-teal-300">ETC output per glucose</p>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          {[
+            { val: "~32", label: "ATP produced", color: "text-teal-400" },
+            { val: "H₂O", label: "Water byproduct", color: "text-blue-400" },
+            { val: "NAD⁺", label: "Recycled to Krebs", color: "text-yellow-400" },
+          ].map((o) => (
+            <div key={o.label} className="rounded-lg bg-card p-3">
+              <p className={`text-xl font-bold ${o.color}`}>{o.val}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{o.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CR Section: Poison ───────────────────────────────────────────────────────
+
+function CRPoisonSection() {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setStage(1), 2000);
+    const t2 = setTimeout(() => setStage(2), 4500);
+    const t3 = setTimeout(() => setStage(3), 7000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  function restart() {
+    setStage(0);
+    setTimeout(() => setStage(1), 2000);
+    setTimeout(() => setStage(2), 4500);
+    setTimeout(() => setStage(3), 7000);
+  }
+
+  const stageLabel = stage === 0
+    ? "Normal ETC operation"
+    : stage === 1
+      ? "Cyanide binds Complex IV — electron flow stops"
+      : stage === 2
+        ? "Cascade failure: ETC backs up, H⁺ gradient collapses"
+        : "ATP synthesis: 0 — cells begin dying; O₂ remains unused";
+
+  return (
+    <div className="flex flex-col gap-6" style={{ animation: "cs-fade-in 0.3s ease forwards" }}>
+      <h2 className="text-2xl font-bold">Cyanide: The Perfect Killer</h2>
+      <p className="leading-relaxed text-muted-foreground">
+        Cyanide (CN⁻) is one of the most acutely toxic substances known. A lethal dose is
+        measured in milligrams. Its mechanism is devastatingly precise — it targets the most
+        critical step in cellular respiration and shuts down ATP production entirely.
+      </p>
+
+      {/* Animated ETC with cyanide */}
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-4">
+        <div className="flex w-full items-center justify-between">
+          <p className="text-xs font-semibold text-muted-foreground">
+            Stage {Math.min(stage + 1, 4)} of 4: {stageLabel}
+          </p>
+          <button
+            type="button"
+            onClick={restart}
+            className="text-[10px] text-teal-400 transition-colors hover:text-teal-300"
+          >
+            ↺ Replay
+          </button>
+        </div>
+        <svg width="420" height="180" viewBox="0 0 420 180">
+          {/* Membrane */}
+          <rect x="10" y="80" width="400" height="24" rx="3" fill="rgba(30,41,59,0.95)" stroke="rgba(100,116,139,0.4)" strokeWidth="1.5"/>
+          {/* Complex I */}
+          <rect x="18" y="22" width="55" height="58" rx="4"
+                fill={stage >= 2 ? "rgba(239,68,68,0.2)" : "rgba(20,184,166,0.15)"}
+                stroke={stage >= 2 ? "rgb(239,68,68)" : "rgba(20,184,166,0.6)"}
+                strokeWidth="1.5" style={{ transition: "all 0.8s ease" }}/>
+          <text x="45" y="46" textAnchor="middle" fontSize="8" fill={stage >= 2 ? "rgb(252,165,165)" : "rgb(94,234,212)"} fontWeight="bold">Complex I</text>
+          {stage >= 2 && <text x="45" y="62" textAnchor="middle" fontSize="13">❌</text>}
+          {/* Complex II */}
+          <rect x="96" y="38" width="44" height="42" rx="4"
+                fill="rgba(20,184,166,0.12)" stroke="rgba(20,184,166,0.45)" strokeWidth="1.5"/>
+          <text x="118" y="62" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">II</text>
+          {/* Complex III */}
+          <rect x="164" y="26" width="55" height="54" rx="4"
+                fill={stage >= 2 ? "rgba(239,68,68,0.15)" : "rgba(20,184,166,0.15)"}
+                stroke={stage >= 2 ? "rgba(239,68,68,0.7)" : "rgba(20,184,166,0.6)"}
+                strokeWidth="1.5" style={{ transition: "all 0.8s ease" }}/>
+          <text x="191" y="50" textAnchor="middle" fontSize="8" fill={stage >= 2 ? "rgb(252,165,165)" : "rgb(94,234,212)"} fontWeight="bold">Complex III</text>
+          {stage >= 2 && <text x="191" y="66" textAnchor="middle" fontSize="12">⚠️</text>}
+          {/* Complex IV — main target */}
+          <rect x="244" y="14" width="64" height="66" rx="4"
+                fill={stage >= 1 ? "rgba(239,68,68,0.25)" : "rgba(20,184,166,0.15)"}
+                stroke={stage >= 1 ? "rgb(239,68,68)" : "rgba(20,184,166,0.6)"}
+                strokeWidth={stage >= 1 ? 2.5 : 1.5} style={{ transition: "all 0.8s ease" }}/>
+          <text x="276" y="38" textAnchor="middle" fontSize="8" fill={stage >= 1 ? "rgb(252,165,165)" : "rgb(94,234,212)"} fontWeight="bold">Complex IV</text>
+          {stage === 0 && <text x="276" y="52" textAnchor="middle" fontSize="7" fill="rgba(94,234,212,0.7)">+O₂ → H₂O</text>}
+          {stage >= 1 && <text x="276" y="68" textAnchor="middle" fontSize="15">🚫</text>}
+          {/* ATP Synthase */}
+          <rect x="334" y="38" width="44" height="42" rx="4"
+                fill={stage >= 2 ? "rgba(100,116,139,0.12)" : "rgba(59,130,246,0.15)"}
+                stroke={stage >= 2 ? "rgba(100,116,139,0.35)" : "rgba(96,165,250,0.6)"}
+                strokeWidth="1.5" style={{ transition: "all 0.8s ease" }}/>
+          <ellipse cx="356" cy="30" rx="24" ry="12"
+                   fill={stage >= 2 ? "rgba(100,116,139,0.1)" : "rgba(59,130,246,0.15)"}
+                   stroke={stage >= 2 ? "rgba(100,116,139,0.3)" : "rgba(96,165,250,0.5)"}
+                   strokeWidth="1.5" style={{ transition: "all 0.8s ease" }}/>
+          <text x="356" y="27" textAnchor="middle" fontSize="8" fill={stage >= 2 ? "rgba(148,163,184,0.4)" : "rgb(147,197,253)"}>ATP syn.</text>
+          {stage >= 2 && <text x="356" y="66" textAnchor="middle" fontSize="7" fill="rgba(148,163,184,0.5)">STOPPED</text>}
+          {/* ATP output indicator */}
+          <text x="356" y="148" textAnchor="middle" fontSize="10" fontWeight="bold"
+                fill={stage >= 2 ? "rgb(248,113,113)" : "rgb(94,234,212)"} style={{ transition: "color 0.8s ease" }}>
+            {stage >= 2 ? "ATP = 0" : "ATP ↑"}
+          </text>
+          {/* Cyanide molecule */}
+          {stage >= 1 && (
+            <g style={{ animation: "cs-fade-in 0.5s ease forwards" }}>
+              <rect x="256" y="0" width="40" height="18" rx="9" fill="rgba(239,68,68,0.9)"/>
+              <text x="276" y="12" textAnchor="middle" fontSize="9" fill="white" fontWeight="bold">CN⁻</text>
+            </g>
+          )}
+          {/* O₂ paradox — stage 3 */}
+          {stage >= 3 && (
+            <g style={{ animation: "cs-fade-in 0.5s ease forwards" }}>
+              <text x="394" y="50" textAnchor="middle" fontSize="9" fill="rgba(148,163,184,0.8)">O₂</text>
+              <text x="394" y="62" textAnchor="middle" fontSize="8" fill="rgba(148,163,184,0.55)">in blood</text>
+              <text x="394" y="74" textAnchor="middle" fontSize="8" fill="rgba(148,163,184,0.55)">unused ✗</text>
+            </g>
+          )}
+        </svg>
+      </div>
+
+      {/* Oxygen paradox */}
+      <div className="rounded-xl border border-red-800 bg-red-950/20 p-4">
+        <p className="text-sm font-semibold text-red-300">🩸 The Oxygen Paradox</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          With Complex IV blocked, cells cannot accept oxygen even though it is still being
+          delivered. Hemoglobin carries oxygen normally — it never offloads it because cells
+          refuse it. The blood stays <strong className="text-foreground">bright red</strong>{" "}
+          throughout the body. The pulse oximeter measures oxygenated hemoglobin and reads
+          normal — while the patient dies of cellular asphyxiation.
+        </p>
+      </div>
+
+      {/* Symptom boxes */}
+      <div className="flex flex-col gap-3">
+        {[
+          {
+            icon: "❤️", label: "Bright Red Skin",
+            body: "Blood normally turns dark red after delivering oxygen. With cyanide, cells cannot accept oxygen — hemoglobin stays bright red throughout the body, giving skin an unusually pink or cherry-red appearance.",
+            cls: "border-red-800 bg-red-950/15 text-red-300",
+          },
+          {
+            icon: "💨", label: "Rapid Breathing",
+            body: "The brain detects zero ATP production and sends an emergency signal to breathe faster. More oxygen floods the blood — but it still cannot be used at the cellular level, so the crisis deepens.",
+            cls: "border-blue-800 bg-blue-950/15 text-blue-300",
+          },
+          {
+            icon: "🌰", label: "Almond Smell",
+            body: "Hydrogen cyanide (HCN) has a characteristic bitter almond odor. Notably, about 40% of people cannot detect it due to a genetic variation in olfactory receptor OR5AN1.",
+            cls: "border-yellow-700 bg-yellow-950/15 text-yellow-300",
+          },
+        ].map((s) => (
+          <div key={s.label} className={`rounded-xl border p-4 ${s.cls}`}>
+            <p className="font-semibold">{s.icon} {s.label}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{s.body}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Treatment */}
+      <div className="rounded-xl border border-teal-700 bg-teal-950/20 p-4">
+        <p className="text-sm font-semibold text-teal-300">💊 Treatment: Hydroxocobalamin</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Hydroxocobalamin (vitamin B12a) is the first-line antidote. It binds cyanide
+          directly in the bloodstream, forming cyanocobalamin which is safely excreted by the
+          kidneys. It must be administered within minutes. First responders to industrial
+          accidents and smoke inhalation events carry it for exactly this scenario.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Quiz: MCQ ────────────────────────────────────────────────────────────────
 
 function MCQComponent({
@@ -1371,6 +1845,18 @@ function CompletionScreen({
         </div>
       </div>
 
+      {cs.id === "cellular-respiration" && (
+        <div className="w-full max-w-lg rounded-xl border border-teal-800 bg-teal-950/20 p-4 text-left">
+          <p className="text-sm font-semibold text-teal-300">💊 Toxicology Connection</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Cyanide illustrates why understanding cellular metabolism is essential to
+            pharmacology. Many drug toxicities — from acetaminophen overdose to carbon
+            monoxide poisoning — work by disrupting the same ATP-producing machinery you
+            just studied.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-wrap justify-center gap-3">
         {cs.historyEraId && (
           <Link
@@ -1680,11 +2166,16 @@ export default function CaseStudyPage() {
       <div className="flex flex-col gap-6">
         <PatientProfileCard cs={cs} collapseOnMount={activeSection > 0} />
 
-        {section?.id === "background" && <BackgroundSection />}
+        {cs.id === "grapefruit-paradox" && section?.id === "background" && <BackgroundSection />}
         {section?.id === "enzyme" && <EnzymeSection isPremium={isPremium} />}
         {section?.id === "inhibitor" && <InhibitorSection />}
         {section?.id === "patient" && <PatientSection />}
         {section?.id === "which-drugs" && <WhichDrugsSection isPremium={isPremium} />}
+        {cs.id === "cellular-respiration" && section?.id === "background" && <CRBackgroundSection />}
+        {cs.id === "cellular-respiration" && section?.id === "glycolysis" && <CRGlycolysisSection />}
+        {cs.id === "cellular-respiration" && section?.id === "krebs" && <CRKrebsSection />}
+        {cs.id === "cellular-respiration" && section?.id === "etc" && <CRETCSection />}
+        {cs.id === "cellular-respiration" && section?.id === "poison" && <CRPoisonSection />}
         {section?.id === "quiz" && (
           <QuizSection
             cs={cs}
