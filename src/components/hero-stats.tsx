@@ -6,6 +6,7 @@ const STATS = [
   { target: 3, suffix: "", label: "Trusted medical databases" },
   { target: 100000, suffix: "+", label: "Potential interactions in our AI model" },
   { target: 3, suffix: "", label: "Curriculum-aligned explanation levels" },
+  { target: 100, suffix: "+", label: "MCAT Flashcards" },
 ];
 
 function useCountUp(target: number, duration = 1400) {
