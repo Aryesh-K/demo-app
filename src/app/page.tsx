@@ -90,7 +90,7 @@ export default function Home() {
                   Powered by &nbsp;🧪 FDA Data &nbsp;·&nbsp; 📋 NIH RxNorm
                   &nbsp;·&nbsp; 💊 DailyMed &nbsp;·&nbsp; 🧬 PharmGKB
                   &nbsp;·&nbsp; 🤖 Llama 3.3 70B &nbsp;·&nbsp; 🎓 Built for
-                  students and patients &nbsp;·&nbsp; ✈️ International Drug Identification
+                  students and patients
                 </p>
               </div>
             </div>

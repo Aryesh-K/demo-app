@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "~/lib/supabase/client";
-import { usePremiumProfile } from "~/hooks/usePremiumProfile";
 import { cn } from "~/lib/utils";
 
 // ─── Country data ─────────────────────────────────────────────────────────────
@@ -75,36 +75,13 @@ interface IdentificationResult {
   controlledNote: string | null;
   foodInteractions: string[];
   storageNote: string;
-  confirmed: boolean;
-}
-
-interface Combination {
-  drug_a: string;
-  drug_b: string;
-  risk_level: "high" | "moderate" | "low";
-  interaction_type: "safety" | "efficacy" | "both";
-  classification: string;
-  simple_explanation: string;
-  real_world_context: string;
-}
-
-interface CheckResult {
-  overall_risk: "high" | "moderate" | "low";
-  combinations: Combination[];
-  overall_summary: string;
-  recommendation: string;
+  additionalNames: string[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const INPUT_CLS =
   "w-full rounded-lg border border-input bg-transparent px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring";
-
-const RISK_CONFIG = {
-  high: { bg: "bg-red-950/40", border: "border-red-800", text: "text-red-300", label: "HIGH RISK" },
-  moderate: { bg: "bg-amber-950/40", border: "border-amber-800", text: "text-amber-300", label: "MODERATE" },
-  low: { bg: "bg-green-950/40", border: "border-green-800", text: "text-green-300", label: "LOW RISK" },
-};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -116,20 +93,11 @@ export default function TravelPage() {
   const [labelLanguage, setLabelLanguage] = useState("");
   const [foreignDrugName, setForeignDrugName] = useState("");
   const [purpose, setPurpose] = useState("");
-  const [additionalDrugs, setAdditionalDrugs] = useState<string[]>([]);
 
   const [identifying, setIdentifying] = useState(false);
   const [identifyError, setIdentifyError] = useState<string | null>(null);
   const [identificationResult, setIdentificationResult] = useState<IdentificationResult | null>(null);
-
-  const [correcting, setCorrecting] = useState(false);
-  const [manualUSName, setManualUSName] = useState("");
-
-  const [checking, setChecking] = useState(false);
-  const [checkError, setCheckError] = useState<string | null>(null);
-  const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
-
-  const { profile } = usePremiumProfile();
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -145,8 +113,7 @@ export default function TravelPage() {
     setSelectedCountry(c);
     setLabelLanguage(c.language);
     setIdentificationResult(null);
-    setCheckResult(null);
-    setCorrecting(false);
+    setCopied(false);
   }
 
   async function handleIdentify() {
@@ -154,7 +121,7 @@ export default function TravelPage() {
     setIdentifying(true);
     setIdentifyError(null);
     setIdentificationResult(null);
-    setCheckResult(null);
+    setCopied(false);
     try {
       const res = await fetch("/api/identify-foreign-drug", {
         method: "POST",
@@ -168,7 +135,7 @@ export default function TravelPage() {
       });
       const data = (await res.json()) as IdentificationResult & { error?: string };
       if (data.error) { setIdentifyError(data.error); return; }
-      setIdentificationResult({ ...data, confirmed: false });
+      setIdentificationResult(data);
     } catch {
       setIdentifyError("Network error. Please try again.");
     } finally {
@@ -176,70 +143,12 @@ export default function TravelPage() {
     }
   }
 
-  function handleConfirm() {
-    if (!identificationResult) return;
-    setIdentificationResult({ ...identificationResult, confirmed: true });
-    setCorrecting(false);
-  }
-
-  function handleCorrect() {
-    setCorrecting(true);
-    setManualUSName(identificationResult?.usEquivalent ?? "");
-  }
-
-  function handleUseManualName() {
-    if (!identificationResult || !manualUSName.trim()) return;
-    setIdentificationResult({ ...identificationResult, usEquivalent: manualUSName.trim(), confirmed: true });
-    setCorrecting(false);
-  }
-
-  async function handleCheck() {
-    if (!identificationResult?.confirmed || !selectedCountry) return;
-    setChecking(true);
-    setCheckError(null);
-    setCheckResult(null);
-
-    const drugs: { name: string; method: string }[] = [
-      { name: identificationResult.usEquivalent, method: "Oral (swallowed)" },
-      ...additionalDrugs.filter((d) => d.trim()).map((d) => ({ name: d.trim(), method: "Oral (swallowed)" })),
-    ];
-
-    if (profile?.medications?.trim()) {
-      const saved = profile.medications.split(/[,\n]+/).map((m) => m.trim()).filter(Boolean);
-      for (const med of saved.slice(0, 4)) {
-        drugs.push({ name: med, method: "Oral (swallowed)" });
-      }
-    }
-
-    if (drugs.length < 2) {
-      drugs.push({ name: "No additional medications", method: "Oral (swallowed)" });
-    }
-
-    const healthContext = [
-      profile?.age ? `Age: ${profile.age}` : "",
-      profile?.conditions ? `Conditions: ${profile.conditions}` : "",
-      profile?.allergies ? `Allergies: ${profile.allergies}` : "",
-    ].filter(Boolean).join(". ");
-
-    try {
-      const res = await fetch("/api/check-interaction-premium", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          drugs,
-          treatment_context: purpose.trim() || undefined,
-          health_context: healthContext || undefined,
-          personal_notes: profile?.notes?.trim() || undefined,
-        }),
-      });
-      const data = (await res.json()) as CheckResult & { error?: string };
-      if (data.error) { setCheckError(data.error); return; }
-      setCheckResult(data);
-    } catch {
-      setCheckError("Network error. Please try again.");
-    } finally {
-      setChecking(false);
-    }
+  function handleReset() {
+    setIdentificationResult(null);
+    setForeignDrugName("");
+    setPurpose("");
+    setSelectedCountry(null);
+    setCopied(false);
   }
 
   if (!ready) {
@@ -266,7 +175,7 @@ export default function TravelPage() {
         </div>
         <h1 className="text-4xl font-bold tracking-tight">International Travel Mode</h1>
         <p className="max-w-2xl text-lg text-muted-foreground">
-          Identify foreign medications and check interactions anywhere in the world
+          Identify foreign medications and find their US equivalents anywhere in the world
         </p>
       </div>
 
@@ -337,47 +246,13 @@ export default function TravelPage() {
             />
           </div>
 
-          {/* Additional drugs */}
-          {additionalDrugs.map((drug, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="shrink-0 text-xl">{selectedCountry.flag}</span>
-              <input
-                className={INPUT_CLS}
-                value={drug}
-                onChange={(e) => {
-                  const next = [...additionalDrugs];
-                  next[i] = e.target.value;
-                  setAdditionalDrugs(next);
-                }}
-                placeholder={`Additional medication ${i + 2}`}
-              />
-              <button
-                type="button"
-                onClick={() => setAdditionalDrugs(additionalDrugs.filter((_, j) => j !== i))}
-                className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-
-          {additionalDrugs.length < 2 && (
-            <button
-              type="button"
-              onClick={() => setAdditionalDrugs([...additionalDrugs, ""])}
-              className="w-fit text-sm text-teal-400 transition-colors hover:text-teal-300"
-            >
-              + Add another medication
-            </button>
-          )}
-
           <button
             type="button"
             onClick={handleIdentify}
             disabled={!canIdentify || identifying}
             className="w-fit rounded-lg bg-teal-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {identifying ? "Identifying…" : "Identify & Check →"}
+            {identifying ? "Identifying…" : "Identify →"}
           </button>
 
           {identifyError && (
@@ -387,7 +262,7 @@ export default function TravelPage() {
       )}
 
       {/* Section 3: Identification result */}
-      {identificationResult && !identificationResult.confirmed && (
+      {identificationResult && (
         <section
           className="flex flex-col gap-4 rounded-2xl border border-teal-800 bg-card p-6"
           style={{ borderLeft: "4px solid rgb(20 184 166)" }}
@@ -438,209 +313,70 @@ export default function TravelPage() {
             </div>
           )}
 
-          {/* Confirmation buttons */}
-          <div className="flex flex-col gap-3">
-            <p className="text-sm font-medium text-foreground">Is this identification correct?</p>
-            {!correcting ? (
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  className="rounded-lg bg-teal-700 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
-                >
-                  ✓ Yes, continue
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCorrect}
-                  className="rounded-lg border border-border px-5 py-2 text-sm text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
-                >
-                  ✗ No, let me correct it
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <label className="text-xs text-muted-foreground">Enter the correct US drug name:</label>
-                <div className="flex gap-2">
-                  <input
-                    className={INPUT_CLS}
-                    value={manualUSName}
-                    onChange={(e) => setManualUSName(e.target.value)}
-                    placeholder="US generic or brand name"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleUseManualName}
-                    disabled={!manualUSName.trim()}
-                    className="shrink-0 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600 disabled:opacity-40"
-                  >
-                    Use this →
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Section 4: Interaction check */}
-      {identificationResult?.confirmed && !checkResult && (
-        <section className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">
-            Checking {selectedCountry?.flag} {foreignDrugName} ({identificationResult.usEquivalent})
-          </h2>
-
-          {profile?.medications?.trim() && (
-            <div className="rounded-xl border border-teal-800 bg-teal-950/20 p-4">
-              <p className="text-sm font-medium text-teal-300">
-                Your saved medications will be automatically checked
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {profile.medications.split(/[,\n]+/).filter(Boolean).slice(0, 4).map((med) => (
-                  <span
-                    key={med}
-                    className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs text-foreground"
-                  >
-                    {med.trim()}
-                  </span>
+          {/* Food interactions */}
+          {identificationResult.foodInteractions.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-medium text-foreground">Food interactions</p>
+              <ul className="flex flex-col gap-1">
+                {identificationResult.foodInteractions.map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <span className="mt-0.5 shrink-0 opacity-40">•</span>
+                    {item}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={handleCheck}
-            disabled={checking}
-            className="w-fit rounded-lg bg-yellow-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-yellow-600 disabled:opacity-40"
-          >
-            {checking ? "Checking interactions…" : "Check All Interactions →"}
-          </button>
-
-          {checkError && <p className="text-sm text-red-400">{checkError}</p>}
+          {/* Storage note */}
+          {identificationResult.storageNote && (
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-foreground">Storage in transit</p>
+              <p className="text-sm text-muted-foreground">{identificationResult.storageNote}</p>
+            </div>
+          )}
         </section>
       )}
 
-      {/* Results */}
-      {checkResult && selectedCountry && identificationResult && (
-        <section className="flex flex-col gap-6">
-          {/* Travel context header */}
-          <div className="flex flex-col gap-1">
-            <p className="text-sm text-muted-foreground">
-              📍 Traveling in {selectedCountry.flag} {selectedCountry.name}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Checking{" "}
-              <span className="font-medium text-foreground">{foreignDrugName}</span>{" "}
-              ({identificationResult.usEquivalent})
-            </p>
-          </div>
-
-          {/* Overall risk */}
-          <div className={cn(
-            "flex items-center gap-3 rounded-xl border p-4",
-            RISK_CONFIG[checkResult.overall_risk].bg,
-            RISK_CONFIG[checkResult.overall_risk].border,
-          )}>
-            <span className={cn("text-sm font-bold", RISK_CONFIG[checkResult.overall_risk].text)}>
-              {RISK_CONFIG[checkResult.overall_risk].label}
-            </span>
-            <p className="text-sm text-muted-foreground">{checkResult.overall_summary}</p>
-          </div>
-
-          {/* Recommendation */}
-          <p className="text-sm font-medium text-foreground">
-            Recommendation:{" "}
-            <span className="text-teal-300">{checkResult.recommendation}</span>
+      {/* Next step: copy + open interaction checker */}
+      {identificationResult && (
+        <section className="flex flex-col gap-4 rounded-2xl border border-teal-800 bg-teal-950/10 p-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-teal-400">Next Step</p>
+          <p className="text-sm text-muted-foreground">
+            Copy the US name below and paste it into the Premium Interaction Checker to check for
+            interactions with your other medications.
           </p>
 
-          {/* Combination cards */}
-          {checkResult.combinations.map((combo, i) => {
-            const cfg = RISK_CONFIG[combo.risk_level];
-            return (
-              <div
-                key={i}
-                className={cn("rounded-xl border p-5", cfg.bg, cfg.border)}
-              >
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className={cn("text-xs font-bold uppercase tracking-wider", cfg.text)}>
-                    {cfg.label}
-                  </span>
-                  <span className="text-sm font-semibold text-foreground">
-                    {combo.drug_a} + {combo.drug_b}
-                  </span>
-                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                    {combo.classification}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">{combo.simple_explanation}</p>
-                {combo.real_world_context && (
-                  <p className="mt-2 text-xs text-muted-foreground/80">{combo.real_world_context}</p>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Travel-specific info card */}
-          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
-            <h3 className="text-base font-semibold text-foreground">✈️ Travel Considerations</h3>
-
-            {/* Customs / Legal */}
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-foreground">Customs &amp; Legal Status</p>
-              {identificationResult.isControlled ? (
-                <div className="rounded-lg border border-red-800 bg-red-950/20 p-3">
-                  <p className="text-xs font-semibold text-red-300">⚠️ Controlled Substance</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {identificationResult.controlledNote ?? "Check customs regulations before traveling with this medication."}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  ✓ Generally safe to carry — keep in original packaging with your prescription or doctor&apos;s note.
-                </p>
-              )}
-            </div>
-
-            {/* Food interactions */}
-            {identificationResult.foodInteractions.length > 0 && (
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium text-foreground">
-                  Food interactions to watch for in {selectedCountry.name}
-                </p>
-                <ul className="flex flex-col gap-1">
-                  {identificationResult.foodInteractions.map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-xs text-muted-foreground">
-                      <span className="mt-0.5 shrink-0 opacity-40">•</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Storage */}
-            {identificationResult.storageNote && (
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium text-foreground">Storage in transit</p>
-                <p className="text-xs text-muted-foreground">{identificationResult.storageNote}</p>
-              </div>
-            )}
+          <div className="flex items-center gap-3">
+            <span className="flex-1 rounded-lg border border-teal-800 bg-teal-950/20 px-4 py-2.5 text-sm font-semibold text-teal-100">
+              {identificationResult.usEquivalent}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(identificationResult.usEquivalent).catch(() => undefined);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="shrink-0 rounded-lg border border-teal-700 px-4 py-2.5 text-sm font-medium text-teal-300 transition-colors hover:bg-teal-900/40"
+            >
+              {copied ? "✓ Copied!" : "Copy"}
+            </button>
           </div>
 
-          {/* Start over */}
+          <Link
+            href="/check/premium"
+            className="w-fit rounded-lg bg-yellow-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-yellow-600"
+          >
+            Open Premium Interaction Checker →
+          </Link>
+
           <button
             type="button"
-            onClick={() => {
-              setIdentificationResult(null);
-              setCheckResult(null);
-              setForeignDrugName("");
-              setPurpose("");
-              setAdditionalDrugs([]);
-            }}
+            onClick={handleReset}
             className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            ← Check another medication
+            ✈️ Translate a Different Drug
           </button>
         </section>
       )}
