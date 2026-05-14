@@ -83,8 +83,10 @@ export async function POST(req: NextRequest) {
     `  "controlled_note": "note if controlled, null if not",\n` +
     `  "food_interactions": ["food interaction 1", "food interaction 2"],\n` +
     `  "storage_note": "storage guidance for travelers",\n` +
-    `  "additional_names": ["other brand names worldwide"]\n` +
-    `}`;
+    `  "additional_names": ["other brand names worldwide"],\n` +
+    `  "copyable_name": "single clean drug name to paste into an interaction checker, or null"\n` +
+    `}\n\n` +
+    `For copyable_name: if you identified the drug with high or medium confidence, return only the clean generic or brand name (e.g. "simvastatin" or "ibuprofen"). If you found the INN but are unsure of the US equivalent, return the INN only (e.g. "benzocaine"). If you cannot identify the drug with any reasonable confidence, return null. NEVER put sentences, explanations, or phrases like "No direct US equivalent" in copyable_name — those belong in confidence_reason only.`;
 
   let apiResponse: Response;
   try {
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
           { role: "user", content: userPrompt },
         ],
         temperature: 0.2,
-        max_tokens: 600,
+        max_tokens: 700,
       }),
     });
   } catch (err) {
@@ -138,6 +140,7 @@ export async function POST(req: NextRequest) {
       food_interactions?: string[];
       storage_note?: string;
       additional_names?: string[];
+      copyable_name?: string | null;
     };
 
     const usEquiv = result.us_equivalent?.trim() ?? "";
@@ -156,6 +159,15 @@ export async function POST(req: NextRequest) {
     const confidence: "high" | "medium" | "low" =
       conf === "high" || conf === "medium" || conf === "low" ? conf : "medium";
 
+    const rawCopyable = result.copyable_name?.trim() ?? "";
+    const copyableName =
+      rawCopyable &&
+      rawCopyable.toLowerCase() !== "none" &&
+      rawCopyable.toLowerCase() !== "n/a" &&
+      rawCopyable.toLowerCase() !== "null"
+        ? rawCopyable
+        : null;
+
     return NextResponse.json({
       activeIngredient: result.active_ingredient ?? foreignDrugName,
       usEquivalent: result.us_equivalent ?? result.active_ingredient ?? foreignDrugName,
@@ -167,6 +179,7 @@ export async function POST(req: NextRequest) {
       foodInteractions: Array.isArray(result.food_interactions) ? result.food_interactions : [],
       storageNote: result.storage_note ?? "",
       additionalNames: Array.isArray(result.additional_names) ? result.additional_names : [],
+      copyableName,
     });
   } catch (err) {
     console.error("[identify-foreign-drug] Parse error:", err, "raw:", content);

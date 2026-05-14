@@ -76,6 +76,7 @@ interface IdentificationResult {
   foodInteractions: string[];
   storageNote: string;
   additionalNames: string[];
+  copyableName: string | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -351,47 +352,67 @@ export default function TravelPage() {
         </section>
       )}
 
-      {/* Next step: copy + open interaction checker */}
+      {/* Next step: copy + open interaction checker, or unable-to-identify fallback */}
       {identificationResult && (
-        <section className="flex flex-col gap-4 rounded-2xl border border-teal-800 bg-teal-950/10 p-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-teal-400">Next Step</p>
-          <p className="text-sm text-muted-foreground">
-            Copy the US name below and paste it into the Premium Interaction Checker to check for
-            interactions with your other medications.
-          </p>
+        identificationResult.copyableName ? (
+          <section className="flex flex-col gap-4 rounded-2xl border border-teal-800 bg-teal-950/10 p-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-teal-400">Next Step</p>
+            <p className="text-sm text-muted-foreground">
+              Copy the drug name below and paste it into the Premium Interaction Checker to check for
+              interactions with your other medications.
+            </p>
 
-          <div className="flex items-center gap-3">
-            <span className="flex-1 rounded-lg border border-teal-800 bg-teal-950/20 px-4 py-2.5 text-sm font-semibold text-teal-100">
-              {identificationResult.usEquivalent}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="flex-1 rounded-lg border border-teal-800 bg-teal-950/20 px-4 py-2.5 text-sm font-semibold text-teal-100">
+                {identificationResult.copyableName}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(identificationResult.copyableName!).catch(() => undefined);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="shrink-0 rounded-lg border border-teal-700 px-4 py-2.5 text-sm font-medium text-teal-300 transition-colors hover:bg-teal-900/40"
+              >
+                {copied ? "✓ Copied!" : "Copy"}
+              </button>
+            </div>
+
+            <Link
+              href="/check/premium"
+              className="w-fit rounded-lg bg-yellow-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-yellow-600"
+            >
+              Open Premium Interaction Checker →
+            </Link>
+
             <button
               type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(identificationResult.usEquivalent).catch(() => undefined);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              }}
-              className="shrink-0 rounded-lg border border-teal-700 px-4 py-2.5 text-sm font-medium text-teal-300 transition-colors hover:bg-teal-900/40"
+              onClick={handleReset}
+              className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              {copied ? "✓ Copied!" : "Copy"}
+              ✈️ Translate a Different Drug
             </button>
-          </div>
-
-          <Link
-            href="/check/premium"
-            className="w-fit rounded-lg bg-yellow-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-yellow-600"
-          >
-            Open Premium Interaction Checker →
-          </Link>
-
-          <button
-            type="button"
-            onClick={handleReset}
-            className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            ✈️ Translate a Different Drug
-          </button>
-        </section>
+          </section>
+        ) : (
+          <section className="flex flex-col gap-4 rounded-2xl border border-red-800/30 bg-red-950/5 p-6">
+            <p className="text-sm leading-relaxed text-foreground/70">
+              We were unable to identify a specific active ingredient for this medication with
+              enough confidence to suggest a name for the interaction checker.
+            </p>
+            <p className="text-xs text-foreground/40">
+              Try searching the drug name on drugs.com or consulting a local pharmacist for the
+              active ingredient, then enter it manually in the Premium Checker.
+            </p>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              ✈️ Translate a Different Drug
+            </button>
+          </section>
+        )
       )}
     </main>
   );
