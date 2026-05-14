@@ -27,7 +27,7 @@ const premiumPublicFeatures = [
   "Save your interaction history",
   'Real-life context (e.g. "this may affect your focus or sleep")',
   "Saved user profile that auto-updates and includes prescribed medications",
-  "Curriculum-aligned explanation modes for middle school/honors biology, AP Biology, and pre-med students",
+  "✈️ International Travel Mode — identify foreign medications by name in any language, map them to their US equivalents, and check interactions against your saved medications. Built for travelers and expats.",
 ];
 
 const premiumStudentsFeatures = [
@@ -41,7 +41,6 @@ const premiumStudentsFeatures = [
   "Clickable term definitions — tap any highlighted word for an instant explanation calibrated to your curriculum level",
   "🃏 MCAT Pharmacology Flashcard Bank — 100 pre-loaded cards across pharmacokinetics, pharmacodynamics, and drug interactions. Add terms directly from your analyses.",
   "🔬 Interactive Case Studies — work through real patient scenarios with animated diagrams, drag-and-drop exercises, and AI-graded written responses. Built for AP Biology and Pre-Med students.",
-  "✈️ International Travel Mode — identify foreign medications by name in any language, map them to their US equivalents, and check interactions against your saved medications. Built for travelers and expats.",
 ];
 
 function FeatureList({ items }: { items: string[] }) {

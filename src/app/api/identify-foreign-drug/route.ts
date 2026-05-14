@@ -55,6 +55,9 @@ export async function POST(req: NextRequest) {
     "You are a clinical pharmacologist specializing in international drug nomenclature. " +
     "You identify foreign drug names and map them to their active ingredients and US equivalents. " +
     "Always prioritize patient safety — if uncertain, say so clearly. " +
+    "If a drug has no direct US equivalent or is not approved in the US, do NOT return 'None'. " +
+    "Instead return the International Nonproprietary Name (INN) or the most widely recognized international generic name. " +
+    "If the drug is a traditional/herbal/homeopathic remedy, return the most recognized Latin or international name for the active ingredient. " +
     "Return ONLY valid JSON, no other text.";
 
   const rxNormLine = rxNormName
@@ -136,6 +139,18 @@ export async function POST(req: NextRequest) {
       storage_note?: string;
       additional_names?: string[];
     };
+
+    const usEquiv = result.us_equivalent?.trim() ?? "";
+    if (
+      !usEquiv ||
+      usEquiv.toLowerCase() === "none" ||
+      usEquiv.toLowerCase() === "n/a"
+    ) {
+      result.us_equivalent = result.active_ingredient;
+      result.confidence = "low";
+      result.confidence_reason =
+        "No direct US equivalent found — using international generic name. Results may vary in the interaction checker.";
+    }
 
     const conf = result.confidence;
     const confidence: "high" | "medium" | "low" =

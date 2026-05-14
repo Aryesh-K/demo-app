@@ -276,11 +276,24 @@ export default function TravelPage() {
           </p>
 
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-sm">
-              <span>🇺🇸</span>
-              <span className="text-muted-foreground">Known in the US as:</span>
-              <span className="font-semibold text-teal-300">{identificationResult.usEquivalent}</span>
-            </div>
+            {identificationResult.usEquivalent === identificationResult.activeIngredient ? (
+              <div className="flex flex-col gap-1">
+                <p className="text-sm text-muted-foreground">🌐 No direct US equivalent found</p>
+                <p className="text-sm">
+                  Using international name:{" "}
+                  <span className="font-semibold text-teal-300">{identificationResult.activeIngredient}</span>
+                </p>
+                <p className="text-xs italic text-muted-foreground">
+                  This name may still work in the interaction checker — give it a try
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm">
+                <span>🇺🇸</span>
+                <span className="text-muted-foreground">Known in the US as:</span>
+                <span className="font-semibold text-teal-300">{identificationResult.usEquivalent}</span>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               💊 Drug class: <span className="text-foreground">{identificationResult.drugClass}</span>
             </p>
