@@ -280,4 +280,128 @@ export const CASE_STUDIES: CaseStudy[] = [
       },
     ],
   },
+  {
+    id: "serotonin-storm",
+    title: "The Serotonin Storm",
+    subtitle:
+      "How two medications combined to create a life-threatening neurological emergency",
+    patientName: "Linda",
+    patientAge: 52,
+    patientSex: "Female",
+    patientConditions: "Treatment-resistant depression, chronic lower back pain",
+    patientMedications: "Phenelzine 45mg daily (MAOI antidepressant)",
+    patientScenario:
+      "Linda, 52, has been taking phenelzine for treatment-resistant depression for three years. While traveling, she runs out of her medication and visits an urgent care clinic. The doctor, unaware of her phenelzine, prescribes tramadol for back pain she mentions in passing. Within two hours Linda is in the emergency room — trembling uncontrollably, drenched in sweat, heart racing at 160 BPM, temperature 104°F, muscles rigid. The triage nurse notes her pupils are dilated and she is visibly agitated and confused. What happened?",
+    learningObjectives: [
+      "Explain how monoamine oxidase normally breaks down serotonin in the synapse",
+      "Understand how MAOIs work and why they require a 2-week washout period",
+      "Identify the three mechanisms that can raise synaptic serotonin levels",
+      "Explain why tramadol is serotonergic beyond just being an opioid",
+      "Connect excess 5-HT1A and 5-HT2A receptor stimulation to the clinical triad of serotonin syndrome",
+      "Recognize which drug combinations carry the highest risk",
+    ],
+    targetLevel: "AP Biology / Pre-Med",
+    estimatedMinutes: 30,
+    historyEraId: "era-8",
+    historyEraTitle: "Serotonin Syndrome (1991)",
+    sections: [
+      { id: "background", title: "Background", type: "content" },
+      { id: "maoi", title: "The MAOI", type: "interactive" },
+      { id: "trigger", title: "The Trigger", type: "interactive" },
+      { id: "storm", title: "The Storm", type: "interactive" },
+      { id: "spectrum", title: "The Spectrum", type: "interactive" },
+      { id: "quiz", title: "Review & Quiz", type: "quiz" },
+    ],
+    questions: [
+      {
+        id: "ss-mcq-1",
+        type: "mcq",
+        question: "What enzyme does phenelzine inhibit?",
+        options: [
+          "CYP3A4 (cytochrome P450)",
+          "Monoamine oxidase (MAO)",
+          "Acetylcholinesterase",
+          "COMT (catechol-O-methyltransferase)",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Phenelzine is a monoamine oxidase inhibitor (MAOI). It irreversibly blocks MAO-A, the enzyme responsible for breaking down serotonin, norepinephrine, and dopamine in the synapse and gut. Without MAO, these neurotransmitters accumulate to dangerous levels.",
+        points: 2,
+      },
+      {
+        id: "ss-mcq-2",
+        type: "mcq",
+        question:
+          "Besides being a weak opioid, what serotonergic mechanism does tramadol have?",
+        options: [
+          "It stimulates serotonin receptors directly",
+          "It blocks the serotonin transporter (SERT), preventing serotonin reuptake",
+          "It increases serotonin synthesis in the raphe nuclei",
+          "It inhibits MAO-B specifically",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Tramadol blocks SERT — the serotonin reuptake transporter — in addition to its weak mu-opioid agonism. This means serotonin released into the synapse cannot be cleared. Combined with an MAOI that prevents serotonin breakdown, the result is catastrophic serotonin accumulation.",
+        points: 2,
+      },
+      {
+        id: "ss-mcq-3",
+        type: "mcq",
+        question:
+          "Which component of the serotonin syndrome triad is most immediately life-threatening?",
+        options: [
+          "Altered mental status",
+          "Autonomic instability",
+          "Hyperthermia from neuromuscular rigidity",
+          "Hyperreflexia",
+        ],
+        correctIndex: 2,
+        explanation:
+          "Hyperthermia is the primary killer in severe serotonin syndrome. Muscle rigidity causes continuous involuntary contraction generating massive heat. Core temperatures above 106°F (41°C) cause direct protein denaturation, brain damage, rhabdomyolysis, and multi-organ failure. Aggressive cooling is the most critical intervention.",
+        points: 2,
+      },
+      {
+        id: "ss-mcq-4",
+        type: "mcq",
+        question:
+          "Why does phenelzine require a 2-week washout period before starting another serotonergic drug?",
+        options: [
+          "Phenelzine takes 2 weeks to be fully absorbed",
+          "MAO is irreversibly inhibited — new enzyme must be synthesized, which takes 2 weeks",
+          "Serotonin levels take 2 weeks to normalize after stopping phenelzine",
+          "The 2-week period allows CYP450 enzymes to clear phenelzine metabolites",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Phenelzine causes irreversible inhibition of MAO — it permanently destroys the enzyme. The only way to restore MAO activity is to synthesize new enzyme from scratch, which takes approximately 2 weeks. During this window, the patient remains at risk for serotonin syndrome even after stopping the drug.",
+        points: 2,
+      },
+      {
+        id: "ss-dragdrop-1",
+        type: "dragdrop",
+        instruction:
+          "Match each drug combination to its serotonin syndrome risk level by ordering them from HIGHEST to LOWEST risk:",
+        items: [
+          "SSRI + Dextromethorphan (cough medicine)",
+          "SSRI + MAOI",
+          "SSRI + Triptan (e.g. sumatriptan)",
+          "MAOI + Tramadol",
+          "SSRI + Tramadol",
+        ],
+        correctOrder: [1, 3, 4, 0, 2],
+        explanation:
+          "Correct order highest to lowest: SSRI + MAOI (extreme — two major mechanisms combined), MAOI + Tramadol (extreme — as demonstrated by Linda's case), SSRI + Tramadol (high — reuptake blockade doubled), SSRI + Dextromethorphan (moderate — DXM weakly blocks SERT), SSRI + Triptan (low/rare — triptans are 5-HT1B/1D agonists with minimal serotonin syndrome risk despite common flagging).",
+        points: 3,
+      },
+      {
+        id: "ss-written-1",
+        type: "written",
+        question:
+          "You are an ER physician treating Linda. Explain to the medical student with you what caused this reaction, why tramadol was the trigger, and what makes the MAOI + tramadol combination so much more dangerous than either drug alone. Write as you would actually speak to a medical student at the bedside.",
+        gradingCriteria:
+          "Award points based on: (1) correct explanation that phenelzine blocks MAO preventing serotonin breakdown, (2) correct identification of tramadol's dual mechanism as both opioid and SERT inhibitor, (3) correct explanation of why the combination is synergistic — serotonin cannot be broken down AND cannot be cleared from the synapse, (4) connection to clinical symptoms via 5-HT1A and 5-HT2A overstimulation, (5) clarity and appropriate clinical teaching tone. Score 1-5.",
+        points: 5,
+      },
+    ],
+  },
 ];

@@ -57,6 +57,20 @@ const ANIM_CSS = `
   88%  { opacity: 1; }
   100% { transform: translateY(-32px); opacity: 0; }
 }
+@keyframes ss-float {
+  0%   { transform: translateY(0px); opacity: 0; }
+  10%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateY(50px); opacity: 0; }
+}
+@keyframes ss-pulse-r {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+@keyframes ss-fade-stage {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 `;
 
 // ─── Patient profile card ─────────────────────────────────────────────────────
@@ -1365,6 +1379,623 @@ function CRPoisonSection() {
   );
 }
 
+// ─── Serotonin Storm: Background ─────────────────────────────────────────────
+
+function SSBackgroundSection() {
+  return (
+    <div className="flex flex-col gap-6">
+      <h2 className="text-xl font-bold">Serotonin: The Messenger Gone Wrong</h2>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Serotonin (5-hydroxytryptamine, 5-HT) is a neurotransmitter produced mainly in the
+        raphe nuclei of the brainstem and the gastrointestinal tract. It regulates mood, sleep,
+        appetite, and pain processing. Like all neurotransmitters, its effects depend entirely on
+        precise concentration — too little causes depression, too much causes something far more
+        dangerous.
+      </p>
+
+      {/* Synapse SVG */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <svg viewBox="0 0 400 200" className="w-full" style={{ maxHeight: 200 }}>
+          {/* Presynaptic terminal */}
+          <rect x="10" y="20" width="140" height="80" rx="10" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.4)" strokeWidth="1.5" />
+          <text x="80" y="38" textAnchor="middle" fill="rgba(165,180,252,0.8)" fontSize="9" fontWeight="bold">PRESYNAPTIC NEURON</text>
+          {/* Vesicles */}
+          <circle cx="40" cy="70" r="10" fill="rgba(234,179,8,0.3)" stroke="rgba(234,179,8,0.6)" strokeWidth="1" />
+          <circle cx="65" cy="65" r="10" fill="rgba(234,179,8,0.3)" stroke="rgba(234,179,8,0.6)" strokeWidth="1" />
+          <circle cx="90" cy="72" r="10" fill="rgba(234,179,8,0.3)" stroke="rgba(234,179,8,0.6)" strokeWidth="1" />
+          <text x="65" y="90" textAnchor="middle" fill="rgba(234,179,8,0.7)" fontSize="7">5-HT vesicles</text>
+          {/* MAO label */}
+          <text x="118" y="60" textAnchor="middle" fill="rgba(74,222,128,0.8)" fontSize="7">MAO</text>
+          <text x="118" y="68" textAnchor="middle" fill="rgba(74,222,128,0.6)" fontSize="6">breakdown</text>
+
+          {/* Synapse gap */}
+          <rect x="155" y="30" width="90" height="60" rx="4" fill="rgba(20,184,166,0.05)" stroke="rgba(20,184,166,0.2)" strokeWidth="1" strokeDasharray="3,3" />
+          <text x="200" y="48" textAnchor="middle" fill="rgba(94,234,212,0.6)" fontSize="7">SYNAPSE</text>
+          {/* SERT label */}
+          <text x="155" y="78" textAnchor="middle" fill="rgba(96,165,250,0.8)" fontSize="7">SERT</text>
+          <text x="155" y="86" textAnchor="middle" fill="rgba(96,165,250,0.6)" fontSize="6">reuptake</text>
+          {/* Floating serotonin */}
+          <circle cx="185" cy="55" r="5" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-float 2.8s ease-in-out infinite" }} />
+          <circle cx="200" cy="65" r="5" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-float 2.8s ease-in-out 0.9s infinite" }} />
+          <circle cx="218" cy="52" r="5" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-float 2.8s ease-in-out 1.8s infinite" }} />
+
+          {/* Postsynaptic */}
+          <rect x="250" y="20" width="140" height="80" rx="10" fill="rgba(20,184,166,0.1)" stroke="rgba(20,184,166,0.3)" strokeWidth="1.5" />
+          <text x="320" y="38" textAnchor="middle" fill="rgba(94,234,212,0.8)" fontSize="9" fontWeight="bold">POSTSYNAPTIC NEURON</text>
+          {/* Receptors */}
+          <path d="M260,70 Q268,55 276,70" stroke="rgba(94,234,212,0.7)" strokeWidth="2" fill="none" />
+          <path d="M280,70 Q288,55 296,70" stroke="rgba(94,234,212,0.7)" strokeWidth="2" fill="none" />
+          <path d="M300,70 Q308,55 316,70" stroke="rgba(94,234,212,0.7)" strokeWidth="2" fill="none" />
+          <text x="290" y="84" textAnchor="middle" fill="rgba(94,234,212,0.6)" fontSize="7">5-HT receptors</text>
+          <text x="340" y="60" textAnchor="middle" fill="rgba(74,222,128,0.8)" fontSize="7">signal</text>
+          <text x="340" y="68" textAnchor="middle" fill="rgba(74,222,128,0.6)" fontSize="6">✓ normal</text>
+
+          {/* Caption */}
+          <text x="200" y="120" textAnchor="middle" fill="rgba(148,163,184,0.7)" fontSize="7.5">
+            Normal signaling: released → binds receptors → cleared by SERT and MAO
+          </text>
+          <text x="200" y="132" textAnchor="middle" fill="rgba(234,179,8,0.6)" fontSize="7">
+            ● serotonin molecules
+          </text>
+        </svg>
+      </div>
+
+      {/* 3 mechanism boxes */}
+      <h3 className="text-sm font-semibold text-foreground">Three Ways Serotonin Can Accumulate</h3>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          {
+            icon: "🔴",
+            title: "Block MAO (MAOIs)",
+            body: "MAO inhibitors like phenelzine prevent serotonin breakdown inside the presynaptic terminal.",
+          },
+          {
+            icon: "🔴",
+            title: "Block SERT (SSRIs, tramadol)",
+            body: "Reuptake blockers prevent serotonin from being cleared from the synapse after release.",
+          },
+          {
+            icon: "⬆️",
+            title: "Increase Release (MDMA, some opioids)",
+            body: "Some drugs force excess serotonin release from vesicles, flooding the synapse.",
+          },
+        ].map((m) => (
+          <div key={m.title} className="rounded-xl border border-border bg-card p-4">
+            <p className="font-semibold text-sm">{m.icon} {m.title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{m.body}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-amber-800/50 bg-amber-950/10 p-4">
+        <p className="text-sm font-semibold text-amber-300">💡 Key Insight</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Serotonin syndrome occurs when multiple mechanisms combine. One mechanism alone rarely
+          causes a crisis — it is the combination that creates the storm.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Serotonin Storm: MAOI ────────────────────────────────────────────────────
+
+function SSMAOISection() {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setStage(1), 2000);
+    const t2 = setTimeout(() => setStage(2), 4500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  const [openTerm, setOpenTerm] = useState<string | null>(null);
+
+  const terms: Record<string, string> = {
+    "monoamine oxidase": "An enzyme found in nerve terminals, the liver, and the gut wall. It breaks down monoamine neurotransmitters — serotonin, norepinephrine, and dopamine — after they have completed their signaling function.",
+    "irreversible inhibition": "A type of enzyme inhibition where the inhibitor forms a permanent covalent bond with the enzyme's active site. Unlike competitive inhibitors which can be displaced, irreversible inhibitors permanently destroy enzyme function.",
+    "washout period": "The time required after stopping a drug before it is safe to start another. For MAOIs like phenelzine, this is ~14 days because the enzyme must be synthesized from scratch.",
+    "tyramine": "An amino acid found in aged cheeses, cured meats, and fermented foods. Normally broken down by MAO in the gut. When MAO is inhibited by phenelzine, dietary tyramine floods into circulation causing a hypertensive crisis — known as the 'cheese effect.'",
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <h2 className="text-xl font-bold">Phenelzine: Disabling the Cleanup Crew</h2>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Monoamine oxidase (MAO) is an enzyme found in nerve terminals and the gut wall. Its job
+        is to break down monoamine neurotransmitters — serotonin, norepinephrine, and dopamine —
+        after they have done their job. Phenelzine permanently disables it.
+      </p>
+
+      {/* Stage animation */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <svg viewBox="0 0 360 140" className="w-full" style={{ maxHeight: 160 }}>
+          {/* Stage labels */}
+          <text x="60" y="14" textAnchor="middle" fill="rgba(148,163,184,0.7)" fontSize="8" fontWeight="bold">
+            {stage === 0 ? "NORMAL FUNCTION" : stage === 1 ? "PHENELZINE ARRIVES" : "ACCUMULATION"}
+          </text>
+
+          {/* Stage 0 & 1: MAO enzyme active (green) or being attacked */}
+          <g style={{ opacity: stage < 2 ? 1 : 0.3, transition: "opacity 0.8s" }}>
+            {/* MAO hexagon */}
+            <polygon
+              points="60,50 80,40 100,50 100,70 80,80 60,70"
+              fill={stage === 0 ? "rgba(74,222,128,0.25)" : stage === 1 ? "rgba(251,191,36,0.25)" : "rgba(239,68,68,0.15)"}
+              stroke={stage === 0 ? "rgba(74,222,128,0.7)" : stage === 1 ? "rgba(251,191,36,0.7)" : "rgba(239,68,68,0.5)"}
+              strokeWidth="1.5"
+              style={{ transition: "fill 0.8s, stroke 0.8s" }}
+            />
+            <text x="80" y="62" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="8" fontWeight="bold">MAO</text>
+            {/* Serotonin being broken down */}
+            {stage === 0 && (
+              <>
+                <circle cx="130" cy="55" r="6" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-pulse-r 1.5s ease-in-out infinite" }} />
+                <text x="146" y="44" fill="rgba(234,179,8,0.6)" fontSize="7">5-HT</text>
+                <line x1="115" y1="58" x2="105" y2="62" stroke="rgba(234,179,8,0.4)" strokeWidth="1.5" strokeDasharray="2,2" />
+                <text x="160" y="72" fill="rgba(74,222,128,0.7)" fontSize="7">→ broken down ✓</text>
+              </>
+            )}
+          </g>
+
+          {/* Phenelzine molecule approaching (stage 1) */}
+          {stage >= 1 && (
+            <g style={{ animation: "ss-fade-stage 0.5s ease forwards" }}>
+              <circle cx="150" cy="40" r="9" fill="rgba(249,115,22,0.3)" stroke="rgba(249,115,22,0.7)" strokeWidth="1.5" />
+              <text x="150" y="43" textAnchor="middle" fill="rgba(249,115,22,0.9)" fontSize="7" fontWeight="bold">Ph</text>
+              <text x="150" y="28" textAnchor="middle" fill="rgba(249,115,22,0.7)" fontSize="7">Phenelzine</text>
+              {stage === 1 && <line x1="141" y1="44" x2="103" y2="57" stroke="rgba(249,115,22,0.5)" strokeWidth="1" strokeDasharray="2,2" />}
+            </g>
+          )}
+
+          {/* Stage 2: MAO destroyed, accumulation */}
+          {stage >= 2 && (
+            <g style={{ animation: "ss-fade-stage 0.5s ease forwards" }}>
+              <polygon points="60,50 80,40 100,50 100,70 80,80 60,70" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.5)" strokeWidth="1.5" />
+              <text x="80" y="57" textAnchor="middle" fill="rgba(239,68,68,0.8)" fontSize="8" fontWeight="bold">MAO</text>
+              <text x="80" y="68" textAnchor="middle" fill="rgba(239,68,68,0.8)" fontSize="9">✕</text>
+              <text x="80" y="92" textAnchor="middle" fill="rgba(239,68,68,0.6)" fontSize="7">Permanently inactivated</text>
+              {/* Accumulating serotonin */}
+              {[
+                { cx: 160, cy: 50, delay: "0s" },
+                { cx: 185, cy: 62, delay: "0.3s" },
+                { cx: 175, cy: 40, delay: "0.6s" },
+                { cx: 200, cy: 53, delay: "0.9s" },
+                { cx: 215, cy: 45, delay: "1.2s" },
+              ].map((d, i) => (
+                <circle
+                  key={i} cx={d.cx} cy={d.cy} r="7"
+                  fill="rgba(234,179,8,0.5)" stroke="rgba(234,179,8,0.8)" strokeWidth="1"
+                  style={{ animation: `ss-fade-stage 0.4s ease ${d.delay} forwards`, opacity: 0 }}
+                />
+              ))}
+              <text x="190" y="85" textAnchor="middle" fill="rgba(234,179,8,0.8)" fontSize="7">Serotonin accumulates ↑↑</text>
+            </g>
+          )}
+        </svg>
+
+        <div className="mt-2 flex justify-center gap-6">
+          {["Normal", "Inhibited", "Accumulation"].map((label, i) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <div className={cn(
+                "h-2 w-2 rounded-full",
+                stage === i ? "bg-teal-400" : "bg-muted",
+              )} />
+              <span className="text-[10px] text-muted-foreground">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Fact boxes */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-red-800/50 bg-red-950/10 p-4">
+          <p className="text-sm font-semibold text-red-300">⛔ Irreversible Inhibition</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Unlike competitive inhibitors that can be displaced, phenelzine forms a permanent
+            covalent bond with MAO. The enzyme is destroyed — not just blocked. New MAO must be
+            synthesized from scratch.
+          </p>
+        </div>
+        <div className="rounded-xl border border-amber-800/50 bg-amber-950/10 p-4">
+          <p className="text-sm font-semibold text-amber-300">⏳ The 2-Week Rule</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            MAO regeneration takes approximately 14 days. Phenelzine's effects persist for
+            2 weeks after the last dose. Many dangerous reactions occur when patients or
+            doctors forget this window.
+          </p>
+        </div>
+      </div>
+
+      {/* Clickable terms */}
+      <div className="flex flex-wrap gap-2">
+        {Object.keys(terms).map((term) => (
+          <div key={term} className="relative">
+            <button
+              type="button"
+              onClick={() => setOpenTerm(openTerm === term ? null : term)}
+              className="rounded-full border border-teal-700 bg-teal-950/20 px-3 py-1 text-xs text-teal-300 transition-colors hover:bg-teal-950/40"
+            >
+              {term} ▾
+            </button>
+            {openTerm === term && (
+              <div
+                className="absolute bottom-full left-0 z-10 mb-2 w-64 rounded-xl border border-teal-800 bg-card p-3 shadow-lg"
+                style={{ animation: "cs-fade-in 0.15s ease forwards" }}
+              >
+                <p className="text-xs leading-relaxed text-muted-foreground">{terms[term]}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Serotonin Storm: Trigger ─────────────────────────────────────────────────
+
+function SSTriggerSection() {
+  return (
+    <div className="flex flex-col gap-6">
+      <h2 className="text-xl font-bold">Tramadol: More Than Just a Painkiller</h2>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Tramadol is commonly prescribed as a mild-to-moderate opioid painkiller. What many
+        prescribers — and Linda's urgent care doctor — don't realize is that tramadol has a second
+        pharmacological action completely unrelated to pain relief.
+      </p>
+
+      {/* Dual mechanism diagram */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tramadol's Dual Mechanism</p>
+        <svg viewBox="0 0 380 160" className="w-full" style={{ maxHeight: 170 }}>
+          {/* Central tramadol */}
+          <circle cx="190" cy="80" r="22" fill="rgba(168,85,247,0.2)" stroke="rgba(168,85,247,0.6)" strokeWidth="1.5" />
+          <text x="190" y="77" textAnchor="middle" fill="rgba(216,180,254,0.9)" fontSize="9" fontWeight="bold">Tramadol</text>
+          <text x="190" y="88" textAnchor="middle" fill="rgba(216,180,254,0.7)" fontSize="7">💊</text>
+
+          {/* Left: opioid receptor */}
+          <line x1="168" y1="80" x2="118" y2="80" stroke="rgba(96,165,250,0.4)" strokeWidth="1.5" strokeDasharray="3,2" />
+          <rect x="30" y="46" width="88" height="68" rx="8" fill="rgba(59,130,246,0.1)" stroke="rgba(96,165,250,0.4)" strokeWidth="1.5" />
+          <text x="74" y="65" textAnchor="middle" fill="rgba(96,165,250,0.8)" fontSize="8" fontWeight="bold">μ-Opioid</text>
+          <text x="74" y="75" textAnchor="middle" fill="rgba(96,165,250,0.8)" fontSize="8" fontWeight="bold">Receptor</text>
+          <text x="74" y="90" textAnchor="middle" fill="rgba(74,222,128,0.7)" fontSize="7">Pain relief</text>
+          <text x="74" y="100" textAnchor="middle" fill="rgba(148,163,184,0.6)" fontSize="6">(weak agonism)</text>
+
+          {/* Right: SERT */}
+          <line x1="212" y1="80" x2="262" y2="80" stroke="rgba(249,115,22,0.4)" strokeWidth="1.5" strokeDasharray="3,2" />
+          <rect x="262" y="46" width="88" height="68" rx="8" fill="rgba(249,115,22,0.1)" stroke="rgba(249,115,22,0.4)" strokeWidth="1.5" />
+          <text x="306" y="65" textAnchor="middle" fill="rgba(253,186,116,0.8)" fontSize="8" fontWeight="bold">SERT</text>
+          <text x="306" y="75" textAnchor="middle" fill="rgba(253,186,116,0.8)" fontSize="8" fontWeight="bold">Transporter</text>
+          <text x="306" y="90" textAnchor="middle" fill="rgba(239,68,68,0.7)" fontSize="7">Blocks reuptake</text>
+          <text x="306" y="100" textAnchor="middle" fill="rgba(148,163,184,0.6)" fontSize="6">(serotonergic)</text>
+
+          <text x="190" y="140" textAnchor="middle" fill="rgba(148,163,184,0.6)" fontSize="7">Two completely independent mechanisms</text>
+        </svg>
+
+        <div className="mt-3 rounded-lg border border-amber-800/40 bg-amber-950/10 px-4 py-3">
+          <p className="text-xs text-amber-300">
+            ⚠️ Most opioid interaction checkers only flag tramadol for opioid interactions.
+            Its serotonergic action is frequently overlooked — which is exactly what happened to Linda.
+          </p>
+        </div>
+      </div>
+
+      {/* Venn diagram */}
+      <div className="rounded-xl border border-red-800/40 bg-card p-5">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Why the Combination Is Catastrophic</p>
+        <div className="flex items-stretch gap-0">
+          <div className="flex flex-1 flex-col gap-2 rounded-l-xl border border-indigo-700 bg-indigo-950/20 px-4 py-5">
+            <p className="text-sm font-semibold text-indigo-300">Phenelzine (MAOI)</p>
+            <p className="text-xs text-muted-foreground">Serotonin cannot be broken down by MAO</p>
+          </div>
+          <div className="flex w-24 shrink-0 flex-col items-center justify-center rounded-none border-y border-red-700 bg-red-950/30 px-2 py-5 text-center">
+            <p className="text-[10px] font-bold text-red-300">RESULT</p>
+            <p className="mt-1 text-[10px] text-red-400 leading-tight">Serotonin accumulates with no escape route</p>
+            <p className="mt-2 text-[10px] font-semibold text-red-300">→ Storm</p>
+          </div>
+          <div className="flex flex-1 flex-col gap-2 rounded-r-xl border border-orange-700 bg-orange-950/20 px-4 py-5">
+            <p className="text-sm font-semibold text-orange-300">Tramadol (SERT inhibitor)</p>
+            <p className="text-xs text-muted-foreground">Serotonin cannot be cleared by reuptake</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Serotonin Storm: The Storm ───────────────────────────────────────────────
+
+function SSStormSection() {
+  const [expanded, setExpanded] = useState<number | null>(0);
+  const [activeBodyDot, setActiveBodyDot] = useState<string | null>(null);
+
+  const triad = [
+    {
+      icon: "🦵",
+      title: "Neuromuscular Abnormalities",
+      body: "Excess 5-HT2A stimulation in the spinal cord causes hyperreflexia (exaggerated reflexes), clonus (rhythmic muscle contractions), muscle rigidity, and tremor.",
+      symptoms: ["Clonus", "Hyperreflexia", "Myoclonus", "Tremor", "Rigidity"],
+      why: "Muscle rigidity is the primary driver of hyperthermia — continuous contraction generates heat",
+      color: "border-amber-700 bg-amber-950/10",
+      titleColor: "text-amber-300",
+    },
+    {
+      icon: "🌡️",
+      title: "Autonomic Instability",
+      body: "The autonomic nervous system is thrown into overdrive. 5-HT1A receptors in the hypothalamus drive temperature dysregulation. Sympathetic activation causes cardiovascular crisis.",
+      symptoms: ["Tachycardia", "Hyperthermia", "Diaphoresis (sweating)", "Hypertension", "Dilated pupils"],
+      why: "Temperatures above 41°C (106°F) cause irreversible protein denaturation and brain damage",
+      color: "border-red-700 bg-red-950/10",
+      titleColor: "text-red-300",
+    },
+    {
+      icon: "🧠",
+      title: "Altered Mental Status",
+      body: "Cortical 5-HT2A overstimulation causes agitation, anxiety, and confusion. In severe cases, patients may be delirious or unresponsive.",
+      symptoms: ["Agitation", "Confusion", "Restlessness", "Disorientation"],
+      why: "Mental status changes combined with neuromuscular findings distinguish serotonin syndrome from other hyperthermic emergencies",
+      color: "border-purple-700 bg-purple-950/10",
+      titleColor: "text-purple-300",
+    },
+  ];
+
+  const bodyDots: { id: string; cx: number; cy: number; color: string; label: string; desc: string }[] = [
+    { id: "brain", cx: 90, cy: 28, color: "#a78bfa", label: "Brain", desc: "Altered mental status — agitation, confusion, 5-HT2A overstimulation" },
+    { id: "heart", cx: 88, cy: 75, color: "#f87171", label: "Heart", desc: "Tachycardia — 160 BPM in Linda's case. Sympathetic overdrive." },
+    { id: "spine", cx: 94, cy: 100, color: "#fbbf24", label: "Spine/Cord", desc: "Hyperreflexia and clonus — 5-HT2A stimulation in spinal cord interneurons" },
+    { id: "legs", cx: 88, cy: 145, color: "#fbbf24", label: "Legs/Muscles", desc: "Muscle rigidity and clonus — continuous contraction generates dangerous heat" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <h2 className="text-xl font-bold">What Happens When Serotonin Floods the Brain</h2>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Serotonin syndrome is not an allergic reaction — it is a direct pharmacological
+        consequence of excess serotonin stimulating 5-HT1A and 5-HT2A receptors throughout
+        the central and peripheral nervous system.
+      </p>
+
+      {/* Clinical triad expandable cards */}
+      <div className="flex flex-col gap-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">The Clinical Triad</p>
+        {triad.map((card, i) => (
+          <div key={card.title} className={cn("rounded-xl border p-4", card.color)}>
+            <button
+              type="button"
+              onClick={() => setExpanded(expanded === i ? null : i)}
+              className="flex w-full items-center justify-between"
+            >
+              <span className={cn("text-sm font-semibold", card.titleColor)}>
+                {card.icon} {card.title}
+              </span>
+              <span className="text-xs text-muted-foreground">{expanded === i ? "▲" : "▼"}</span>
+            </button>
+            {expanded === i && (
+              <div className="mt-3 flex flex-col gap-2" style={{ animation: "cs-fade-in 0.2s ease forwards" }}>
+                <p className="text-sm text-muted-foreground">{card.body}</p>
+                <div className="flex flex-wrap gap-1">
+                  {card.symptoms.map((s) => (
+                    <span key={s} className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs font-medium text-foreground/70">⚠️ Why it matters: {card.why}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Body diagram + thermometer */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* Body diagram */}
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Click a dot to explore</p>
+          <div className="relative flex justify-center">
+            <svg viewBox="0 0 180 200" className="w-40">
+              {/* Simple body outline */}
+              <circle cx="90" cy="20" r="17" fill="none" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              <rect x="72" y="38" width="36" height="55" rx="6" fill="none" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              <line x1="72" y1="45" x2="52" y2="90" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              <line x1="108" y1="45" x2="128" y2="90" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              <line x1="80" y1="93" x2="75" y2="155" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              <line x1="100" y1="93" x2="105" y2="155" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              {/* Body glow for hyperthermia */}
+              <ellipse cx="90" cy="80" rx="45" ry="70" fill="rgba(239,68,68,0.04)" />
+              {/* Clickable dots */}
+              {bodyDots.map((dot) => (
+                <circle
+                  key={dot.id}
+                  cx={dot.cx} cy={dot.cy} r="7"
+                  fill={`${dot.color}55`} stroke={dot.color} strokeWidth="1.5"
+                  style={{ cursor: "pointer", animation: "ss-pulse-r 1.8s ease-in-out infinite" }}
+                  onClick={() => setActiveBodyDot(activeBodyDot === dot.id ? null : dot.id)}
+                />
+              ))}
+            </svg>
+          </div>
+          {activeBodyDot && (
+            <div className="mt-2 rounded-lg border border-border bg-muted/40 px-3 py-2" style={{ animation: "cs-fade-in 0.2s ease forwards" }}>
+              <p className="text-xs font-semibold text-foreground">
+                {bodyDots.find((d) => d.id === activeBodyDot)?.label}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {bodyDots.find((d) => d.id === activeBodyDot)?.desc}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Thermometer */}
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Temperature Danger Zones</p>
+          <div className="flex items-start gap-3">
+            <svg viewBox="0 0 40 200" className="w-8 shrink-0">
+              <rect x="14" y="10" width="12" height="155" rx="6" fill="rgba(30,41,59,0.8)" stroke="rgba(148,163,184,0.2)" strokeWidth="1" />
+              {/* Fill zones */}
+              <rect x="16" y="130" width="8" height="35" fill="rgba(74,222,128,0.7)" />
+              <rect x="16" y="100" width="8" height="30" fill="rgba(234,179,8,0.7)" />
+              <rect x="16" y="70" width="8" height="30" fill="rgba(249,115,22,0.7)" />
+              <rect x="16" y="12" width="8" height="58" fill="rgba(239,68,68,0.8)" />
+              {/* Bulb */}
+              <circle cx="20" cy="170" r="10" fill="rgba(239,68,68,0.8)" />
+              {/* Linda marker */}
+              <circle cx="34" cy="85" r="5" fill="rgba(251,191,36,0.9)" stroke="rgba(251,191,36,1)" strokeWidth="1" />
+            </svg>
+            <div className="flex flex-col justify-between" style={{ height: 175 }}>
+              {[
+                { label: "Critical >41°C / 106°F", sub: "Brain damage risk", color: "text-red-400", top: 0 },
+                { label: "Severe 40–41°C", sub: "Linda's case ← 104°F (40°C)", color: "text-orange-400", top: 44 },
+                { label: "Moderate 39–40°C", sub: "Urgent intervention", color: "text-amber-400", top: 88 },
+                { label: "Normal 37°C / 98.6°F", sub: "Baseline", color: "text-green-400", top: 130 },
+              ].map((z) => (
+                <div key={z.label} className="flex flex-col">
+                  <span className={cn("text-[10px] font-semibold", z.color)}>{z.label}</span>
+                  <span className="text-[9px] text-muted-foreground">{z.sub}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Serotonin Storm: Spectrum ────────────────────────────────────────────────
+
+function SSSpectrumSection() {
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+
+  const severities = [
+    {
+      label: "MILD",
+      bg: "border-green-700 bg-green-950/10",
+      textColor: "text-green-300",
+      symptoms: "Shivering, diarrhea, mild agitation, tachycardia",
+      onset: "Hours after drug change",
+      treatment: "Stop offending drug, supportive care",
+      example: "SSRI dose increase",
+    },
+    {
+      label: "MODERATE",
+      bg: "border-amber-700 bg-amber-950/10",
+      textColor: "text-amber-300",
+      symptoms: "Hyperreflexia, diaphoresis, mydriasis, intermittent tremor, agitation, tachycardia",
+      onset: "Rapid after combination",
+      treatment: "Cyproheptadine (5-HT antagonist) + benzodiazepines",
+      example: "SSRI + tramadol",
+    },
+    {
+      label: "SEVERE",
+      bg: "border-red-700 bg-red-950/10",
+      textColor: "text-red-300",
+      symptoms: "Muscle rigidity, temperature >41°C, rhabdomyolysis, metabolic acidosis, seizures",
+      onset: "Rapid, escalates quickly",
+      treatment: "ICU, aggressive cooling, IV cyproheptadine, intubation",
+      example: "MAOI + SSRI or MAOI + tramadol (Linda's case)",
+    },
+  ];
+
+  const riskRows = [
+    { combo: "MAOI + SSRI", risk: "🔴 EXTREME", mech: "MAO blocked + SERT blocked" },
+    { combo: "MAOI + Tramadol", risk: "🔴 EXTREME", mech: "MAO blocked + SERT blocked", linda: true },
+    { combo: "MAOI + Meperidine", risk: "🔴 EXTREME", mech: "MAO blocked + serotonin release" },
+    { combo: "SSRI + Tramadol", risk: "🟠 HIGH", mech: "Double SERT blockade" },
+    { combo: "SSRI + Linezolid", risk: "🟠 HIGH", mech: "Antibiotic with MAOI properties" },
+    { combo: "SSRI + Dextromethorphan", risk: "🟡 MODERATE", mech: "SERT + weak sigma receptor" },
+    { combo: "SSRI + Lithium", risk: "🟡 MODERATE", mech: "Indirect serotonin enhancement" },
+    { combo: "SSRI + Triptan", risk: "🟢 LOW/RARE", mech: "Minimal — different receptor subtypes" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <h2 className="text-xl font-bold">Not All Serotonin Syndrome Is Equal</h2>
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Serotonin syndrome exists on a spectrum from mild to fatal. The severity depends on how
+        much serotonin accumulates and which receptor subtypes are most activated.
+      </p>
+
+      {/* Severity cards */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        {severities.map((s) => (
+          <div key={s.label} className={cn("relative rounded-xl border p-4", s.bg)}>
+            <p className={cn("text-sm font-bold", s.textColor)}>{s.label}</p>
+            <div className="mt-2 flex flex-col gap-1.5 text-xs text-muted-foreground">
+              <p><span className="font-medium text-foreground/70">Symptoms:</span> {s.symptoms}</p>
+              <p><span className="font-medium text-foreground/70">Onset:</span> {s.onset}</p>
+              <p><span className="font-medium text-foreground/70">Treatment:</span> {s.treatment}</p>
+              <p><span className="font-medium text-foreground/70">Example:</span> {s.example}</p>
+            </div>
+            {s.label === "SEVERE" && (
+              <span className="mt-2 inline-block rounded-full border border-yellow-600 bg-yellow-950/30 px-2 py-0.5 text-[10px] font-semibold text-yellow-300">
+                📍 Linda's case
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Risk table */}
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Drug Combination Risk Table</p>
+        <div className="overflow-hidden rounded-xl border border-border">
+          <div className="grid grid-cols-[2fr_1fr_2fr] border-b border-border bg-muted px-4 py-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Combination</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Risk</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Mechanism</span>
+          </div>
+          {riskRows.map((row, i) => (
+            <button
+              key={row.combo}
+              type="button"
+              onClick={() => setExpandedRow(expandedRow === i ? null : i)}
+              className={cn(
+                "grid w-full grid-cols-[2fr_1fr_2fr] px-4 py-2.5 text-left transition-colors hover:bg-muted/50",
+                i < riskRows.length - 1 && "border-b border-border/50",
+                row.linda && "bg-amber-950/10",
+              )}
+            >
+              <span className="text-xs text-foreground">
+                {row.combo}
+                {row.linda && <span className="ml-1.5 text-[9px] text-yellow-400">📍 Linda</span>}
+              </span>
+              <span className="text-xs">{row.risk}</span>
+              <span className="text-xs text-muted-foreground">{row.mech}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Treatment fact box */}
+      <div className="rounded-xl border border-teal-800 bg-teal-950/10 p-4">
+        <p className="text-sm font-semibold text-teal-300">💊 Treatment</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          The antidote is cyproheptadine — a histamine blocker that also antagonizes 5-HT2A
+          receptors. Combined with aggressive cooling for hyperthermia, benzodiazepines for
+          muscle rigidity, and IV fluids, most patients recover fully if treated promptly.
+        </p>
+      </div>
+
+      {/* History link */}
+      <div className="rounded-xl border border-yellow-700 bg-yellow-950/10 p-4">
+        <p className="text-sm font-semibold text-yellow-300">📖 Read the History</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Serotonin syndrome was first systematically described by Dr. Harvey Sternbach in 1991.
+          Read the full historical account of how this interaction was discovered.
+        </p>
+        <Link
+          href="/history"
+          className="mt-3 inline-block rounded-lg border border-yellow-700 bg-yellow-950/30 px-4 py-2 text-xs font-semibold text-yellow-300 transition-colors hover:bg-yellow-950/50"
+        >
+          View Era 8 on the History Page →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // ─── Quiz: MCQ ────────────────────────────────────────────────────────────────
 
 function MCQComponent({
@@ -1856,6 +2487,17 @@ function CompletionScreen({
           </p>
         </div>
       )}
+      {cs.id === "serotonin-storm" && (
+        <div className="w-full max-w-lg rounded-xl border border-amber-800 bg-amber-950/20 p-4 text-left">
+          <p className="text-sm font-semibold text-amber-300">💊 Clinical Takeaway</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Always check a patient's complete medication list before prescribing — including
+            medications they may have stopped recently. Phenelzine's effects persist for
+            2 weeks after the last dose. Linda's case is a reminder that the most dangerous
+            drug interactions are often the ones nobody thought to check.
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-wrap justify-center gap-3">
         {cs.historyEraId && (
@@ -2176,6 +2818,11 @@ export default function CaseStudyPage() {
         {cs.id === "cellular-respiration" && section?.id === "krebs" && <CRKrebsSection />}
         {cs.id === "cellular-respiration" && section?.id === "etc" && <CRETCSection />}
         {cs.id === "cellular-respiration" && section?.id === "poison" && <CRPoisonSection />}
+        {cs.id === "serotonin-storm" && section?.id === "background" && <SSBackgroundSection />}
+        {cs.id === "serotonin-storm" && section?.id === "maoi" && <SSMAOISection />}
+        {cs.id === "serotonin-storm" && section?.id === "trigger" && <SSTriggerSection />}
+        {cs.id === "serotonin-storm" && section?.id === "storm" && <SSStormSection />}
+        {cs.id === "serotonin-storm" && section?.id === "spectrum" && <SSSpectrumSection />}
         {section?.id === "quiz" && (
           <QuizSection
             cs={cs}
