@@ -161,6 +161,14 @@ export function Navbar() {
   const pathname = usePathname();
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -249,42 +257,41 @@ export function Navbar() {
             ToxiClear AI
           </Link>
 
-          {/* Desktop nav — hidden on mobile */}
-          <div
-            className="hidden md:flex"
-            style={{ alignItems: "center", gap: "4px" }}
-          >
-            <Link
-              href="/"
-              className={cn(
-                "text-sm transition-colors hover:text-foreground",
-                pathname === "/" ? "text-foreground" : "text-muted-foreground",
-              )}
-              style={{ padding: "6px 10px", whiteSpace: "nowrap" }}
-            >
-              Home
-            </Link>
-            {dropdowns.map((d) => (
-              <NavDropdown
-                key={d.label}
-                label={d.label}
-                items={d.items}
-                isActive={pathname.startsWith(d.basePath)}
-              />
-            ))}
-            <Link
-              href="/history"
-              className={cn(
-                "text-sm transition-colors hover:text-foreground",
-                pathname === "/history"
-                  ? "text-foreground"
-                  : "text-muted-foreground",
-              )}
-              style={{ padding: "6px 10px", whiteSpace: "nowrap" }}
-            >
-              History
-            </Link>
-          </div>
+          {/* Desktop nav — JS-gated, not shown on mobile */}
+          {!isMobile && (
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <Link
+                href="/"
+                className={cn(
+                  "text-sm transition-colors hover:text-foreground",
+                  pathname === "/" ? "text-foreground" : "text-muted-foreground",
+                )}
+                style={{ padding: "6px 10px", whiteSpace: "nowrap" }}
+              >
+                Home
+              </Link>
+              {dropdowns.map((d) => (
+                <NavDropdown
+                  key={d.label}
+                  label={d.label}
+                  items={d.items}
+                  isActive={pathname.startsWith(d.basePath)}
+                />
+              ))}
+              <Link
+                href="/history"
+                className={cn(
+                  "text-sm transition-colors hover:text-foreground",
+                  pathname === "/history"
+                    ? "text-foreground"
+                    : "text-muted-foreground",
+                )}
+                style={{ padding: "6px 10px", whiteSpace: "nowrap" }}
+              >
+                History
+              </Link>
+            </div>
+          )}
 
           {/* Right side: account icon + hamburger */}
           <div
@@ -293,6 +300,7 @@ export function Navbar() {
               alignItems: "center",
               gap: "12px",
               flexShrink: 0,
+              paddingRight: "16px",
             }}
           >
             {auth.status === "unauthenticated" ? (
@@ -308,65 +316,68 @@ export function Navbar() {
               <AvatarButton />
             )}
 
-            {/* Hamburger — mobile only */}
-            <button
-              type="button"
-              className="md:hidden"
-              onClick={() => setMenuOpen((v) => !v)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "4px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "5px",
-                flexShrink: 0,
-              }}
-              aria-label="Toggle menu"
-            >
-              <span
+            {/* Hamburger — mobile only, JS-gated */}
+            {isMobile && (
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
                 style={{
-                  display: "block",
-                  width: "22px",
-                  height: "2px",
-                  background: "rgba(255,255,255,0.8)",
-                  transition: "all 0.2s",
-                  transform: menuOpen
-                    ? "rotate(45deg) translate(0, 7px)"
-                    : "none",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "5px",
+                  flexShrink: 0,
+                  minWidth: "32px",
+                  minHeight: "32px",
                 }}
-              />
-              <span
-                style={{
-                  display: "block",
-                  width: "22px",
-                  height: "2px",
-                  background: "rgba(255,255,255,0.8)",
-                  transition: "all 0.2s",
-                  opacity: menuOpen ? 0 : 1,
-                }}
-              />
-              <span
-                style={{
-                  display: "block",
-                  width: "22px",
-                  height: "2px",
-                  background: "rgba(255,255,255,0.8)",
-                  transition: "all 0.2s",
-                  transform: menuOpen
-                    ? "rotate(-45deg) translate(0, -7px)"
-                    : "none",
-                }}
-              />
-            </button>
+                aria-label="Toggle menu"
+              >
+                <span
+                  style={{
+                    display: "block",
+                    width: "22px",
+                    height: "2px",
+                    background: "rgba(255,255,255,0.8)",
+                    transition: "all 0.2s",
+                    transform: menuOpen
+                      ? "rotate(45deg) translate(0, 7px)"
+                      : "none",
+                  }}
+                />
+                <span
+                  style={{
+                    display: "block",
+                    width: "22px",
+                    height: "2px",
+                    background: "rgba(255,255,255,0.8)",
+                    transition: "all 0.2s",
+                    opacity: menuOpen ? 0 : 1,
+                  }}
+                />
+                <span
+                  style={{
+                    display: "block",
+                    width: "22px",
+                    height: "2px",
+                    background: "rgba(255,255,255,0.8)",
+                    transition: "all 0.2s",
+                    transform: menuOpen
+                      ? "rotate(-45deg) translate(0, -7px)"
+                      : "none",
+                  }}
+                />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* ── Mobile dropdown menu ── */}
-        {menuOpen && (
+        {/* ── Mobile dropdown menu — JS-gated ── */}
+        {isMobile && menuOpen && (
           <div
-            className="md:hidden"
             style={{
               background: "rgba(5,13,26,0.98)",
               borderTop: "1px solid rgba(255,255,255,0.06)",
