@@ -130,7 +130,7 @@ function PatientProfileCard({
 
 function MetabolismDiagram() {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="overflow-hidden rounded-xl border border-border bg-card" style={{ width: "100%", overflowX: "hidden" }}>
       <style>{ANIM_CSS}</style>
       <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" className="w-full">
         {/* Zones */}
@@ -453,7 +453,7 @@ function InhibitorSection() {
       </p>
 
       {/* Animated inhibition SVG */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card p-4">
+      <div className="overflow-hidden rounded-xl border border-border bg-card p-4" style={{ width: "100%", overflowX: "hidden" }}>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-semibold text-muted-foreground">
             Stage {animStage + 1} of 3:{" "}
@@ -703,7 +703,7 @@ function PatientSection() {
       </div>
 
       {/* Body diagram */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5" style={{ width: "100%", overflowX: "hidden" }}>
         <p className="text-xs font-semibold text-muted-foreground">
           Click a highlighted area to see what happened there
         </p>
@@ -935,8 +935,8 @@ function CRBackgroundSection() {
         seconds.
       </p>
       {/* Mitochondria SVG */}
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5">
-        <svg width="340" height="140" viewBox="0 0 340 140">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5" style={{ width: "100%", overflowX: "hidden" }}>
+        <svg width="100%" viewBox="0 0 340 140">
           <ellipse cx="170" cy="68" rx="130" ry="50" fill="rgba(30,41,59,0.9)" stroke="rgb(100,116,139)" strokeWidth="2"/>
           <path d="M58,68 Q74,48 90,68 Q106,88 122,68 Q138,48 154,68 Q170,88 186,68 Q202,48 218,68 Q234,88 250,68 Q262,53 270,68"
                 fill="none" stroke="rgba(20,184,166,0.75)" strokeWidth="2.5"/>
@@ -1055,8 +1055,8 @@ function CRKrebsSection() {
         extracts electrons and loads them onto carrier molecules (NADH, FADH₂) to power the ETC.
       </p>
       {/* Cycle SVG */}
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5">
-        <svg width="310" height="280" viewBox="0 0 310 280">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5" style={{ width: "100%", overflowX: "hidden" }}>
+        <svg width="100%" viewBox="0 0 310 295">
           {/* Cycle ring */}
           <circle cx="155" cy="148" r="74" fill="none" stroke="rgba(20,184,166,0.35)" strokeWidth="2" strokeDasharray="6,4"/>
           {/* Center */}
@@ -1070,19 +1070,19 @@ function CRKrebsSection() {
           {/* Acetyl-CoA input */}
           <path d="M155,6 L155,66" stroke="rgba(234,179,8,0.55)" strokeWidth="1.5" strokeDasharray="3,2"/>
           <polygon points="150,64 160,64 155,74" fill="rgba(234,179,8,0.65)"/>
-          <text x="155" y="5" textAnchor="middle" fontSize="9" fill="rgba(234,179,8,0.9)" fontWeight="bold">Acetyl-CoA</text>
+          <text x="155" y="5" textAnchor="middle" fontSize="10" fill="rgba(234,179,8,0.9)" fontWeight="bold">Acetyl-CoA</text>
           {/* CO₂ exits — left */}
           <path d="M90,112 L52,92" stroke="rgba(148,163,184,0.45)" strokeWidth="1.5" strokeDasharray="3,2"/>
-          <text x="28" y="89" textAnchor="middle" fontSize="9" fill="rgba(148,163,184,0.85)">CO₂ ×2</text>
+          <text x="8" y="89" textAnchor="middle" fontSize="10" fill="rgba(148,163,184,0.85)">CO₂ ×2</text>
           {/* NADH exits — right */}
           <path d="M224,130 L268,112" stroke="rgba(234,179,8,0.5)" strokeWidth="1.5" strokeDasharray="3,2"/>
-          <text x="282" y="109" textAnchor="start" fontSize="9" fill="rgba(234,179,8,0.9)">NADH ×3</text>
+          <text x="302" y="109" textAnchor="start" fontSize="10" fill="rgba(234,179,8,0.9)">NADH ×3</text>
           {/* FADH₂ exits — bottom right */}
           <path d="M218,178 L258,202" stroke="rgba(251,146,60,0.5)" strokeWidth="1.5" strokeDasharray="3,2"/>
-          <text x="260" y="207" textAnchor="start" fontSize="9" fill="rgba(251,146,60,0.9)">FADH₂ ×1</text>
+          <text x="280" y="222" textAnchor="start" fontSize="10" fill="rgba(251,146,60,0.9)">FADH₂ ×1</text>
           {/* ATP exits — bottom */}
           <path d="M155,222 L155,258" stroke="rgba(96,165,250,0.5)" strokeWidth="1.5" strokeDasharray="3,2"/>
-          <text x="155" y="270" textAnchor="middle" fontSize="9" fill="rgba(96,165,250,0.9)">ATP ×1</text>
+          <text x="155" y="285" textAnchor="middle" fontSize="10" fill="rgba(96,165,250,0.9)">ATP ×1</text>
         </svg>
         <p className="text-xs text-muted-foreground">Per turn of the cycle — runs twice per glucose molecule</p>
       </div>
@@ -1130,57 +1130,58 @@ function CRETCSection() {
         through the complexes, pumping H⁺ ions that drive ATP synthesis.
       </p>
       {/* ETC SVG */}
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-4">
-        <svg width="440" height="210" viewBox="0 0 440 210">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-4" style={{ width: "100%", overflowX: "hidden" }}>
+        <svg width="100%" viewBox="0 0 700 280" style={{ maxHeight: 300 }}>
           {/* Zone labels */}
-          <text x="220" y="13" textAnchor="middle" fontSize="9" fill="rgba(251,146,60,0.7)">Intermembrane Space — High H⁺ concentration</text>
-          <text x="220" y="204" textAnchor="middle" fontSize="9" fill="rgba(148,163,184,0.6)">Matrix — Low H⁺ concentration</text>
+          <text x="350" y="13" textAnchor="middle" fontSize="9" fill="rgba(251,146,60,0.7)">Intermembrane Space — High H⁺ concentration</text>
+          <text x="350" y="272" textAnchor="middle" fontSize="9" fill="rgba(148,163,184,0.6)">Matrix — Low H⁺ concentration</text>
           {/* Membrane band */}
-          <rect x="10" y="95" width="420" height="28" rx="3" fill="rgba(30,41,59,0.95)" stroke="rgba(100,116,139,0.45)" strokeWidth="1.5"/>
+          <rect x="10" y="115" width="680" height="28" rx="3" fill="rgba(30,41,59,0.95)" stroke="rgba(100,116,139,0.45)" strokeWidth="1.5"/>
           {/* Complex I */}
-          <rect x="22" y="30" width="58" height="65" rx="5" fill="rgba(20,184,166,0.15)" stroke="rgba(20,184,166,0.65)" strokeWidth="1.5"/>
-          <text x="51" y="56" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">Complex</text>
-          <text x="51" y="67" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">I</text>
-          <text x="51" y="145" textAnchor="middle" fontSize="8" fill="rgba(234,179,8,0.8)">NADH in</text>
+          <rect x="30" y="40" width="80" height="75" rx="5" fill="rgba(20,184,166,0.15)" stroke="rgba(20,184,166,0.65)" strokeWidth="1.5"/>
+          <text x="70" y="73" textAnchor="middle" fontSize="9" fill="rgb(94,234,212)" fontWeight="bold">I</text>
+          <text x="70" y="156" textAnchor="middle" fontSize="9" fill="rgb(94,234,212)" fontWeight="bold">Complex I</text>
+          <text x="70" y="170" textAnchor="middle" fontSize="8" fill="rgba(234,179,8,0.8)">NADH in</text>
           {/* Complex II */}
-          <rect x="104" y="50" width="46" height="45" rx="5" fill="rgba(20,184,166,0.12)" stroke="rgba(20,184,166,0.5)" strokeWidth="1.5"/>
-          <text x="127" y="70" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">II</text>
-          <text x="127" y="145" textAnchor="middle" fontSize="8" fill="rgba(251,146,60,0.8)">FADH₂ in</text>
+          <rect x="145" y="60" width="80" height="55" rx="5" fill="rgba(20,184,166,0.12)" stroke="rgba(20,184,166,0.5)" strokeWidth="1.5"/>
+          <text x="185" y="90" textAnchor="middle" fontSize="9" fill="rgb(94,234,212)" fontWeight="bold">II</text>
+          <text x="185" y="156" textAnchor="middle" fontSize="9" fill="rgb(94,234,212)" fontWeight="bold">Complex II</text>
+          <text x="185" y="170" textAnchor="middle" fontSize="8" fill="rgba(251,146,60,0.8)">FADH₂ in</text>
           {/* Complex III */}
-          <rect x="176" y="35" width="56" height="60" rx="5" fill="rgba(20,184,166,0.15)" stroke="rgba(20,184,166,0.65)" strokeWidth="1.5"/>
-          <text x="204" y="60" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">Complex</text>
-          <text x="204" y="71" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">III</text>
+          <rect x="265" y="45" width="80" height="70" rx="5" fill="rgba(20,184,166,0.15)" stroke="rgba(20,184,166,0.65)" strokeWidth="1.5"/>
+          <text x="305" y="83" textAnchor="middle" fontSize="9" fill="rgb(94,234,212)" fontWeight="bold">III</text>
+          <text x="305" y="156" textAnchor="middle" fontSize="9" fill="rgb(94,234,212)" fontWeight="bold">Complex III</text>
           {/* Complex IV */}
-          <rect x="258" y="22" width="62" height="73" rx="5" fill="rgba(20,184,166,0.15)" stroke="rgba(20,184,166,0.65)" strokeWidth="1.5"/>
-          <text x="289" y="50" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">Complex</text>
-          <text x="289" y="61" textAnchor="middle" fontSize="8" fill="rgb(94,234,212)" fontWeight="bold">IV</text>
-          <text x="289" y="74" textAnchor="middle" fontSize="7" fill="rgba(94,234,212,0.7)">+O₂→H₂O</text>
-          <text x="289" y="145" textAnchor="middle" fontSize="8" fill="rgba(148,163,184,0.7)">O₂ in</text>
+          <rect x="390" y="30" width="80" height="85" rx="5" fill="rgba(20,184,166,0.15)" stroke="rgba(20,184,166,0.65)" strokeWidth="1.5"/>
+          <text x="430" y="72" textAnchor="middle" fontSize="9" fill="rgb(94,234,212)" fontWeight="bold">IV</text>
+          <text x="430" y="86" textAnchor="middle" fontSize="7" fill="rgba(94,234,212,0.7)">+O₂→H₂O</text>
+          <text x="430" y="156" textAnchor="middle" fontSize="9" fill="rgb(94,234,212)" fontWeight="bold">Complex IV</text>
+          <text x="430" y="170" textAnchor="middle" fontSize="8" fill="rgba(148,163,184,0.7)">O₂ in</text>
           {/* ATP Synthase — stalk + cap */}
-          <rect x="360" y="95" width="42" height="35" rx="4" fill="rgba(59,130,246,0.15)" stroke="rgba(96,165,250,0.6)" strokeWidth="1.5"/>
-          <ellipse cx="381" cy="84" rx="28" ry="14" fill="rgba(59,130,246,0.15)" stroke="rgba(96,165,250,0.55)" strokeWidth="1.5"/>
-          <text x="381" y="81" textAnchor="middle" fontSize="8" fill="rgb(147,197,253)">ATP</text>
-          <text x="381" y="91" textAnchor="middle" fontSize="8" fill="rgb(147,197,253)">Synthase</text>
-          <text x="381" y="145" textAnchor="middle" fontSize="8" fill="rgba(96,165,250,0.8)">ATP out</text>
+          <rect x="545" y="115" width="60" height="40" rx="4" fill="rgba(59,130,246,0.15)" stroke="rgba(96,165,250,0.6)" strokeWidth="1.5"/>
+          <ellipse cx="575" cy="100" rx="36" ry="18" fill="rgba(59,130,246,0.15)" stroke="rgba(96,165,250,0.55)" strokeWidth="1.5"/>
+          <text x="575" y="97" textAnchor="middle" fontSize="8" fill="rgb(147,197,253)">ATP</text>
+          <text x="575" y="109" textAnchor="middle" fontSize="8" fill="rgb(147,197,253)">Synthase</text>
+          <text x="575" y="170" textAnchor="middle" fontSize="8" fill="rgba(96,165,250,0.8)">ATP out</text>
           {/* Electron flow — animated dots */}
           {[0, 1, 2].map((i) => (
             <g key={i} style={{ animation: `cr-flow-right 2.8s ease-in-out ${i * 0.9}s infinite` }}>
-              <circle cx="30" cy="62" r="5" fill="rgba(234,179,8,0.9)"/>
+              <circle cx="38" cy="77" r="5" fill="rgba(234,179,8,0.9)"/>
             </g>
           ))}
           {/* H⁺ pumping indicators */}
-          {[51, 204, 289].map((x, i) => (
+          {[70, 305, 430].map((x, i) => (
             <g key={x} style={{ animation: `cr-pump-up 2.2s ease-in-out ${i * 0.5}s infinite` }}>
-              <circle cx={x} cy="94" r="5" fill="rgba(251,146,60,0.85)"/>
-              <text x={x} y="92" textAnchor="middle" fontSize="6" fill="white">H⁺</text>
+              <circle cx={x} cy="114" r="5" fill="rgba(251,146,60,0.85)"/>
+              <text x={x} y="112" textAnchor="middle" fontSize="6" fill="white">H⁺</text>
             </g>
           ))}
           {/* Accumulated H⁺ and chemiosmosis arrow */}
-          <text x="160" y="28" textAnchor="middle" fontSize="9" fill="rgba(251,146,60,0.65)">H⁺  H⁺  H⁺  H⁺  H⁺</text>
-          <path d="M381,95 L381,70" stroke="rgba(251,146,60,0.5)" strokeWidth="1.5" strokeDasharray="3,2"/>
-          <polygon points="376,68 386,68 381,58" fill="rgba(251,146,60,0.55)"/>
-          <text x="381" y="55" textAnchor="middle" fontSize="8" fill="rgba(251,146,60,0.75)">H⁺ flows back</text>
-          <text x="381" y="175" textAnchor="middle" fontSize="8" fill="rgba(96,165,250,0.75)">→ ~32 ATP</text>
+          <text x="230" y="35" textAnchor="middle" fontSize="9" fill="rgba(251,146,60,0.65)">H⁺  H⁺  H⁺  H⁺  H⁺</text>
+          <path d="M575,115 L575,88" stroke="rgba(251,146,60,0.5)" strokeWidth="1.5" strokeDasharray="3,2"/>
+          <polygon points="570,86 580,86 575,76" fill="rgba(251,146,60,0.55)"/>
+          <text x="575" y="68" textAnchor="middle" fontSize="8" fill="rgba(251,146,60,0.75)">H⁺ flows back</text>
+          <text x="575" y="220" textAnchor="middle" fontSize="8" fill="rgba(96,165,250,0.75)">→ ~32 ATP</text>
         </svg>
         <p className="text-xs text-muted-foreground">Electrons (yellow) flow right → H⁺ (orange) pumps up → returns through ATP synthase → ATP</p>
       </div>
@@ -1251,7 +1252,7 @@ function CRPoisonSection() {
       </p>
 
       {/* Animated ETC with cyanide */}
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-4">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-4" style={{ width: "100%", overflowX: "hidden" }}>
         <div className="flex w-full items-center justify-between">
           <p className="text-xs font-semibold text-muted-foreground">
             Stage {Math.min(stage + 1, 4)} of 4: {stageLabel}
@@ -1264,7 +1265,7 @@ function CRPoisonSection() {
             ↺ Replay
           </button>
         </div>
-        <svg width="420" height="180" viewBox="0 0 420 180">
+        <svg width="100%" viewBox="0 0 420 180">
           {/* Membrane */}
           <rect x="10" y="80" width="400" height="24" rx="3" fill="rgba(30,41,59,0.95)" stroke="rgba(100,116,139,0.4)" strokeWidth="1.5"/>
           {/* Complex I */}
@@ -1394,49 +1395,48 @@ function SSBackgroundSection() {
       </p>
 
       {/* Synapse SVG */}
-      <div className="rounded-xl border border-border bg-card p-4">
-        <svg viewBox="0 0 400 200" className="w-full" style={{ maxHeight: 200 }}>
+      <div className="rounded-xl border border-border bg-card p-4" style={{ width: "100%", overflowX: "hidden" }}>
+        <svg viewBox="0 0 500 240" width="100%" style={{ maxHeight: 260 }}>
           {/* Presynaptic terminal */}
-          <rect x="10" y="20" width="140" height="80" rx="10" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.4)" strokeWidth="1.5" />
-          <text x="80" y="38" textAnchor="middle" fill="rgba(165,180,252,0.8)" fontSize="9" fontWeight="bold">PRESYNAPTIC NEURON</text>
+          <rect x="10" y="30" width="150" height="90" rx="10" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.4)" strokeWidth="1.5" />
+          <text x="85" y="48" textAnchor="middle" fill="rgba(165,180,252,0.8)" fontSize="11" fontWeight="bold">PRESYNAPTIC</text>
           {/* Vesicles */}
-          <circle cx="40" cy="70" r="10" fill="rgba(234,179,8,0.3)" stroke="rgba(234,179,8,0.6)" strokeWidth="1" />
-          <circle cx="65" cy="65" r="10" fill="rgba(234,179,8,0.3)" stroke="rgba(234,179,8,0.6)" strokeWidth="1" />
-          <circle cx="90" cy="72" r="10" fill="rgba(234,179,8,0.3)" stroke="rgba(234,179,8,0.6)" strokeWidth="1" />
-          <text x="65" y="90" textAnchor="middle" fill="rgba(234,179,8,0.7)" fontSize="7">5-HT vesicles</text>
-          {/* MAO label */}
-          <text x="118" y="60" textAnchor="middle" fill="rgba(74,222,128,0.8)" fontSize="7">MAO</text>
-          <text x="118" y="68" textAnchor="middle" fill="rgba(74,222,128,0.6)" fontSize="6">breakdown</text>
+          <circle cx="40" cy="80" r="12" fill="rgba(234,179,8,0.3)" stroke="rgba(234,179,8,0.6)" strokeWidth="1" />
+          <circle cx="70" cy="74" r="12" fill="rgba(234,179,8,0.3)" stroke="rgba(234,179,8,0.6)" strokeWidth="1" />
+          <circle cx="100" cy="82" r="12" fill="rgba(234,179,8,0.3)" stroke="rgba(234,179,8,0.6)" strokeWidth="1" />
+          <text x="70" y="104" textAnchor="middle" fill="rgba(234,179,8,0.7)" fontSize="9">5-HT vesicles</text>
+          {/* MAO */}
+          <text x="138" y="65" textAnchor="middle" fill="rgba(74,222,128,0.8)" fontSize="9" fontWeight="bold">MAO</text>
+          <text x="138" y="77" textAnchor="middle" fill="rgba(74,222,128,0.6)" fontSize="8">breakdown</text>
 
           {/* Synapse gap */}
-          <rect x="155" y="30" width="90" height="60" rx="4" fill="rgba(20,184,166,0.05)" stroke="rgba(20,184,166,0.2)" strokeWidth="1" strokeDasharray="3,3" />
-          <text x="200" y="48" textAnchor="middle" fill="rgba(94,234,212,0.6)" fontSize="7">SYNAPSE</text>
-          {/* SERT label */}
-          <text x="155" y="78" textAnchor="middle" fill="rgba(96,165,250,0.8)" fontSize="7">SERT</text>
-          <text x="155" y="86" textAnchor="middle" fill="rgba(96,165,250,0.6)" fontSize="6">reuptake</text>
+          <rect x="165" y="20" width="170" height="100" rx="4" fill="rgba(20,184,166,0.05)" stroke="rgba(20,184,166,0.2)" strokeWidth="1" strokeDasharray="3,3" />
+          {/* SYNAPSE label ABOVE the gap */}
+          <text x="250" y="15" textAnchor="middle" fill="rgba(94,234,212,0.7)" fontSize="10" fontWeight="bold">SYNAPSE GAP</text>
+          {/* SERT */}
+          <text x="168" y="90" textAnchor="middle" fill="rgba(96,165,250,0.8)" fontSize="9" fontWeight="bold">SERT</text>
+          <text x="168" y="102" textAnchor="middle" fill="rgba(96,165,250,0.6)" fontSize="8">reuptake</text>
           {/* Floating serotonin */}
-          <circle cx="185" cy="55" r="5" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-float 2.8s ease-in-out infinite" }} />
-          <circle cx="200" cy="65" r="5" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-float 2.8s ease-in-out 0.9s infinite" }} />
-          <circle cx="218" cy="52" r="5" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-float 2.8s ease-in-out 1.8s infinite" }} />
+          <circle cx="210" cy="60" r="7" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-float 2.8s ease-in-out infinite" }} />
+          <circle cx="250" cy="75" r="7" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-float 2.8s ease-in-out 0.9s infinite" }} />
+          <circle cx="295" cy="58" r="7" fill="rgba(234,179,8,0.7)" style={{ animation: "ss-float 2.8s ease-in-out 1.8s infinite" }} />
 
           {/* Postsynaptic */}
-          <rect x="250" y="20" width="140" height="80" rx="10" fill="rgba(20,184,166,0.1)" stroke="rgba(20,184,166,0.3)" strokeWidth="1.5" />
-          <text x="320" y="38" textAnchor="middle" fill="rgba(94,234,212,0.8)" fontSize="9" fontWeight="bold">POSTSYNAPTIC NEURON</text>
+          <rect x="340" y="30" width="150" height="90" rx="10" fill="rgba(20,184,166,0.1)" stroke="rgba(20,184,166,0.3)" strokeWidth="1.5" />
+          <text x="415" y="48" textAnchor="middle" fill="rgba(94,234,212,0.8)" fontSize="11" fontWeight="bold">POSTSYNAPTIC</text>
           {/* Receptors */}
-          <path d="M260,70 Q268,55 276,70" stroke="rgba(94,234,212,0.7)" strokeWidth="2" fill="none" />
-          <path d="M280,70 Q288,55 296,70" stroke="rgba(94,234,212,0.7)" strokeWidth="2" fill="none" />
-          <path d="M300,70 Q308,55 316,70" stroke="rgba(94,234,212,0.7)" strokeWidth="2" fill="none" />
-          <text x="290" y="84" textAnchor="middle" fill="rgba(94,234,212,0.6)" fontSize="7">5-HT receptors</text>
-          <text x="340" y="60" textAnchor="middle" fill="rgba(74,222,128,0.8)" fontSize="7">signal</text>
-          <text x="340" y="68" textAnchor="middle" fill="rgba(74,222,128,0.6)" fontSize="6">✓ normal</text>
+          <path d="M350,85 Q360,68 370,85" stroke="rgba(94,234,212,0.7)" strokeWidth="2" fill="none" />
+          <path d="M375,85 Q385,68 395,85" stroke="rgba(94,234,212,0.7)" strokeWidth="2" fill="none" />
+          <path d="M400,85 Q410,68 420,85" stroke="rgba(94,234,212,0.7)" strokeWidth="2" fill="none" />
+          <text x="385" y="102" textAnchor="middle" fill="rgba(94,234,212,0.6)" fontSize="9">5-HT receptors</text>
+          <text x="445" y="72" textAnchor="middle" fill="rgba(74,222,128,0.8)" fontSize="9">signal ✓</text>
 
           {/* Caption */}
-          <text x="200" y="120" textAnchor="middle" fill="rgba(148,163,184,0.7)" fontSize="7.5">
+          <text x="250" y="150" textAnchor="middle" fill="rgba(148,163,184,0.7)" fontSize="9">
             Normal signaling: released → binds receptors → cleared by SERT and MAO
           </text>
-          <text x="200" y="132" textAnchor="middle" fill="rgba(234,179,8,0.6)" fontSize="7">
-            ● serotonin molecules
-          </text>
+          <circle cx="205" cy="170" r="5" fill="rgba(234,179,8,0.7)" />
+          <text x="215" y="174" fill="rgba(234,179,8,0.6)" fontSize="9">serotonin molecules</text>
         </svg>
       </div>
 
@@ -1508,7 +1508,7 @@ function SSMAOISection() {
       </p>
 
       {/* Stage animation */}
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-5" style={{ width: "100%", overflowX: "hidden" }}>
         <svg viewBox="0 0 360 140" className="w-full" style={{ maxHeight: 160 }}>
           {/* Stage labels */}
           <text x="60" y="14" textAnchor="middle" fill="rgba(148,163,184,0.7)" fontSize="8" fontWeight="bold">
@@ -1645,7 +1645,7 @@ function SSTriggerSection() {
       </p>
 
       {/* Dual mechanism diagram */}
-      <div className="rounded-xl border border-border bg-card p-5">
+      <div className="rounded-xl border border-border bg-card p-5" style={{ width: "100%", overflowX: "hidden" }}>
         <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tramadol's Dual Mechanism</p>
         <svg viewBox="0 0 380 160" className="w-full" style={{ maxHeight: 170 }}>
           {/* Central tramadol */}
@@ -1740,10 +1740,10 @@ function SSStormSection() {
   ];
 
   const bodyDots: { id: string; cx: number; cy: number; color: string; label: string; desc: string }[] = [
-    { id: "brain", cx: 90, cy: 28, color: "#a78bfa", label: "Brain", desc: "Altered mental status — agitation, confusion, 5-HT2A overstimulation" },
-    { id: "heart", cx: 88, cy: 75, color: "#f87171", label: "Heart", desc: "Tachycardia — 160 BPM in Linda's case. Sympathetic overdrive." },
-    { id: "spine", cx: 94, cy: 100, color: "#fbbf24", label: "Spine/Cord", desc: "Hyperreflexia and clonus — 5-HT2A stimulation in spinal cord interneurons" },
-    { id: "legs", cx: 88, cy: 145, color: "#fbbf24", label: "Legs/Muscles", desc: "Muscle rigidity and clonus — continuous contraction generates dangerous heat" },
+    { id: "brain", cx: 90, cy: 22, color: "#a78bfa", label: "Brain", desc: "Altered mental status — agitation, confusion, 5-HT2A overstimulation" },
+    { id: "heart", cx: 83, cy: 72, color: "#f87171", label: "Heart", desc: "Tachycardia — 160 BPM in Linda's case. Sympathetic overdrive." },
+    { id: "spine", cx: 96, cy: 95, color: "#fbbf24", label: "Spine/Cord", desc: "Hyperreflexia and clonus — 5-HT2A stimulation in spinal cord interneurons" },
+    { id: "legs", cx: 88, cy: 155, color: "#fbbf24", label: "Legs/Muscles", desc: "Muscle rigidity and clonus — continuous contraction generates dangerous heat" },
   ];
 
   return (
@@ -1788,26 +1788,29 @@ function SSStormSection() {
       </div>
 
       {/* Body diagram + thermometer */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="flex flex-wrap gap-4 items-start">
         {/* Body diagram */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4" style={{ width: "100%", overflowX: "hidden" }}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Click a dot to explore</p>
           <div className="relative flex justify-center">
-            <svg viewBox="0 0 180 200" className="w-40">
-              {/* Simple body outline */}
-              <circle cx="90" cy="20" r="17" fill="none" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
-              <rect x="72" y="38" width="36" height="55" rx="6" fill="none" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
-              <line x1="72" y1="45" x2="52" y2="90" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
-              <line x1="108" y1="45" x2="128" y2="90" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
-              <line x1="80" y1="93" x2="75" y2="155" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
-              <line x1="100" y1="93" x2="105" y2="155" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
-              {/* Body glow for hyperthermia */}
-              <ellipse cx="90" cy="80" rx="45" ry="70" fill="rgba(239,68,68,0.04)" />
-              {/* Clickable dots */}
+            <svg viewBox="0 0 180 220" width="100%" style={{ maxHeight: 380, maxWidth: 200 }}>
+              {/* Head */}
+              <circle cx="90" cy="22" r="20" fill="none" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              {/* Torso */}
+              <rect x="70" y="44" width="40" height="60" rx="6" fill="none" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              {/* Arms */}
+              <line x1="70" y1="50" x2="48" y2="100" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              <line x1="110" y1="50" x2="132" y2="100" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              {/* Legs */}
+              <line x1="80" y1="104" x2="72" y2="175" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              <line x1="100" y1="104" x2="108" y2="175" stroke="rgba(148,163,184,0.3)" strokeWidth="1.5" />
+              {/* Body heat glow */}
+              <ellipse cx="90" cy="85" rx="50" ry="80" fill="rgba(239,68,68,0.04)" />
+              {/* Clickable dots - larger r=10 */}
               {bodyDots.map((dot) => (
                 <circle
                   key={dot.id}
-                  cx={dot.cx} cy={dot.cy} r="7"
+                  cx={dot.cx} cy={dot.cy} r="10"
                   fill={`${dot.color}55`} stroke={dot.color} strokeWidth="1.5"
                   style={{ cursor: "pointer", animation: "ss-pulse-r 1.8s ease-in-out infinite" }}
                   onClick={() => setActiveBodyDot(activeBodyDot === dot.id ? null : dot.id)}
@@ -1828,31 +1831,32 @@ function SSStormSection() {
         </div>
 
         {/* Thermometer */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 flex-1" style={{ minWidth: 200 }}>
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Temperature Danger Zones</p>
-          <div className="flex items-start gap-3">
-            <svg viewBox="0 0 40 200" className="w-8 shrink-0">
-              <rect x="14" y="10" width="12" height="155" rx="6" fill="rgba(30,41,59,0.8)" stroke="rgba(148,163,184,0.2)" strokeWidth="1" />
-              {/* Fill zones */}
-              <rect x="16" y="130" width="8" height="35" fill="rgba(74,222,128,0.7)" />
-              <rect x="16" y="100" width="8" height="30" fill="rgba(234,179,8,0.7)" />
-              <rect x="16" y="70" width="8" height="30" fill="rgba(249,115,22,0.7)" />
-              <rect x="16" y="12" width="8" height="58" fill="rgba(239,68,68,0.8)" />
+          <div className="flex items-start gap-4">
+            <svg viewBox="0 0 40 280" style={{ width: 36, height: 280, flexShrink: 0 }}>
+              {/* Bar background */}
+              <rect x="14" y="10" width="12" height="220" rx="6" fill="rgba(30,41,59,0.8)" stroke="rgba(148,163,184,0.2)" strokeWidth="1" />
+              {/* Color zones from bottom to top */}
+              <rect x="16" y="192" width="8" height="36" rx="2" fill="rgba(74,222,128,0.7)" />
+              <rect x="16" y="152" width="8" height="40" rx="2" fill="rgba(234,179,8,0.7)" />
+              <rect x="16" y="112" width="8" height="40" rx="2" fill="rgba(249,115,22,0.7)" />
+              <rect x="16" y="12" width="8" height="100" rx="2" fill="rgba(239,68,68,0.8)" />
               {/* Bulb */}
-              <circle cx="20" cy="170" r="10" fill="rgba(239,68,68,0.8)" />
-              {/* Linda marker */}
-              <circle cx="34" cy="85" r="5" fill="rgba(251,191,36,0.9)" stroke="rgba(251,191,36,1)" strokeWidth="1" />
+              <circle cx="20" cy="238" r="12" fill="rgba(239,68,68,0.8)" />
+              {/* Linda marker dot on right side */}
+              <circle cx="34" cy="135" r="6" fill="rgba(251,191,36,1)" stroke="white" strokeWidth="1" />
             </svg>
-            <div className="flex flex-col justify-between" style={{ height: 175 }}>
+            <div className="flex flex-col gap-5 flex-1">
               {[
-                { label: "Critical >41°C / 106°F", sub: "Brain damage risk", color: "text-red-400", top: 0 },
-                { label: "Severe 40–41°C", sub: "Linda's case ← 104°F (40°C)", color: "text-orange-400", top: 44 },
-                { label: "Moderate 39–40°C", sub: "Urgent intervention", color: "text-amber-400", top: 88 },
-                { label: "Normal 37°C / 98.6°F", sub: "Baseline", color: "text-green-400", top: 130 },
+                { label: "Critical >41°C / 106°F", sub: "Brain damage risk", color: "text-red-400" },
+                { label: "Severe 40–41°C", sub: "📍 Linda's case (104°F / 40°C)", color: "text-orange-400" },
+                { label: "Moderate 39–40°C", sub: "Urgent intervention", color: "text-amber-400" },
+                { label: "Normal 37°C / 98.6°F", sub: "Baseline", color: "text-green-400" },
               ].map((z) => (
                 <div key={z.label} className="flex flex-col">
-                  <span className={cn("text-[10px] font-semibold", z.color)}>{z.label}</span>
-                  <span className="text-[9px] text-muted-foreground">{z.sub}</span>
+                  <span className={cn("text-[11px] font-semibold", z.color)}>{z.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{z.sub}</span>
                 </div>
               ))}
             </div>
@@ -2662,16 +2666,19 @@ export default function CaseStudyPage() {
     if (!cs) return;
     let total = 0;
     for (const q of cs.questions) {
-      if (!submitted[q.id]) continue;
-      if (q.type === "mcq") {
-        const mq = q as MCQQuestion;
-        if (answers[q.id] === mq.correctIndex) total += mq.points;
-      } else if (q.type === "dragdrop") {
-        const dq = q as DragDropQuestion;
-        const correct = dragOrder.every((itemIdx, pos) => dq.correctOrder[pos] === itemIdx);
-        if (correct) total += dq.points;
-      } else if (q.type === "written") {
-        total += writtenGrading[q.id]?.score ?? 0;
+      if (q.type === "written") {
+        const g = writtenGrading[q.id];
+        if (g && !g.loading) total += g.score ?? 0;
+      } else {
+        if (!submitted[q.id]) continue;
+        if (q.type === "mcq") {
+          const mq = q as MCQQuestion;
+          if (answers[q.id] === mq.correctIndex) total += mq.points;
+        } else if (q.type === "dragdrop") {
+          const dq = q as DragDropQuestion;
+          const correct = dragOrder.every((itemIdx, pos) => dq.correctOrder[pos] === itemIdx);
+          if (correct) total += dq.points;
+        }
       }
     }
     setScore(total);
@@ -2681,6 +2688,7 @@ export default function CaseStudyPage() {
   function handleSectionChange(i: number) {
     setCompletedSections((prev) => new Set([...prev, activeSection]));
     setActiveSection(i);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   // Check if all questions submitted
