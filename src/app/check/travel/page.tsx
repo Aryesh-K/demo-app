@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "~/lib/supabase/client";
+import { usePremiumGuard } from "~/hooks/usePremiumGuard";
 import { cn } from "~/lib/utils";
 
 // ─── Country data ─────────────────────────────────────────────────────────────
@@ -87,8 +86,7 @@ const INPUT_CLS =
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function TravelPage() {
-  const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const { isLoading, isPremium } = usePremiumGuard();
 
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [labelLanguage, setLabelLanguage] = useState("");
@@ -100,15 +98,6 @@ export default function TravelPage() {
   const [identificationResult, setIdentificationResult] = useState<IdentificationResult | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.push("/signup?message=Please create a free account to access Travel Mode."); return; }
-      const { data: prof } = await supabase.from("profiles").select("is_premium").eq("id", user.id).single();
-      if (!prof?.is_premium) { router.push("/account?message=Travel Mode requires a premium account."); return; }
-      setReady(true);
-    });
-  }, [router]);
 
   function handleSelectCountry(c: Country) {
     setSelectedCountry(c);
@@ -152,13 +141,15 @@ export default function TravelPage() {
     setCopied(false);
   }
 
-  if (!ready) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <div style={{ minHeight: "100vh", background: "#050d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>
+        Checking access...
       </div>
     );
   }
+
+  if (!isPremium) return null;
 
   const canIdentify = !!selectedCountry && foreignDrugName.trim().length > 0;
 

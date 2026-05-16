@@ -1,35 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "~/lib/supabase/client";
+import { usePremiumGuard } from "~/hooks/usePremiumGuard";
 import { CASE_STUDIES } from "~/lib/case-studies";
 
 export default function CaseStudiesPage() {
-  const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const { isLoading, isPremium } = usePremiumGuard();
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        router.push(
-          "/signup?message=Please create a free account to access Case Studies.",
-        );
-        return;
-      }
-      setReady(true);
-    });
-  }, [router]);
-
-  if (!ready) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <div style={{ minHeight: "100vh", background: "#050d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>
+        Checking access...
       </div>
     );
   }
+
+  if (!isPremium) return null;
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-5xl flex-col gap-10 px-6 py-12">

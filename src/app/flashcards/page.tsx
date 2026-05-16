@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "~/lib/supabase/client";
+import { usePremiumGuard } from "~/hooks/usePremiumGuard";
 import { MCAT_FLASHCARDS, type Flashcard } from "~/lib/mcat-flashcards";
 import { cn } from "~/lib/utils";
 
@@ -242,8 +242,7 @@ function FlipCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function FlashcardsPage() {
-  const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const { isLoading, isPremium } = usePremiumGuard();
 
   // Tab
   const [tab, setTab] = useState<Tab>("all");
@@ -270,28 +269,6 @@ export default function FlashcardsPage() {
   const [secondPassMsg, setSecondPassMsg] = useState(false);
 
   const totalCount = remaining.length + reviewAgain.length + mastered.length;
-
-  // Auth check
-  useEffect(() => {
-    const supabase = createClient();
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/signup?message=Please create a free account to access Flashcards.");
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_premium")
-        .eq("id", user.id)
-        .single();
-      if (!profile?.is_premium) {
-        router.push("/account");
-        return;
-      }
-      setReady(true);
-    })();
-  }, [router]);
 
   // Load my cards on mount
   useEffect(() => {
@@ -391,13 +368,15 @@ export default function FlashcardsPage() {
     }, 1500);
   }
 
-  if (!ready) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      <div style={{ minHeight: "100vh", background: "#050d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>
+        Checking access...
       </div>
     );
   }
+
+  if (!isPremium) return null;
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-4xl flex-col gap-8 px-6 py-12">

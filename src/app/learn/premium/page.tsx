@@ -5,6 +5,7 @@ import BodyMap from "~/components/body-map";
 import { DrugAutocomplete } from "~/components/drug-autocomplete";
 import { isLikelyValidDrug } from "~/lib/drug-suggestions";
 import { usePremiumProfile } from "~/hooks/usePremiumProfile";
+import { usePremiumGuard } from "~/hooks/usePremiumGuard";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -915,6 +916,7 @@ function Results({ result, level, addedTerms, onAddTerm }: { result: ApiResult; 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LearnPremium() {
+  const { isLoading, isPremium } = usePremiumGuard();
   const [selectedLevel, setSelectedLevel] = useState<1 | 2 | 3 | null>(null);
   const [isCaseStudy, setIsCaseStudy] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -1151,6 +1153,16 @@ export default function LearnPremium() {
     `Drug ${String.fromCharCode(65 + index)}`;
 
   const selectedLevelDef = LEVELS.find((l) => l.id === selectedLevel);
+
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#050d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>
+        Checking access...
+      </div>
+    );
+  }
+
+  if (!isPremium) return null;
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[750px] flex-col gap-8 px-6 py-12">

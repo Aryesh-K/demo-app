@@ -413,8 +413,8 @@ export function Navbar() {
               Check Mode
             </div>
             <Link href="/check/free" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Free</Link>
-            <Link href="/check/premium" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Premium 👑</Link>
-            <Link href="/check/travel" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Travel Mode ✈️</Link>
+            <Link href={auth.status === "premium" ? "/check/premium" : "/account"} onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Premium {auth.status === "premium" ? "👑" : "🔒"}</Link>
+            <Link href={auth.status === "premium" ? "/check/travel" : "/account"} onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>✈️ Travel Mode {auth.status === "premium" ? "👑" : "🔒"}</Link>
 
             <div
               style={{
@@ -429,9 +429,9 @@ export function Navbar() {
               Learn Mode
             </div>
             <Link href="/learn/free" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Free</Link>
-            <Link href="/learn/premium" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Premium 👑</Link>
-            <Link href="/flashcards" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>🃏 MCAT Flashcards</Link>
-            <Link href="/case-studies" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>🔬 Case Studies</Link>
+            <Link href={auth.status === "premium" ? "/learn/premium" : "/account"} onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Premium {auth.status === "premium" ? "👑" : "🔒"}</Link>
+            <Link href={auth.status === "premium" ? "/flashcards" : "/account"} onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>🃏 MCAT Flashcards {auth.status === "premium" ? "👑" : "🔒"}</Link>
+            <Link href={auth.status === "premium" ? "/case-studies" : "/account"} onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>🔬 Case Studies {auth.status === "premium" ? "👑" : "🔒"}</Link>
 
             <Link
               href="/history"

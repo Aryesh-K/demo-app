@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { createClient } from "~/lib/supabase/client";
+import { useParams } from "next/navigation";
+import { usePremiumGuard } from "~/hooks/usePremiumGuard";
 import {
   CASE_STUDIES,
   type CaseStudy,
@@ -2600,7 +2600,18 @@ function Sidebar({
 
 export default function CaseStudyPage() {
   const params = useParams();
-  const router = useRouter();
+  const { isLoading, isPremium } = usePremiumGuard();
+
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#050d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>
+        Checking access...
+      </div>
+    );
+  }
+
+  if (!isPremium) return null;
+
   const id = params?.id as string;
   const csFound = CASE_STUDIES.find((c) => c.id === id);
 
@@ -2614,8 +2625,6 @@ export default function CaseStudyPage() {
 
   const cs: CaseStudy = csFound;
 
-  const [ready, setReady] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -2641,23 +2650,6 @@ export default function CaseStudyPage() {
   }>>({});
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
 
-  // Auth + premium check
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) {
-        router.push("/signup");
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_premium")
-        .eq("id", user.id)
-        .single();
-      setIsPremium(profile?.is_premium ?? false);
-      setReady(true);
-    });
-  }, [router]);
 
   // Initialize drag order from questions
   useEffect(() => {
@@ -2708,14 +2700,6 @@ export default function CaseStudyPage() {
     });
     if (allDone && cs.questions.length > 0) setShowCompletion(true);
   }, [cs, submitted, writtenGrading, isPremium]);
-
-  if (!ready) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading…</p>
-      </div>
-    );
-  }
 
   // Compute max score
   const maxScore = cs.questions.reduce((sum, q) => sum + q.points, 0);

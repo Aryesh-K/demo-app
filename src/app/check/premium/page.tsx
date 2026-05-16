@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { usePremiumProfile } from "~/hooks/usePremiumProfile";
+import { usePremiumGuard } from "~/hooks/usePremiumGuard";
 import { isPrescriptionDrug } from "~/lib/prescribed-detection";
 import { cn } from "~/lib/utils";
 
@@ -727,6 +728,7 @@ function Results({ result }: { result: ApiResult }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CheckPremium() {
+  const { isLoading, isPremium } = usePremiumGuard();
   const { profile: savedProfile, loading: profileLoading } =
     usePremiumProfile();
   const [autoFilled, setAutoFilled] = useState(false);
@@ -971,6 +973,16 @@ export default function CheckPremium() {
 
   const getDrugLabel = (index: number) =>
     `Drug ${String.fromCharCode(65 + index)}`;
+
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#050d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>
+        Checking access...
+      </div>
+    );
+  }
+
+  if (!isPremium) return null;
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[960px] flex-col gap-8 px-6 py-12">
