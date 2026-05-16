@@ -20,12 +20,12 @@ const USER_TYPES: {
   { id: "healthcare", emoji: "💊", label: "Healthcare Professional", desc: "Clinical or pharmacy practice" },
 ];
 
-const SUBTYPES: Record<UserType, { id: string; emoji: string; label: string }[]> = {
+const SUBTYPES: Record<UserType, { id: string; emoji: string; label: string; desc?: string }[]> = {
   student: [
-    { id: "undergrad", emoji: "🎓", label: "Undergraduate" },
-    { id: "grad", emoji: "🔬", label: "Graduate / PhD" },
-    { id: "medical", emoji: "🏥", label: "Medical / Nursing school" },
-    { id: "pharmacy", emoji: "⚗️", label: "Pharmacy school" },
+    { id: "middle",    emoji: "📚", label: "Middle School",  desc: "Grades 6-8" },
+    { id: "highschool",emoji: "🔬", label: "High School",    desc: "AP Bio, Honors Bio" },
+    { id: "undergrad", emoji: "🧪", label: "Undergraduate",  desc: "Pre-med, Biology major" },
+    { id: "grad",      emoji: "🏫", label: "Graduate",       desc: "Medical or pharmacy school" },
   ],
   teacher: [
     { id: "university", emoji: "🏛️", label: "University / College" },
@@ -345,6 +345,7 @@ export default function OnboardingPage() {
                   key={s.id}
                   emoji={s.emoji}
                   label={s.label}
+                  desc={s.desc}
                   selected={userSubtype === s.id}
                   onClick={() => {
                     setUserSubtype(s.id);
