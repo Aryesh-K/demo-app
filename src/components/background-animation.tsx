@@ -282,9 +282,11 @@ export function BackgroundAnimation() {
         left: 0,
         width: "100%",
         height: "100%",
+        maxWidth: "100vw",
         zIndex: 0,
         pointerEvents: "none",
         opacity: 0.85,
+        overflow: "hidden",
       }}
     />
   );

@@ -107,7 +107,7 @@ function NavDropdown({
           "flex items-center gap-1 text-sm transition-colors hover:text-foreground",
           isActive ? "text-foreground" : "text-muted-foreground",
         )}
-        style={{ fontSize: "clamp(11px, 3vw, 14px)", padding: "clamp(4px, 1vw, 8px)", whiteSpace: "nowrap" }}
+        style={{ fontSize: "clamp(10px, 2.8vw, 14px)", padding: "clamp(2px, 1vw, 8px) clamp(4px, 1.5vw, 12px)", whiteSpace: "nowrap" }}
       >
         {label}
         <span
@@ -145,10 +145,11 @@ function AvatarButton() {
   return (
     <Link
       href="/account"
-      className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#0d1b2a] ring-2 ring-teal-500"
+      className="flex items-center justify-center rounded-full bg-[#0d1b2a] ring-2 ring-teal-500"
+      style={{ width: "28px", height: "28px", flexShrink: 0 }}
       aria-label="Account"
     >
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <circle cx="10" cy="7" r="4" fill="#9ca3af" />
         <path d="M2 18c0-4 3.582-7 8-7s8 3 8 7" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
@@ -206,7 +207,10 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="relative z-10 border-b border-border bg-background">
+    <nav
+      className="relative z-10 border-b border-border bg-background"
+      style={{ width: "100%", maxWidth: "100vw", overflowX: "hidden" }}
+    >
       <div
         className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4"
         style={{ gap: "clamp(2px, 1.5vw, 24px)", padding: "0 clamp(8px, 2vw, 16px)" }}
@@ -214,7 +218,7 @@ export function Navbar() {
         <Link
           href="/"
           className="font-semibold tracking-tight"
-          style={{ fontSize: "clamp(13px, 4vw, 18px)", whiteSpace: "nowrap", flexShrink: 0 }}
+          style={{ fontSize: "clamp(12px, 3.5vw, 18px)", whiteSpace: "nowrap", flexShrink: 0 }}
         >
           ToxiClear AI
         </Link>
@@ -228,7 +232,7 @@ export function Navbar() {
               "text-sm transition-colors hover:text-foreground",
               pathname === "/" ? "text-foreground" : "text-muted-foreground",
             )}
-            style={{ fontSize: "clamp(11px, 3vw, 14px)", padding: "clamp(4px, 1vw, 8px)", whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{ fontSize: "clamp(10px, 2.8vw, 14px)", padding: "clamp(2px, 1vw, 8px) clamp(4px, 1.5vw, 12px)", whiteSpace: "nowrap", flexShrink: 0 }}
           >
             Home
           </Link>
@@ -246,7 +250,7 @@ export function Navbar() {
               "text-sm transition-colors hover:text-foreground",
               pathname === "/history" ? "text-foreground" : "text-muted-foreground",
             )}
-            style={{ fontSize: "clamp(11px, 3vw, 14px)", padding: "clamp(4px, 1vw, 8px)", whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{ fontSize: "clamp(10px, 2.8vw, 14px)", padding: "clamp(2px, 1vw, 8px) clamp(4px, 1.5vw, 12px)", whiteSpace: "nowrap", flexShrink: 0 }}
           >
             History
           </Link>

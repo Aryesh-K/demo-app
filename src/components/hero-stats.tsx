@@ -32,11 +32,11 @@ function StatItem({ target, suffix, label }: (typeof STATS)[number]) {
   const count = useCountUp(target);
   const display = count >= 1000 ? count.toLocaleString() : String(count);
   return (
-    <div style={{ textAlign: "center", minWidth: "80px", flex: "1 1 80px" }}>
-      <div style={{ fontSize: "clamp(20px, 5vw, 36px)", fontWeight: 700, color: "#1D9E75", lineHeight: 1, overflow: "hidden" }}>
+    <div style={{ textAlign: "center", width: "100%" }}>
+      <div style={{ fontSize: "clamp(22px, 6vw, 36px)", fontWeight: 700, color: "#1D9E75", lineHeight: 1, overflow: "hidden" }}>
         {display}{suffix}
       </div>
-      <div style={{ fontSize: "clamp(10px, 2.5vw, 13px)", color: "#64748b", marginTop: "6px", maxWidth: "120px", lineHeight: 1.4 }}>
+      <div style={{ fontSize: "clamp(10px, 2.5vw, 12px)", color: "#64748b", marginTop: "6px", lineHeight: 1.4 }}>
         {label}
       </div>
     </div>
@@ -61,23 +61,17 @@ export function HeroStats() {
   return (
     <div
       ref={ref}
-      className="mx-auto max-w-3xl px-8 py-8"
-      style={{ width: "100%", overflowX: "hidden", boxSizing: "border-box", padding: "0 16px" }}
+      className="mx-auto max-w-3xl"
+      style={{ width: "100%", overflowX: "hidden", boxSizing: "border-box", padding: "32px 16px" }}
     >
       <div
+        className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full"
         style={{
           background: "rgba(29,158,117,0.05)",
           border: "1px solid rgba(29,158,117,0.2)",
           borderRadius: "16px",
-          padding: "32px 24px",
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "16px",
+          padding: "24px",
           overflow: "hidden",
-          width: "100%",
-          maxWidth: "100vw",
           boxSizing: "border-box",
         }}
       >
