@@ -99,7 +99,7 @@ function NavDropdown({
   }, []);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative" style={{ flexShrink: 0 }}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -107,6 +107,7 @@ function NavDropdown({
           "flex items-center gap-1 text-sm transition-colors hover:text-foreground",
           isActive ? "text-foreground" : "text-muted-foreground",
         )}
+        style={{ fontSize: "clamp(11px, 3vw, 14px)", padding: "clamp(4px, 1vw, 8px)", whiteSpace: "nowrap" }}
       >
         {label}
         <span
@@ -206,17 +207,28 @@ export function Navbar() {
 
   return (
     <nav className="relative z-10 border-b border-border bg-background">
-      <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4">
-        <Link href="/" className="font-semibold tracking-tight">
+      <div
+        className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4"
+        style={{ gap: "clamp(2px, 1.5vw, 24px)", padding: "0 clamp(8px, 2vw, 16px)" }}
+      >
+        <Link
+          href="/"
+          className="font-semibold tracking-tight"
+          style={{ fontSize: "clamp(13px, 4vw, 18px)", whiteSpace: "nowrap", flexShrink: 0 }}
+        >
           ToxiClear AI
         </Link>
-        <div className="flex flex-1 items-center gap-4">
+        <div
+          className="flex flex-1 items-center gap-4"
+          style={{ gap: "clamp(2px, 1.2vw, 16px)", flexWrap: "nowrap" }}
+        >
           <Link
             href="/"
             className={cn(
               "text-sm transition-colors hover:text-foreground",
               pathname === "/" ? "text-foreground" : "text-muted-foreground",
             )}
+            style={{ fontSize: "clamp(11px, 3vw, 14px)", padding: "clamp(4px, 1vw, 8px)", whiteSpace: "nowrap", flexShrink: 0 }}
           >
             Home
           </Link>
@@ -234,25 +246,28 @@ export function Navbar() {
               "text-sm transition-colors hover:text-foreground",
               pathname === "/history" ? "text-foreground" : "text-muted-foreground",
             )}
+            style={{ fontSize: "clamp(11px, 3vw, 14px)", padding: "clamp(4px, 1vw, 8px)", whiteSpace: "nowrap", flexShrink: 0 }}
           >
             History
           </Link>
         </div>
-        {auth.status === "unauthenticated" || auth.status === "loading" ? (
-          auth.status === "unauthenticated" ? (
-            <Link
-              href="/signup"
-              className="rounded-md bg-yellow-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-yellow-600"
-            >
-              Sign Up / Log In
-            </Link>
+        <div style={{ flexShrink: 0, marginLeft: "auto" }}>
+          {auth.status === "unauthenticated" || auth.status === "loading" ? (
+            auth.status === "unauthenticated" ? (
+              <Link
+                href="/signup"
+                className="rounded-md bg-yellow-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-yellow-600"
+              >
+                Sign Up / Log In
+              </Link>
+            ) : (
+              // loading — reserve space to avoid layout shift
+              <div className="h-[38px] w-[38px]" />
+            )
           ) : (
-            // loading — reserve space to avoid layout shift
-            <div className="h-[38px] w-[38px]" />
-          )
-        ) : (
-          <AvatarButton />
-        )}
+            <AvatarButton />
+          )}
+        </div>
       </div>
     </nav>
   );
