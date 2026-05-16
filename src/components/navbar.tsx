@@ -160,6 +160,7 @@ function AvatarButton() {
 export function Navbar() {
   const pathname = usePathname();
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -207,72 +208,241 @@ export function Navbar() {
   ];
 
   return (
-    <nav
-      className="relative z-10 border-b border-border bg-background"
-      style={{ width: "100%", maxWidth: "100vw", overflowX: "hidden" }}
-    >
-      <div
-        className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4"
-        style={{ gap: "clamp(2px, 1.5vw, 24px)", padding: "0 clamp(8px, 2vw, 16px)" }}
+    <>
+      <nav
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          background: "rgba(5,13,26,0.95)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
       >
-        <Link
-          href="/"
-          className="font-semibold tracking-tight"
-          style={{ fontSize: "clamp(12px, 3.5vw, 18px)", whiteSpace: "nowrap", flexShrink: 0 }}
-        >
-          ToxiClear AI
-        </Link>
+        {/* ── Main row ── */}
         <div
-          className="flex flex-1 items-center gap-4"
-          style={{ gap: "clamp(2px, 1.2vw, 16px)", flexWrap: "nowrap" }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 16px",
+            height: "52px",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
         >
+          {/* Logo */}
           <Link
             href="/"
-            className={cn(
-              "text-sm transition-colors hover:text-foreground",
-              pathname === "/" ? "text-foreground" : "text-muted-foreground",
-            )}
-            style={{ fontSize: "clamp(10px, 2.8vw, 14px)", padding: "clamp(2px, 1vw, 8px) clamp(4px, 1.5vw, 12px)", whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{
+              color: "white",
+              fontWeight: 700,
+              fontSize: "16px",
+              textDecoration: "none",
+              flexShrink: 0,
+            }}
           >
-            Home
+            ToxiClear AI
           </Link>
-          {dropdowns.map((d) => (
-            <NavDropdown
-              key={d.label}
-              label={d.label}
-              items={d.items}
-              isActive={pathname.startsWith(d.basePath)}
-            />
-          ))}
-          <Link
-            href="/history"
-            className={cn(
-              "text-sm transition-colors hover:text-foreground",
-              pathname === "/history" ? "text-foreground" : "text-muted-foreground",
-            )}
-            style={{ fontSize: "clamp(10px, 2.8vw, 14px)", padding: "clamp(2px, 1vw, 8px) clamp(4px, 1.5vw, 12px)", whiteSpace: "nowrap", flexShrink: 0 }}
+
+          {/* Desktop nav — hidden on mobile */}
+          <div
+            className="hidden md:flex"
+            style={{ alignItems: "center", gap: "4px" }}
           >
-            History
-          </Link>
-        </div>
-        <div style={{ flexShrink: 0, marginLeft: "auto" }}>
-          {auth.status === "unauthenticated" || auth.status === "loading" ? (
-            auth.status === "unauthenticated" ? (
+            <Link
+              href="/"
+              className={cn(
+                "text-sm transition-colors hover:text-foreground",
+                pathname === "/" ? "text-foreground" : "text-muted-foreground",
+              )}
+              style={{ padding: "6px 10px", whiteSpace: "nowrap" }}
+            >
+              Home
+            </Link>
+            {dropdowns.map((d) => (
+              <NavDropdown
+                key={d.label}
+                label={d.label}
+                items={d.items}
+                isActive={pathname.startsWith(d.basePath)}
+              />
+            ))}
+            <Link
+              href="/history"
+              className={cn(
+                "text-sm transition-colors hover:text-foreground",
+                pathname === "/history"
+                  ? "text-foreground"
+                  : "text-muted-foreground",
+              )}
+              style={{ padding: "6px 10px", whiteSpace: "nowrap" }}
+            >
+              History
+            </Link>
+          </div>
+
+          {/* Right side: account icon + hamburger */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              flexShrink: 0,
+            }}
+          >
+            {auth.status === "unauthenticated" ? (
               <Link
                 href="/signup"
-                className="rounded-md bg-yellow-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-yellow-600"
+                className="rounded-md bg-yellow-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-yellow-600"
               >
-                Sign Up / Log In
+                Sign In
               </Link>
+            ) : auth.status === "loading" ? (
+              <div style={{ width: "28px", height: "28px" }} />
             ) : (
-              // loading — reserve space to avoid layout shift
-              <div className="h-[38px] w-[38px]" />
-            )
-          ) : (
-            <AvatarButton />
-          )}
+              <AvatarButton />
+            )}
+
+            {/* Hamburger — mobile only */}
+            <button
+              type="button"
+              className="md:hidden"
+              onClick={() => setMenuOpen((v) => !v)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+                flexShrink: 0,
+              }}
+              aria-label="Toggle menu"
+            >
+              <span
+                style={{
+                  display: "block",
+                  width: "22px",
+                  height: "2px",
+                  background: "rgba(255,255,255,0.8)",
+                  transition: "all 0.2s",
+                  transform: menuOpen
+                    ? "rotate(45deg) translate(0, 7px)"
+                    : "none",
+                }}
+              />
+              <span
+                style={{
+                  display: "block",
+                  width: "22px",
+                  height: "2px",
+                  background: "rgba(255,255,255,0.8)",
+                  transition: "all 0.2s",
+                  opacity: menuOpen ? 0 : 1,
+                }}
+              />
+              <span
+                style={{
+                  display: "block",
+                  width: "22px",
+                  height: "2px",
+                  background: "rgba(255,255,255,0.8)",
+                  transition: "all 0.2s",
+                  transform: menuOpen
+                    ? "rotate(-45deg) translate(0, -7px)"
+                    : "none",
+                }}
+              />
+            </button>
+          </div>
         </div>
-      </div>
-    </nav>
+
+        {/* ── Mobile dropdown menu ── */}
+        {menuOpen && (
+          <div
+            className="md:hidden"
+            style={{
+              background: "rgba(5,13,26,0.98)",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              padding: "8px 0 16px",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <Link
+              href="/"
+              onClick={() => setMenuOpen(false)}
+              style={{
+                display: "block",
+                padding: "12px 20px",
+                color: "rgba(255,255,255,0.8)",
+                textDecoration: "none",
+                fontSize: "15px",
+                borderBottom: "1px solid rgba(255,255,255,0.04)",
+              }}
+            >
+              Home
+            </Link>
+
+            <div
+              style={{
+                padding: "12px 20px 4px",
+                fontSize: "11px",
+                color: "rgba(255,255,255,0.3)",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+              }}
+            >
+              Check Mode
+            </div>
+            <Link href="/check/free" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Free</Link>
+            <Link href="/check/premium" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Premium 👑</Link>
+            <Link href="/check/travel" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Travel Mode ✈️</Link>
+
+            <div
+              style={{
+                padding: "12px 20px 4px",
+                fontSize: "11px",
+                color: "rgba(255,255,255,0.3)",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                marginTop: "4px",
+              }}
+            >
+              Learn Mode
+            </div>
+            <Link href="/learn/free" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Free</Link>
+            <Link href="/learn/premium" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>Premium 👑</Link>
+            <Link href="/flashcards" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>🃏 MCAT Flashcards</Link>
+            <Link href="/case-studies" onClick={() => setMenuOpen(false)} style={{ display: "block", padding: "10px 28px", color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "14px" }}>🔬 Case Studies</Link>
+
+            <Link
+              href="/history"
+              onClick={() => setMenuOpen(false)}
+              style={{
+                display: "block",
+                padding: "12px 20px",
+                color: "rgba(255,255,255,0.8)",
+                textDecoration: "none",
+                fontSize: "15px",
+                borderTop: "1px solid rgba(255,255,255,0.04)",
+                marginTop: "4px",
+              }}
+            >
+              History
+            </Link>
+          </div>
+        )}
+      </nav>
+
+      {/* Spacer to push page content below the fixed navbar */}
+      <div style={{ height: "52px" }} />
+    </>
   );
 }
