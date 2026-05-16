@@ -917,6 +917,14 @@ function Results({ result, level, addedTerms, onAddTerm }: { result: ApiResult; 
 export default function LearnPremium() {
   const [selectedLevel, setSelectedLevel] = useState<1 | 2 | 3 | null>(null);
   const [isCaseStudy, setIsCaseStudy] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const [drugs, setDrugs] = useState<DrugEntry[]>([
     { id: "drug-1", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
     { id: "drug-2", name: "", method: "Oral (swallowed)", amount: "", unit: "mg" },
@@ -1172,8 +1180,12 @@ export default function LearnPremium() {
         {/* Large cards — before level selected */}
         {!selectedLevel && (
           <div
-            className="grid grid-cols-3 gap-4"
-            style={{ animation: "fade-in 0.3s ease forwards" }}
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+              gap: "16px",
+              animation: "fade-in 0.3s ease forwards",
+            }}
           >
             {LEVELS.map((level) => (
               <button
@@ -1184,6 +1196,7 @@ export default function LearnPremium() {
                   if (validationError) setValidationError(null);
                 }}
                 className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 text-left transition-all hover:border-teal-600 hover:bg-teal-950/10"
+                style={{ width: "100%", minWidth: "unset" }}
               >
                 <span className="text-3xl">{level.icon}</span>
                 <div className="flex flex-col gap-0.5">

@@ -730,6 +730,14 @@ export default function CheckPremium() {
   const { profile: savedProfile, loading: profileLoading } =
     usePremiumProfile();
   const [autoFilled, setAutoFilled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const [drugs, setDrugs] = useState<DrugEntry[]>([
     {
@@ -980,7 +988,15 @@ export default function CheckPremium() {
       </div>
 
       {/* Two-column input area */}
-      <div className="grid grid-cols-[2fr_1fr] items-start gap-6">
+      <div
+        className="items-start"
+        style={{
+          display: isMobile ? "flex" : "grid",
+          gridTemplateColumns: "2fr 1fr",
+          flexDirection: "column",
+          gap: isMobile ? "24px" : "24px",
+        }}
+      >
         {/* Left column: drug cards + optional context + submit */}
         <div className="flex flex-col gap-4">
           {/* Drug cards */}
@@ -1079,12 +1095,14 @@ export default function CheckPremium() {
         </div>
 
         {/* Right column: health profile panel */}
-        <HealthProfilePanel
-          profile={healthProfile}
-          onChange={updateHealthField}
-          profileLoading={profileLoading}
-          autoFilled={autoFilled}
-        />
+        <div style={isMobile ? { width: "100%", marginTop: "0" } : {}}>
+          <HealthProfilePanel
+            profile={healthProfile}
+            onChange={updateHealthField}
+            profileLoading={profileLoading}
+            autoFilled={autoFilled}
+          />
+        </div>
       </div>
 
       <div ref={resultsRef}>

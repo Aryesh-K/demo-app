@@ -406,6 +406,14 @@ function Results({ result }: { result: ApiResult }) {
 export default function LearnFree() {
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -612,7 +620,13 @@ export default function LearnFree() {
       </div>
 
       {/* Drug inputs */}
-      <div className="grid grid-cols-2 gap-6">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+          gap: "24px",
+        }}
+      >
         <DrugInputGroup
           label="Drug A"
           placeholder="e.g. ibuprofen"

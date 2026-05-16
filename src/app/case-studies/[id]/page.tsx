@@ -2616,6 +2616,14 @@ export default function CaseStudyPage() {
 
   const [ready, setReady] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Quiz state
   const [activeSection, setActiveSection] = useState(0);
@@ -2870,6 +2878,30 @@ export default function CaseStudyPage() {
       </div>
     );
   }
+
+  if (isMobile) return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#050d1a",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "40px 24px",
+      textAlign: "center",
+    }}>
+      <div style={{ fontSize: "48px", marginBottom: "24px" }}>🖥️</div>
+      <h2 style={{ fontSize: "22px", fontWeight: 700, color: "white", marginBottom: "12px" }}>
+        Best on a larger screen
+      </h2>
+      <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.5)", lineHeight: "1.7", maxWidth: "300px", marginBottom: "32px" }}>
+        This experience was designed for desktop. Visit toxiclearai.com on your computer for the full interactive version.
+      </p>
+      <Link href="/" style={{ padding: "12px 28px", background: "#1D9E75", borderRadius: "8px", color: "white", textDecoration: "none", fontWeight: 600, fontSize: "15px" }}>
+        ← Back to Home
+      </Link>
+    </div>
+  );
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-5xl flex-col gap-6 px-6 py-12">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -111,6 +111,14 @@ export default function BodyMap({
     () => affected_systems.find((s) => s.organ in ORGAN_COORDS)?.organ ?? null,
   );
   const [currentStep, setCurrentStep] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   if (!affected_systems.length || !steps.length) return null;
 
@@ -166,7 +174,7 @@ export default function BodyMap({
         <section
           style={{
             display: "flex",
-            flexDirection: "row",
+            flexDirection: isMobile ? "column" : "row",
             gap: 20,
             alignItems: "flex-start",
           }}
@@ -176,7 +184,9 @@ export default function BodyMap({
           <div
             style={{
               position: "relative",
-              width: 200,
+              width: isMobile ? "100%" : 200,
+              maxWidth: 200,
+              margin: isMobile ? "0 auto" : undefined,
               height: 420,
               flexShrink: 0,
             }}
@@ -258,11 +268,13 @@ export default function BodyMap({
           {/* ── Right column: two-section info panel ── */}
           <div
             style={{
-              width: 220,
-              height: 420,
+              width: isMobile ? "100%" : 220,
+              marginTop: isMobile ? 16 : undefined,
+              height: isMobile ? "auto" : 420,
               flexShrink: 0,
               display: "flex",
               flexDirection: "column",
+              overflow: "visible",
             }}
           >
             {/* TOP SECTION (~40 %) — organ + reason, driven by hover */}
