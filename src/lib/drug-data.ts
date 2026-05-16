@@ -1,5 +1,5 @@
 // ─── Drug database pre-fetch utility ─────────────────────────────────────────
-// Fetches RxNorm, FDA label, DailyMed, and PharmGKB data before AI calls.
+// Fetches RxNorm, FDA label, DailyMed, PharmGKB, and KEGG data before AI calls.
 // All functions are safe: they never throw and always return null fields on failure.
 
 const TIMEOUT_MS = 3000;
@@ -44,6 +44,11 @@ export interface DrugData {
   dailyMedWarnings: string | null;
   dailyMedInteractions: string | null;
   pharmGKBData: string | null;
+  keggInteractions: string | null;
+  keggDrugClass: string | null;
+  aggregatedWarnings: string | null;
+  aggregatedInteractions: string | null;
+  dataSourceCount: number;
 }
 
 export interface NIHInteractionResult {
@@ -319,6 +324,103 @@ async function getPharmGKBData(drugName: string): Promise<{ pharmGKBData: string
   }
 }
 
+// ─── KEGG Drug ────────────────────────────────────────────────────────────────
+
+async function getKEGGData(
+  drugName: string,
+): Promise<{ keggInteractions: string | null; keggDrugClass: string | null }> {
+  const enc = encodeURIComponent(drugName);
+  console.log("[kegg] Fetching:", drugName);
+  try {
+    const findRes = await fetchWithTimeout(
+      `https://rest.kegg.jp/find/drug/${enc}`,
+    );
+    console.log("[kegg] Find status:", findRes.status);
+    if (!findRes.ok) return { keggInteractions: null, keggDrugClass: null };
+
+    const findText = await findRes.text();
+    const idMatch = findText.match(/^(dr:D\d+)\t/m);
+    if (!idMatch?.[1]) return { keggInteractions: null, keggDrugClass: null };
+
+    const keggId = idMatch[1];
+    console.log("[kegg] Found ID:", keggId);
+
+    const getRes = await fetchWithTimeout(
+      `https://rest.kegg.jp/get/${keggId}`,
+    );
+    console.log("[kegg] Get status:", getRes.status);
+    if (!getRes.ok) return { keggInteractions: null, keggDrugClass: null };
+
+    const entry = await getRes.text();
+
+    const interactionMatch = entry.match(
+      /^INTERACTION\s+([\s\S]+?)(?=^\S|\Z)/m,
+    );
+    const classMatch = entry.match(/^CLASS\s+(.+)/m);
+
+    const keggInteractions = interactionMatch?.[1]
+      ? `KEGG interactions: ${interactionMatch[1].replace(/\s+/g, " ").trim()}`.slice(0, 500)
+      : null;
+    const keggDrugClass = classMatch?.[1]?.trim() ?? null;
+
+    console.log(
+      "[kegg] interactions:",
+      !!keggInteractions,
+      "class:",
+      keggDrugClass,
+    );
+    return { keggInteractions, keggDrugClass };
+  } catch (err) {
+    console.log("[drug-data] CATCH ERROR in getKEGGData:", err);
+    return { keggInteractions: null, keggDrugClass: null };
+  }
+}
+
+// ─── Aggregation ──────────────────────────────────────────────────────────────
+
+function aggregateDrugData(
+  _drugName: string,
+  fda: FDAResult,
+  dailyMed: DailyMedResult,
+  pharmGKB: { pharmGKBData: string | null },
+  kegg: { keggInteractions: string | null; keggDrugClass: string | null },
+): {
+  aggregatedWarnings: string | null;
+  aggregatedInteractions: string | null;
+  dataSourceCount: number;
+} {
+  const warningParts: string[] = [];
+  if (fda.warnings) warningParts.push(`[FDA] ${fda.warnings}`);
+  if (dailyMed.dailyMedWarnings)
+    warningParts.push(`[DailyMed] ${dailyMed.dailyMedWarnings}`);
+
+  const interactionParts: string[] = [];
+  if (fda.interactions) interactionParts.push(`[FDA] ${fda.interactions}`);
+  if (dailyMed.dailyMedInteractions)
+    interactionParts.push(`[DailyMed] ${dailyMed.dailyMedInteractions}`);
+  if (pharmGKB.pharmGKBData)
+    interactionParts.push(`[PharmGKB] ${pharmGKB.pharmGKBData}`);
+  if (kegg.keggInteractions)
+    interactionParts.push(`[KEGG] ${kegg.keggInteractions}`);
+
+  const sourcesWithData = [
+    fda.warnings ?? fda.interactions ?? fda.description,
+    dailyMed.dailyMedWarnings ?? dailyMed.dailyMedInteractions,
+    pharmGKB.pharmGKBData,
+    kegg.keggInteractions ?? kegg.keggDrugClass,
+  ].filter(Boolean).length;
+
+  return {
+    aggregatedWarnings: warningParts.length
+      ? warningParts.join("\n\n").slice(0, 1200)
+      : null,
+    aggregatedInteractions: interactionParts.length
+      ? interactionParts.join("\n\n").slice(0, 1200)
+      : null,
+    dataSourceCount: sourcesWithData,
+  };
+}
+
 // ─── Build prompt context string ──────────────────────────────────────────────
 
 export function buildDataContext(
@@ -326,21 +428,25 @@ export function buildDataContext(
   drug2Data: DrugData,
   _knownInteraction: NIHInteractionResult,
 ): string {
+  const fmt = (val: string | null | undefined, fallback = "Not found") =>
+    val ?? fallback;
+
   return (
-    `VERIFIED DRUG DATABASE DATA (use this to inform your analysis):\n\n` +
-    `Drug A (${drug1Data.inputName}):\n` +
-    `- FDA Warnings: ${drug1Data.warnings ?? "Not found"}\n` +
-    `- FDA Interactions: ${drug1Data.interactions ?? "Not found"}\n` +
-    `- DailyMed Warnings: ${drug1Data.dailyMedWarnings ?? "Not found"}\n` +
-    `- DailyMed Interactions: ${drug1Data.dailyMedInteractions ?? "Not found"}\n` +
-    `- PharmGKB Data: ${drug1Data.pharmGKBData ?? "Not found"}\n\n` +
-    `Drug B (${drug2Data.inputName}):\n` +
-    `- FDA Warnings: ${drug2Data.warnings ?? "Not found"}\n` +
-    `- FDA Interactions: ${drug2Data.interactions ?? "Not found"}\n` +
-    `- DailyMed Warnings: ${drug2Data.dailyMedWarnings ?? "Not found"}\n` +
-    `- DailyMed Interactions: ${drug2Data.dailyMedInteractions ?? "Not found"}\n` +
-    `- PharmGKB Data: ${drug2Data.pharmGKBData ?? "Not found"}\n\n` +
-    `NIH Interaction Database: Not available (deprecated)\n\n` +
+    `VERIFIED DRUG DATABASE DATA (aggregated from up to 4 sources: FDA, DailyMed, PharmGKB, KEGG):\n\n` +
+    `Drug A (${drug1Data.inputName}) — data from ${drug1Data.dataSourceCount} of 4 sources:\n` +
+    (drug1Data.keggDrugClass
+      ? `- Drug Class (KEGG): ${drug1Data.keggDrugClass}\n`
+      : "") +
+    `- Warnings: ${fmt(drug1Data.aggregatedWarnings ?? drug1Data.warnings)}\n` +
+    `- Interactions: ${fmt(drug1Data.aggregatedInteractions ?? drug1Data.interactions)}\n` +
+    `- Description: ${fmt(drug1Data.description)}\n\n` +
+    `Drug B (${drug2Data.inputName}) — data from ${drug2Data.dataSourceCount} of 4 sources:\n` +
+    (drug2Data.keggDrugClass
+      ? `- Drug Class (KEGG): ${drug2Data.keggDrugClass}\n`
+      : "") +
+    `- Warnings: ${fmt(drug2Data.aggregatedWarnings ?? drug2Data.warnings)}\n` +
+    `- Interactions: ${fmt(drug2Data.aggregatedInteractions ?? drug2Data.interactions)}\n` +
+    `- Description: ${fmt(drug2Data.description)}\n\n` +
     `Base your analysis on this data where available. ` +
     `If database data conflicts with your training knowledge, ` +
     `prioritize the database data.\n\n`
@@ -359,7 +465,7 @@ export async function fetchDrugPairData(
       getRxNormData(drug2),
     ]);
 
-    const [fda1, fda2, dailyMed1, dailyMed2, pharmGKB1, pharmGKB2] =
+    const [fda1, fda2, dailyMed1, dailyMed2, pharmGKB1, pharmGKB2, kegg1, kegg2] =
       await Promise.all([
         getFDALabel(drug1),
         getFDALabel(drug2),
@@ -367,7 +473,12 @@ export async function fetchDrugPairData(
         getDailyMedData(drug2),
         getPharmGKBData(drug1),
         getPharmGKBData(drug2),
+        getKEGGData(drug1),
+        getKEGGData(drug2),
       ]);
+
+    const aggregated1 = aggregateDrugData(drug1, fda1, dailyMed1, pharmGKB1, kegg1);
+    const aggregated2 = aggregateDrugData(drug2, fda2, dailyMed2, pharmGKB2, kegg2);
 
     return {
       drug1Data: {
@@ -376,6 +487,8 @@ export async function fetchDrugPairData(
         ...fda1,
         ...dailyMed1,
         ...pharmGKB1,
+        ...kegg1,
+        ...aggregated1,
       },
       drug2Data: {
         inputName: drug2,
@@ -383,6 +496,8 @@ export async function fetchDrugPairData(
         ...fda2,
         ...dailyMed2,
         ...pharmGKB2,
+        ...kegg2,
+        ...aggregated2,
       },
       knownInteraction: {
         hasInteraction: false,
@@ -392,29 +507,25 @@ export async function fetchDrugPairData(
     };
   } catch (err) {
     console.log("[drug-data] CATCH ERROR in fetchDrugPairData:", err);
+    const nullDrug = (name: string): DrugData => ({
+      inputName: name,
+      rxcui: null,
+      standardName: null,
+      warnings: null,
+      interactions: null,
+      description: null,
+      dailyMedWarnings: null,
+      dailyMedInteractions: null,
+      pharmGKBData: null,
+      keggInteractions: null,
+      keggDrugClass: null,
+      aggregatedWarnings: null,
+      aggregatedInteractions: null,
+      dataSourceCount: 0,
+    });
     return {
-      drug1Data: {
-        inputName: drug1,
-        rxcui: null,
-        standardName: null,
-        warnings: null,
-        interactions: null,
-        description: null,
-        dailyMedWarnings: null,
-        dailyMedInteractions: null,
-        pharmGKBData: null,
-      },
-      drug2Data: {
-        inputName: drug2,
-        rxcui: null,
-        standardName: null,
-        warnings: null,
-        interactions: null,
-        description: null,
-        dailyMedWarnings: null,
-        dailyMedInteractions: null,
-        pharmGKBData: null,
-      },
+      drug1Data: nullDrug(drug1),
+      drug2Data: nullDrug(drug2),
       knownInteraction: {
         hasInteraction: false,
         severity: null,

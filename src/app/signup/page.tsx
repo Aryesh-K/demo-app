@@ -219,7 +219,7 @@ function LogInForm() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -227,8 +227,18 @@ function LogInForm() {
 
     if (authError) {
       setError(authError.message);
-    } else {
-      router.push("/");
+    } else if (data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_complete")
+        .eq("id", data.user.id)
+        .single();
+
+      if (!profile?.onboarding_complete) {
+        router.push("/onboarding");
+      } else {
+        router.push("/");
+      }
     }
   }
 

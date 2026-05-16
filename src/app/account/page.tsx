@@ -23,6 +23,7 @@ type Profile = {
   medications?: string | null;
   allergies?: string | null;
   notes?: string | null;
+  onboarding_complete?: boolean | null;
 };
 
 function formatJoinDate(isoDate: string) {
@@ -534,6 +535,7 @@ export default function AccountPage() {
   const [phone, setPhone] = useState("");
   const [isPremium, setIsPremium] = useState(false);
   const [needsReEncryption, setNeedsReEncryption] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
@@ -555,6 +557,7 @@ export default function AccountPage() {
         setLastName(profileData.last_name ?? "");
         setPhone(profileData.phone ?? "");
         setIsPremium(profileData.is_premium ?? false);
+        setOnboardingComplete(profileData.onboarding_complete ?? false);
         // Check raw values before decryption to detect plaintext data
         const hasPlaintext =
           (!!profileData.conditions && !profileData.conditions.startsWith("U2Fsd")) ||
@@ -598,6 +601,25 @@ export default function AccountPage() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-12">
       <h1 className="text-2xl font-bold tracking-tight">My Account</h1>
+
+      {!onboardingComplete && (
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-teal-700/50 bg-teal-950/30 px-4 py-3">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-semibold text-teal-300">
+              Complete your profile setup
+            </p>
+            <p className="text-xs text-teal-400/70">
+              Takes 30 seconds — helps us personalize your experience.
+            </p>
+          </div>
+          <a
+            href="/onboarding"
+            className="shrink-0 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500 transition-colors"
+          >
+            Start →
+          </a>
+        </div>
+      )}
 
       {/* Tab bar */}
       <div className="flex border-b border-border">
