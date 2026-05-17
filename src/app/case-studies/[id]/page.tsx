@@ -2602,29 +2602,11 @@ export default function CaseStudyPage() {
   const params = useParams();
   const { isLoading, isPremium } = usePremiumGuard();
 
-  if (isLoading) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#050d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>
-        Checking access...
-      </div>
-    );
-  }
-
-  if (!isPremium) return null;
-
+  // Derive cs before hooks — it's a lookup, not a hook
   const id = params?.id as string;
-  const csFound = CASE_STUDIES.find((c) => c.id === id);
+  const csData: CaseStudy | null = CASE_STUDIES.find((c) => c.id === id) ?? null;
 
-  if (!csFound) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "18px" }}>
-        Case study not found.
-      </div>
-    );
-  }
-
-  const cs: CaseStudy = csFound;
-
+  // ── All hooks must be called unconditionally ──────────────────────────────
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -2653,19 +2635,19 @@ export default function CaseStudyPage() {
 
   // Initialize drag order from questions
   useEffect(() => {
-    if (!cs) return;
-    const ddq = cs.questions.find((q): q is DragDropQuestion => q.type === "dragdrop");
+    if (!csData) return;
+    const ddq = (csData?.questions ?? []).find((q): q is DragDropQuestion => q.type === "dragdrop");
     if (ddq) {
       const indices = [...Array(ddq.items.length).keys()];
       setDragOrder([...indices].sort(() => Math.random() - 0.5));
     }
-  }, [cs]);
+  }, [csData]);
 
   // Compute score whenever answers or writtenGrading changes
   useEffect(() => {
-    if (!cs) return;
+    if (!csData) return;
     let total = 0;
-    for (const q of cs.questions) {
+    for (const q of csData?.questions ?? []) {
       if (q.type === "written") {
         const g = writtenGrading[q.id];
         if (g && !g.loading) total += g.score ?? 0;
@@ -2682,7 +2664,39 @@ export default function CaseStudyPage() {
       }
     }
     setScore(total);
-  }, [cs, answers, submitted, dragOrder, writtenGrading]);
+  }, [csData, answers, submitted, dragOrder, writtenGrading]);
+
+  // Check if all questions submitted
+  useEffect(() => {
+    if (!csData || !isPremium) return;
+    const allDone = (csData?.questions ?? []).every((q) => {
+      if (q.type === "written") return !!writtenGrading[q.id] && !writtenGrading[q.id]?.loading;
+      return !!submitted[q.id];
+    });
+    if (allDone && (csData?.questions?.length ?? 0) > 0) setShowCompletion(true);
+  }, [csData, submitted, writtenGrading, isPremium]);
+
+  // ── Early returns after all hooks ─────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#050d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>
+        Checking access...
+      </div>
+    );
+  }
+
+  if (!isPremium) return null;
+
+  if (!csData) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "18px" }}>
+        Case study not found.
+      </div>
+    );
+  }
+
+  // TypeScript now knows csData is CaseStudy — alias to cs for the rest of the component
+  const cs = csData;
 
   // Mark section as completed when navigating away
   function handleSectionChange(i: number) {
@@ -2690,16 +2704,6 @@ export default function CaseStudyPage() {
     setActiveSection(i);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
-  // Check if all questions submitted
-  useEffect(() => {
-    if (!cs || !isPremium) return;
-    const allDone = cs.questions.every((q) => {
-      if (q.type === "written") return !!writtenGrading[q.id] && !writtenGrading[q.id]?.loading;
-      return !!submitted[q.id];
-    });
-    if (allDone && cs.questions.length > 0) setShowCompletion(true);
-  }, [cs, submitted, writtenGrading, isPremium]);
 
   // Compute max score
   const maxScore = cs.questions.reduce((sum, q) => sum + q.points, 0);
@@ -2792,6 +2796,7 @@ export default function CaseStudyPage() {
 
   // Render active section content
   function renderSection() {
+    try {
     if (showCompletion) {
       return (
         <CompletionScreen
@@ -2803,7 +2808,7 @@ export default function CaseStudyPage() {
       );
     }
 
-    const section = cs.sections[activeSection];
+    const section = (cs?.sections ?? [])[activeSection];
     return (
       <div className="flex flex-col gap-6">
         <PatientProfileCard cs={cs} collapseOnMount={activeSection > 0} />
@@ -2849,18 +2854,26 @@ export default function CaseStudyPage() {
           >
             ← Previous
           </button>
-          {activeSection < cs.sections.length - 1 && (
+          {activeSection < (cs?.sections?.length ?? 0) - 1 && (
             <button
               type="button"
               onClick={() => handleSectionChange(activeSection + 1)}
               className="rounded-lg bg-teal-700 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-600"
             >
-              Next: {cs.sections[activeSection + 1]?.title} →
+              Next: {cs?.sections?.[activeSection + 1]?.title} →
             </button>
           )}
         </div>
       </div>
     );
+    } catch (err) {
+      console.error("[case-study] Section render error:", err);
+      return (
+        <div style={{ color: "white", padding: "20px" }}>
+          Error loading this section. Please try refreshing.
+        </div>
+      );
+    }
   }
 
   if (isMobile) return (
