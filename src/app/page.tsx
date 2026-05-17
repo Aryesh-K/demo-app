@@ -361,15 +361,6 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: "#1D9E75",
-                    textAlign: "right",
-                  }}
-                >
-                  Try it free — no account needed →
-                </div>
               </div>
             </div>
 

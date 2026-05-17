@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 const STATS = [
   { target: 10000, suffix: "+", label: "Possible drug combinations checked" },
   { target: 3, suffix: "", label: "Trusted medical databases" },
-  { target: 100000, suffix: "+", label: "Potential interactions in our AI model" },
+  { target: 100, suffix: "K+", label: "Potential interactions in our AI model" },
   { target: 3, suffix: "", label: "Curriculum-aligned explanation levels" },
 ];
 
