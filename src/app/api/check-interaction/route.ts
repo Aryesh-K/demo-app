@@ -198,6 +198,7 @@ export async function POST(req: NextRequest) {
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
+          max_tokens: 800,
         }),
       },
     );
@@ -334,22 +335,31 @@ export async function POST(req: NextRequest) {
       "type:",
       interaction_type,
     );
-    return NextResponse.json({
-      risk_level,
-      interaction_type,
-      mechanism: result.mechanism ?? "",
-      simple_explanation: result.simple_explanation,
-      confidence_score:
-        typeof result.confidence_score === "number"
-          ? Math.min(100, Math.max(0, result.confidence_score))
-          : 70,
-      fda_found: !!(drug1Data.warnings || drug2Data.warnings),
-      daily_med_found: !!(
-        drug1Data.dailyMedWarnings || drug2Data.dailyMedWarnings
-      ),
-      pharm_gkb_found: !!(drug1Data.pharmGKBData || drug2Data.pharmGKBData),
-      rxnorm_found: !!(drug1Data.rxcui || drug2Data.rxcui),
-    });
+    return NextResponse.json(
+      {
+        risk_level,
+        interaction_type,
+        mechanism: result.mechanism ?? "",
+        simple_explanation: result.simple_explanation,
+        confidence_score:
+          typeof result.confidence_score === "number"
+            ? Math.min(100, Math.max(0, result.confidence_score))
+            : 70,
+        fda_found: !!(drug1Data.warnings || drug2Data.warnings),
+        daily_med_found: !!(
+          drug1Data.dailyMedWarnings || drug2Data.dailyMedWarnings
+        ),
+        pharm_gkb_found: !!(drug1Data.pharmGKBData || drug2Data.pharmGKBData),
+        rxnorm_found: !!(drug1Data.rxcui || drug2Data.rxcui),
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+          "Connection": "keep-alive",
+          "Transfer-Encoding": "chunked",
+        },
+      },
+    );
   } catch (err) {
     console.error("[check-interaction] Failed to parse:", err, "raw:", content);
     return NextResponse.json(

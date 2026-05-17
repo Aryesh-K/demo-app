@@ -2,7 +2,7 @@
 // Fetches RxNorm, FDA label, DailyMed, PharmGKB, and KEGG data before AI calls.
 // All functions are safe: they never throw and always return null fields on failure.
 
-const TIMEOUT_MS = 3000;
+const TIMEOUT_MS = 1500;
 
 // ─── Internal API response types ──────────────────────────────────────────────
 
