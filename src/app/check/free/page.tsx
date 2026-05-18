@@ -640,13 +640,6 @@ export default function CheckFree() {
         />
       </div>
 
-      {/* Notice */}
-      <p className="text-xs text-muted-foreground">
-        Note: At least one of the substances above must be a prescription or OTC
-        medication. If you are checking a medication against two other OTCs,
-        please upgrade to Premium.
-      </p>
-
       {/* Optional context */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
