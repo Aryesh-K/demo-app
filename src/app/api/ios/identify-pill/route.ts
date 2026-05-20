@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
       shape,
     } = body;
 
+    const groqApiKey = process.env.GROQ_API_KEY;
     const fdaApiKey = process.env.OPENFDA_API_KEY;
 
     // PATH A — Imprint code lookup (most reliable for US pills)
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     // PATH B — Vision AI analysis
     if (imageBase64) {
-      const visionResult = await analyzeWithVision(imageBase64, mediaType);
+      const visionResult = await analyzeWithVision(imageBase64, mediaType, groqApiKey ?? '');
 
       // If vision found an imprint, cross-reference with FDA
       if (visionResult.imprintFound && fdaApiKey) {
@@ -165,91 +166,101 @@ async function lookupByImprint(
 async function analyzeWithVision(
   imageBase64: string,
   mediaType: string,
-): Promise<PillResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return {
-      objectType: "unrecognizable",
-      drugName: null,
-      confidence: "low",
-      copyableName: null,
-      additionalInfo: "Vision analysis unavailable: API key not configured",
-      boundingBox: { position: "center", width: 0.5, height: 0.3 },
-    };
-  }
+  apiKey: string
+): Promise<any> {
+  const res = await fetch(
+    'https://api.groq.com/openai/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.2-11b-vision-preview',
+        max_tokens: 600,
+        temperature: 0.1,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mediaType};base64,${imageBase64}`,
+                  detail: 'high'
+                }
+              },
+              {
+                type: 'text',
+                text: `Read every word visible in this image. This is a medication identification task.
 
-  const prompt = `Analyze this image and identify any medication, pill, tablet, capsule, or medication packaging.
+INSTRUCTIONS:
+- If you see ANY text on packaging, read it exactly
+- If you see a pill/tablet, describe its color, shape, and any imprint
+- If you see a brand name like Motrin, Tylenol, Advil, Benadryl etc, use it
+- If you see foreign text, translate it
+- Be CONFIDENT if you can clearly read text
 
-Return ONLY valid JSON with no other text:
+Return ONLY this JSON, no other text:
 {
   "objectType": "pill" | "tablet" | "capsule" | "bottle" | "container" | "foreign_medication" | "unrecognizable",
-  "drugName": "full drug name with dose if visible, or null",
-  "genericName": "generic/chemical name if visible, or null",
-  "brandName": "brand name if visible, or null",
-  "confidence": "high" | "medium" | "low",
-  "copyableName": "best single name to use for drug interaction check, or null",
-  "imprintFound": "any imprint/marking code visible on pill, or null",
-  "additionalInfo": "color, shape, markings, packaging text, foreign language text translated, or null",
+  "drugName": "exact drug name and dose you can read, e.g. Motrin IB 200mg",
+  "genericName": "generic name if known, e.g. Ibuprofen",
+  "brandName": "brand name if visible",
+  "confidence": "high" if text clearly readable | "medium" if partially visible | "low" if unclear,
+  "copyableName": "single best name for interaction checking, e.g. Ibuprofen",
+  "imprintFound": "imprint code on pill if visible, e.g. L484",
+  "additionalInfo": "describe everything you see including colors, shapes, any text",
   "boundingBox": {
     "position": "center" | "top" | "bottom" | "left" | "right" | "top-left" | "top-right" | "bottom-left" | "bottom-right",
-    "width": 0.1 to 1.0,
-    "height": 0.1 to 1.0
+    "width": 0.4,
+    "height": 0.4
   },
-  "isForeign": true | false,
-  "foreignCountry": "country name if foreign packaging detected, or null",
-  "warning": "any important warning or null"
-}`;
+  "isForeign": false,
+  "foreignCountry": null,
+  "warning": null
+}`
+              }
+            ]
+          }
+        ]
+      })
+    }
+  )
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-opus-4-5",
-      max_tokens: 500,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: mediaType,
-                data: imageBase64,
-              },
-            },
-            { type: "text", text: prompt },
-          ],
-        },
-      ],
-    }),
-  });
+  const data = await res.json() as any
 
-  const data = (await res.json()) as AnthropicResponse;
-  const raw = data.content?.[0]?.text ?? "";
+  // Log the full Groq response for debugging
+  console.log('[identify-pill] Groq response:',
+    JSON.stringify(data).slice(0, 500))
+
+  const raw = data.choices?.[0]?.message
+    ?.content ?? ''
+
+  console.log('[identify-pill] Raw content:',
+    raw.slice(0, 300))
 
   try {
-    return JSON.parse(raw) as PillResult;
+    return JSON.parse(raw)
   } catch {
-    const match = raw.match(/\{[\s\S]*\}/);
+    const match = raw.match(/\{[\s\S]*\}/)
     if (match) {
       try {
-        return JSON.parse(match[0]) as PillResult;
-      } catch {
-        // fall through to default
-      }
+        return JSON.parse(match[0])
+      } catch {}
     }
     return {
-      objectType: "unrecognizable",
+      objectType: 'unrecognizable',
       drugName: null,
-      confidence: "low",
+      confidence: 'low',
       copyableName: null,
       additionalInfo: raw.slice(0, 200),
-      boundingBox: { position: "center", width: 0.5, height: 0.3 },
-    };
+      boundingBox: {
+        position: 'center',
+        width: 0.5,
+        height: 0.3
+      }
+    }
   }
 }
