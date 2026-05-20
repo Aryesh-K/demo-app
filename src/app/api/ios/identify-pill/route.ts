@@ -1,4 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -162,18 +168,127 @@ async function lookupByImprint(
   shape?: string,
   apiKey?: string,
 ): Promise<any | null> {
-  const [fdaResult, rxImageResult] = await Promise.allSettled([
-    lookupOpenFDA(imprint, color, shape, apiKey),
-    lookupRxImage(imprint, color, shape),
-  ]);
+  const pillboxResult = await lookupPillboxDatabase(imprint, color, shape);
+  if (pillboxResult) return pillboxResult;
 
-  if (fdaResult.status === 'fulfilled' && fdaResult.value) {
-    return fdaResult.value;
-  }
-  if (rxImageResult.status === 'fulfilled' && rxImageResult.value) {
-    return rxImageResult.value;
-  }
+  const fdaResult = await lookupOpenFDA(imprint, color, shape, apiKey);
+  if (fdaResult) return fdaResult;
+
+  const rxImageResult = await lookupRxImage(imprint, color, shape);
+  if (rxImageResult) return rxImageResult;
+
   return null;
+}
+
+async function lookupPillboxDatabase(
+  imprint: string,
+  color?: string,
+  shape?: string,
+): Promise<any | null> {
+  try {
+    const cleanImprint = imprint.trim().toUpperCase().replace(/\s+/g, ' ');
+
+    const { data: exactMatches } = await supabase
+      .from('pills')
+      .select(`
+        id,
+        medicine_name,
+        spl_strength,
+        spl_ingredients,
+        splimprint,
+        pillbox_imprint,
+        splcolor_text,
+        pillbox_color_text,
+        splshape_text,
+        pillbox_shape_text,
+        dosage_form,
+        dea_schedule_code,
+        dea_schedule_name,
+        ndc9,
+        rxcui,
+        author,
+        has_image,
+        file_name,
+        spp
+      `)
+      .eq('enabled', 'TRUE')
+      .or(`splimprint.ilike.%${cleanImprint}%,pillbox_imprint.ilike.%${cleanImprint}%`)
+      .limit(5);
+
+    let matches = exactMatches || [];
+
+    if (color && matches.length > 1) {
+      const colorFiltered = matches.filter(m =>
+        m.splcolor_text?.toLowerCase().includes(color.toLowerCase()) ||
+        m.pillbox_color_text?.toLowerCase().includes(color.toLowerCase()),
+      );
+      if (colorFiltered.length > 0) matches = colorFiltered;
+    }
+
+    if (shape && matches.length > 1) {
+      const shapeFiltered = matches.filter(m =>
+        m.splshape_text?.toLowerCase().includes(shape.toLowerCase()) ||
+        m.pillbox_shape_text?.toLowerCase().includes(shape.toLowerCase()),
+      );
+      if (shapeFiltered.length > 0) matches = shapeFiltered;
+    }
+
+    if (!matches.length) return null;
+
+    const pill = matches[0];
+    if (!pill.medicine_name) return null;
+
+    const strengthMatch = pill.spl_strength?.match(/[\d.]+\s*(?:mg|mcg|g|ml|%|units)/i);
+    const strength = strengthMatch ? strengthMatch[0] : null;
+
+    const ingredientMatch = pill.spl_ingredients?.match(/^([A-Z\s]+)\[/);
+    const genericName = ingredientMatch
+      ? ingredientMatch[1].trim().toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())
+      : pill.medicine_name;
+
+    const drugName = strength ? `${pill.medicine_name} ${strength}` : pill.medicine_name;
+
+    const details = [
+      `Imprint: ${pill.splimprint || pill.pillbox_imprint}`,
+      pill.splcolor_text ? `Color: ${pill.splcolor_text}` : null,
+      pill.splshape_text ? `Shape: ${pill.splshape_text}` : null,
+      pill.dosage_form ? `Form: ${pill.dosage_form}` : null,
+      pill.dea_schedule_name && pill.dea_schedule_name !== 'Not a controlled substance'
+        ? `⚠️ ${pill.dea_schedule_name}` : null,
+      'Source: NIH Pillbox Database',
+    ].filter(Boolean).join(' · ');
+
+    const { data: similarPills } = await supabase
+      .from('pills')
+      .select('id, medicine_name, spl_strength, splimprint, has_image, spp')
+      .eq('enabled', 'TRUE')
+      .ilike('medicine_name', `%${pill.medicine_name}%`)
+      .neq('id', pill.id)
+      .limit(3);
+
+    return {
+      objectType: pill.dosage_form?.toLowerCase().includes('capsule') ? 'capsule'
+        : pill.dosage_form?.toLowerCase().includes('tablet') ? 'tablet'
+        : 'pill',
+      drugName,
+      genericName,
+      brandName: null,
+      confidence: 'high',
+      copyableName: genericName || pill.medicine_name,
+      source: 'nihpillbox',
+      sourceLabel: 'NIH Pillbox Database',
+      additionalInfo: details,
+      isControlled: !!(pill.dea_schedule_code && pill.dea_schedule_code !== 'Not a controlled substance'),
+      controlledNote: pill.dea_schedule_name,
+      ndc: pill.ndc9,
+      rxcui: pill.rxcui,
+      similarPills: similarPills || [],
+      boundingBox: { position: 'center', width: 0.5, height: 0.3 },
+    };
+  } catch (err) {
+    console.error('[pillbox-db]', err);
+    return null;
+  }
 }
 
 async function lookupOpenFDA(
@@ -514,7 +629,7 @@ Return ONLY valid JSON:
 
   try {
     const identified = JSON.parse(raw)
-    return {
+    const merged = {
       ...visionRaw,
       drugName: identified.drugName || visionRaw.drugName,
       genericName: identified.genericName || visionRaw.genericName,
@@ -525,6 +640,19 @@ Return ONLY valid JSON:
       warning: identified.warning || visionRaw.warning,
       identificationMethod: identified.identificationMethod,
     }
+
+    if (merged.imprintFound) {
+      const dbResult = await lookupPillboxDatabase(merged.imprintFound)
+      if (dbResult) {
+        return {
+          ...dbResult,
+          boundingBox: merged.boundingBox,
+          additionalInfo: merged.additionalInfo + ' · ' + (dbResult.additionalInfo || ''),
+        }
+      }
+    }
+
+    return merged
   } catch {
     const match = raw.match(/\{[\s\S]*\}/)
     if (match) {
