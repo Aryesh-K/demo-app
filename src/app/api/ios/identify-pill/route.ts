@@ -80,6 +80,29 @@ export async function POST(req: NextRequest) {
       // Always run second identification step
       const identified = await identifyFromClues(visionResult, groqApiKey ?? '');
 
+      // Strict confidence filter — never return a drug name unless confident
+      if (identified.confidence === 'low') {
+        identified.drugName = null;
+        identified.genericName = null;
+        identified.brandName = null;
+        identified.copyableName = null;
+      }
+
+      // Reject copyableName if it looks like an imprint code rather than a real drug name
+      if (identified.copyableName) {
+        const copy = identified.copyableName as string;
+        const looksLikeImprint =
+          /^[A-Z0-9\s\-]{2,10}$/.test(copy) &&
+          !/^(Ibuprofen|Acetaminophen|Aspirin|Naproxen|Warfarin|Metformin|Atorvastatin|Lisinopril|Omeprazole|Sertraline|Fluoxetine|Amoxicillin|Azithromycin|Gabapentin|Tramadol|Alprazolam|Lorazepam|Diazepam|Clonazepam|Prednisone|Metoprolol|Amlodipine|Losartan|Furosemide|Levothyroxine|Simvastatin|Rosuvastatin|Pravastatin|Clopidogrel|Apixaban|Rivaroxaban|Escitalopram|Bupropion|Venlafaxine|Duloxetine|Quetiapine|Risperidone|Lamotrigine|Pregabalin|Codeine|Morphine|Oxycodone|Hydrocodone|Fentanyl|Doxycycline|Ciprofloxacin|Metronidazole|Clindamycin|Celecoxib|Meloxicam|Cyclosporine|Tacrolimus|Methotrexate|Insulin|Albuterol|Montelukast|Cetirizine|Loratadine|Diphenhydramine|Melatonin|Famotidine|Pantoprazole|Esomeprazole)/i.test(copy);
+
+        if (looksLikeImprint && identified.confidence !== 'high') {
+          identified.drugName = null;
+          identified.genericName = null;
+          identified.copyableName = null;
+          identified.confidence = 'low';
+        }
+      }
+
       // If FDA cross-reference found imprint
       if (identified.imprintFound && fdaApiKey) {
         const fdaCross = await lookupByImprint(
@@ -446,11 +469,20 @@ Rules:
 - Imprint codes like L484 = Acetaminophen 500mg
 - Imprint codes like IP 190 = Naproxen 500mg
 - TEVA followed by numbers = identify by TEVA imprint database
-- Red/blue capsule with no imprint = likely Tylenol PM or Benadryl
 - If foreign text, translate AND identify US equivalent
 - Return the GENERIC name as copyableName, not brand
 - NEVER return imprint codes or foreign text as the drug name
-- If you cannot identify with confidence, say so`
+- If you cannot identify with confidence, say so
+
+STRICT RULES:
+- If you are not at least 80% confident, return confidence: "low" and drugName: null
+- NEVER guess a drug name from color alone
+- Imprint codes are the ONLY reliable visual identifier for pills — always look for them
+- A red/blue capsule with no text = confidence: "low", not Tylenol PM
+- Foreign text must be fully translated before returning a drug name
+- TEVA codes: TEVA 3109 = Amoxicillin, TEVA 5728 = Atorvastatin, etc — only identify if you are certain of the mapping
+- If additionalInfo mentions a brand name clearly visible on packaging (Motrin, Tylenol, Advil, etc), that IS high confidence
+- Return drugName: null if unsure — it is better to say unknown than to be wrong`
           },
           {
             role: 'user',
