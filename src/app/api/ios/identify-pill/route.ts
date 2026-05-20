@@ -6,8 +6,8 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-interface GroqVisionResponse {
-  choices?: { message?: { content?: string } }[];
+interface AnthropicResponse {
+  content?: { type: string; text?: string }[];
 }
 
 interface OpenFDAResult {
@@ -62,7 +62,6 @@ export async function POST(req: NextRequest) {
       shape,
     } = body;
 
-    const groqApiKey = process.env.GROQ_API_KEY;
     const fdaApiKey = process.env.OPENFDA_API_KEY;
 
     // PATH A — Imprint code lookup (most reliable for US pills)
@@ -74,8 +73,8 @@ export async function POST(req: NextRequest) {
     }
 
     // PATH B — Vision AI analysis
-    if (imageBase64 && groqApiKey) {
-      const visionResult = await analyzeWithVision(imageBase64, mediaType, groqApiKey);
+    if (imageBase64) {
+      const visionResult = await analyzeWithVision(imageBase64, mediaType);
 
       // If vision found an imprint, cross-reference with FDA
       if (visionResult.imprintFound && fdaApiKey) {
@@ -166,8 +165,19 @@ async function lookupByImprint(
 async function analyzeWithVision(
   imageBase64: string,
   mediaType: string,
-  apiKey: string,
 ): Promise<PillResult> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return {
+      objectType: "unrecognizable",
+      drugName: null,
+      confidence: "low",
+      copyableName: null,
+      additionalInfo: "Vision analysis unavailable: API key not configured",
+      boundingBox: { position: "center", width: 0.5, height: 0.3 },
+    };
+  }
+
   const prompt = `Analyze this image and identify any medication, pill, tablet, capsule, or medication packaging.
 
 Return ONLY valid JSON with no other text:
@@ -190,23 +200,27 @@ Return ONLY valid JSON with no other text:
   "warning": "any important warning or null"
 }`;
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.2-11b-vision-preview",
+      model: "claude-opus-4-5",
       max_tokens: 500,
-      temperature: 0.1,
       messages: [
         {
           role: "user",
           content: [
             {
-              type: "image_url",
-              image_url: { url: `data:${mediaType};base64,${imageBase64}` },
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType,
+                data: imageBase64,
+              },
             },
             { type: "text", text: prompt },
           ],
@@ -215,8 +229,8 @@ Return ONLY valid JSON with no other text:
     }),
   });
 
-  const data = (await res.json()) as GroqVisionResponse;
-  const raw = data.choices?.[0]?.message?.content ?? "";
+  const data = (await res.json()) as AnthropicResponse;
+  const raw = data.content?.[0]?.text ?? "";
 
   try {
     return JSON.parse(raw) as PillResult;
