@@ -96,6 +96,21 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Appearance-based fallback for low-confidence results with no imprint
+      if (identified.confidence === 'low' && !identified.imprintFound) {
+        const appearanceResult = await lookupByAppearance(
+          identified.additionalInfo || '',
+          identified.additionalInfo || '',
+          fdaApiKey,
+        );
+        if (appearanceResult) {
+          return NextResponse.json(
+            { ...identified, ...appearanceResult, additionalInfo: identified.additionalInfo },
+            { headers: CORS_HEADERS },
+          );
+        }
+      }
+
       return NextResponse.json(identified, { headers: CORS_HEADERS });
     }
 
@@ -123,38 +138,155 @@ async function lookupByImprint(
   color?: string,
   shape?: string,
   apiKey?: string,
-): Promise<PillResult | null> {
+): Promise<any | null> {
+  const [fdaResult, rxImageResult] = await Promise.allSettled([
+    lookupOpenFDA(imprint, color, shape, apiKey),
+    lookupRxImage(imprint, color, shape),
+  ]);
+
+  if (fdaResult.status === 'fulfilled' && fdaResult.value) {
+    return fdaResult.value;
+  }
+  if (rxImageResult.status === 'fulfilled' && rxImageResult.value) {
+    return rxImageResult.value;
+  }
+  return null;
+}
+
+async function lookupOpenFDA(
+  imprint: string,
+  color?: string,
+  shape?: string,
+  apiKey?: string,
+): Promise<any | null> {
   try {
-    let query = `imprint:"${imprint}"`;
-    if (color) query += `+AND+color:"${color}"`;
-    if (shape) query += `+AND+shape:"${shape}"`;
+    const keyParam = apiKey ? `&api_key=${apiKey}` : '';
 
-    const keyParam = apiKey ? `&api_key=${apiKey}` : "";
-    const url = `https://api.fda.gov/drug/ndc.json?search=${encodeURIComponent(query)}&limit=1${keyParam}`;
+    let url = `https://api.fda.gov/drug/ndc.json?search=imprint:"${encodeURIComponent(imprint)}"&limit=3${keyParam}`;
+    let res = await fetch(url);
+    let data = await res.json() as any;
 
-    const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!data.results?.length) {
+      url = `https://api.fda.gov/drug/label.json?search=openfda.imprint:"${encodeURIComponent(imprint)}"&limit=3${keyParam}`;
+      res = await fetch(url);
+      data = await res.json() as any;
+    }
 
-    const data = (await res.json()) as OpenFDAResult;
-    const result = data.results?.[0];
-    if (!result) return null;
+    if (!data.results?.length) return null;
 
-    const brandName = result.brand_name?.[0] ?? null;
-    const genericName = result.generic_name?.[0] ?? null;
-    const drugName = brandName ?? genericName;
-
+    const result = data.results[0];
+    const brandName = result.brand_name?.[0] || result.openfda?.brand_name?.[0] || null;
+    const genericName = result.generic_name?.[0] || result.openfda?.generic_name?.[0] || null;
+    const drugName = brandName || genericName;
     if (!drugName) return null;
 
     return {
-      objectType: "pill",
-      drugName,
+      objectType: 'pill',
+      drugName: genericName && brandName ? `${brandName} (${genericName})` : drugName,
       genericName,
       brandName,
-      confidence: "high",
-      copyableName: genericName ?? drugName,
-      source: "openfda",
-      additionalInfo: `Imprint: ${imprint}${color ? `, Color: ${color}` : ""}${shape ? `, Shape: ${shape}` : ""}`,
-      boundingBox: { position: "center", width: 0.5, height: 0.3 },
+      confidence: 'high',
+      copyableName: genericName || drugName,
+      source: 'openfda',
+      additionalInfo: `Imprint: ${imprint}${color ? `, Color: ${color}` : ''}${shape ? `, Shape: ${shape}` : ''}`,
+      boundingBox: { position: 'center', width: 0.5, height: 0.3 },
+    };
+  } catch (err) {
+    console.error('[openfda]', err);
+    return null;
+  }
+}
+
+async function lookupRxImage(
+  imprint: string,
+  color?: string,
+  shape?: string,
+): Promise<any | null> {
+  try {
+    const params = new URLSearchParams();
+    if (imprint) params.set('imprint', imprint);
+    if (color) params.set('color', color);
+    if (shape) params.set('shape', shape);
+    params.set('format', 'json');
+
+    const url = `https://rximage.nlm.nih.gov/api/rximage/1/rxbase?${params.toString()}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+
+    const data = await res.json() as any;
+    if (!data.nlmRxImages?.length) return null;
+
+    const pill = data.nlmRxImages[0];
+    const genericName = pill.name || null;
+    const ndc = pill.ndc11 || null;
+    if (!genericName) return null;
+
+    let brandName = null;
+    if (ndc) {
+      try {
+        const fdaRes = await fetch(
+          `https://api.fda.gov/drug/ndc.json?search=product_ndc:"${ndc}"&limit=1`,
+        );
+        const fdaData = await fdaRes.json() as any;
+        brandName = fdaData.results?.[0]?.brand_name?.[0] || null;
+      } catch {}
+    }
+
+    return {
+      objectType: 'pill',
+      drugName: brandName ? `${brandName} (${genericName})` : genericName,
+      genericName,
+      brandName,
+      confidence: 'high',
+      copyableName: genericName,
+      source: 'rximage',
+      additionalInfo: [
+        `Imprint: ${imprint}`,
+        pill.colorText ? `Color: ${pill.colorText}` : null,
+        pill.shapeText ? `Shape: ${pill.shapeText}` : null,
+        pill.dea_schedule_code ? `Schedule: ${pill.dea_schedule_code}` : null,
+      ].filter(Boolean).join(', '),
+      imageUrl: pill.imageUrl || null,
+      boundingBox: { position: 'center', width: 0.5, height: 0.3 },
+    };
+  } catch (err) {
+    console.error('[rximage]', err);
+    return null;
+  }
+}
+
+async function lookupByAppearance(
+  color: string,
+  shape: string,
+  apiKey?: string,
+): Promise<any | null> {
+  try {
+    const params = new URLSearchParams();
+    if (color) params.set('color', color);
+    if (shape) params.set('shape', shape);
+    params.set('format', 'json');
+    params.set('limit', '5');
+
+    const url = `https://rximage.nlm.nih.gov/api/rximage/1/rxbase?${params.toString()}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+
+    const data = await res.json() as any;
+    if (!data.nlmRxImages?.length) return null;
+
+    const pill = data.nlmRxImages[0];
+    const genericName = pill.name || null;
+    if (!genericName) return null;
+
+    return {
+      objectType: 'pill',
+      drugName: genericName,
+      genericName,
+      confidence: 'medium',
+      copyableName: genericName,
+      source: 'rximage_appearance',
+      additionalInfo: `Color: ${color}, Shape: ${shape}`,
+      boundingBox: { position: 'center', width: 0.5, height: 0.3 },
     };
   } catch {
     return null;
