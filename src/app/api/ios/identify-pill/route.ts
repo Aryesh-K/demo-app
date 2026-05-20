@@ -258,15 +258,20 @@ async function lookupPillboxDatabase(
     const pill = matches[0];
     if (!pill.medicine_name) return null;
 
-    const strengthMatch = pill.spl_strength?.match(/[\d.]+\s*(?:mg|mcg|g|ml|%|units)/i);
-    const strength = strengthMatch ? strengthMatch[0] : null;
+    const strengthMatch = pill.spl_strength?.match(/([\d.]+\s*(?:mg|mcg|g|ml|%|units|IU))/i);
+    const strength = strengthMatch ? strengthMatch[1].trim() : null;
+
+    const cleanMedicineName = pill.medicine_name
+      ?.replace(/;/g, '')
+      .trim()
+      .replace(/\b\w/g, (c: string) => c.toUpperCase()) || '';
 
     const ingredientMatch = pill.spl_ingredients?.match(/^([A-Z\s]+)\[/);
     const genericName = ingredientMatch
       ? ingredientMatch[1].trim().toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())
-      : pill.medicine_name;
+      : cleanMedicineName;
 
-    const drugName = strength ? `${pill.medicine_name} ${strength}` : pill.medicine_name;
+    const drugName = strength ? `${cleanMedicineName} ${strength}` : cleanMedicineName;
 
     const imprintDisplay = pill.splimprint
       ?.split(';')
@@ -298,10 +303,10 @@ async function lookupPillboxDatabase(
         : pill.dosage_form?.toLowerCase().includes('tablet') ? 'tablet'
         : 'pill',
       drugName,
-      genericName,
+      genericName: genericName || cleanMedicineName,
       brandName: null,
       confidence: 'high',
-      copyableName: genericName || pill.medicine_name,
+      copyableName: genericName || cleanMedicineName,
       source: 'nihpillbox',
       sourceLabel: 'NIH Pillbox Database',
       additionalInfo: details,
@@ -309,7 +314,13 @@ async function lookupPillboxDatabase(
       controlledNote: pill.dea_schedule_name,
       ndc: pill.ndc9,
       rxcui: pill.rxcui,
-      similarPills: similarPills || [],
+      similarPills: (similarPills || []).map(p => ({
+        ...p,
+        medicine_name: p.medicine_name
+          ?.replace(/;/g, '')
+          .trim()
+          .replace(/\b\w/g, (c: string) => c.toUpperCase()),
+      })),
       boundingBox: { position: 'center', width: 0.5, height: 0.3 },
     };
   } catch (err) {
