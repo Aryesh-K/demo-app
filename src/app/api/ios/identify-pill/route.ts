@@ -77,28 +77,26 @@ export async function POST(req: NextRequest) {
     if (imageBase64) {
       const visionResult = await analyzeWithVision(imageBase64, mediaType, groqApiKey ?? '');
 
-      // If vision found an imprint, cross-reference with FDA
-      if (visionResult.imprintFound && fdaApiKey) {
+      // Always run second identification step
+      const identified = await identifyFromClues(visionResult, groqApiKey ?? '');
+
+      // If FDA cross-reference found imprint
+      if (identified.imprintFound && fdaApiKey) {
         const fdaCross = await lookupByImprint(
-          visionResult.imprintFound as string,
+          identified.imprintFound,
           undefined,
           undefined,
           fdaApiKey,
         );
         if (fdaCross) {
           return NextResponse.json(
-            {
-              ...fdaCross,
-              additionalInfo: visionResult.additionalInfo,
-              boundingBox: visionResult.boundingBox,
-              source: "vision+fda",
-            },
+            { ...identified, ...fdaCross, source: 'vision+id+fda' },
             { headers: CORS_HEADERS },
           );
         }
       }
 
-      return NextResponse.json(visionResult, { headers: CORS_HEADERS });
+      return NextResponse.json(identified, { headers: CORS_HEADERS });
     }
 
     return NextResponse.json(
@@ -262,5 +260,121 @@ Return ONLY this JSON, no other text:
         height: 0.3
       }
     }
+  }
+}
+
+async function identifyFromClues(
+  visionRaw: any,
+  apiKey: string
+): Promise<any> {
+  const clues = []
+
+  if (visionRaw.additionalInfo) {
+    clues.push(`Visual description: ${visionRaw.additionalInfo}`)
+  }
+  if (visionRaw.imprintFound) {
+    clues.push(`Imprint code on pill: ${visionRaw.imprintFound}`)
+  }
+  if (visionRaw.drugName) {
+    clues.push(`Text found: ${visionRaw.drugName}`)
+  }
+  if (visionRaw.brandName) {
+    clues.push(`Brand text: ${visionRaw.brandName}`)
+  }
+  if (visionRaw.isForeign && visionRaw.additionalInfo) {
+    clues.push(`Foreign packaging text: ${visionRaw.additionalInfo}`)
+  }
+
+  if (clues.length === 0) return visionRaw
+
+  const res = await fetch(
+    'https://api.groq.com/openai/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 400,
+        temperature: 0.1,
+        messages: [
+          {
+            role: 'system',
+            content: `You are a pharmaceutical expert with complete knowledge of:
+- US brand and generic medications
+- Pill imprint codes and their drugs
+- Foreign medications and their US equivalents
+- Distinctive pill appearances by color/shape
+
+Your job: given clues about a medication, identify the actual drug name.
+
+Rules:
+- Imprint codes like L484 = Acetaminophen 500mg
+- Imprint codes like IP 190 = Naproxen 500mg
+- TEVA followed by numbers = identify by TEVA imprint database
+- Red/blue capsule with no imprint = likely Tylenol PM or Benadryl
+- If foreign text, translate AND identify US equivalent
+- Return the GENERIC name as copyableName, not brand
+- NEVER return imprint codes or foreign text as the drug name
+- If you cannot identify with confidence, say so`
+          },
+          {
+            role: 'user',
+            content: `Identify this medication from these clues:
+
+${clues.join('\n')}
+
+Return ONLY valid JSON:
+{
+  "drugName": "Brand Name GenericName Dose, e.g. Tylenol Acetaminophen 500mg",
+  "genericName": "generic name only, e.g. Acetaminophen",
+  "brandName": "brand name if known, e.g. Tylenol",
+  "copyableName": "single generic name for interaction checker, e.g. Acetaminophen",
+  "confidence": "high" | "medium" | "low",
+  "identificationMethod": "imprint" | "visual" | "text" | "foreign_translation",
+  "usEquivalent": "US equivalent if foreign medication",
+  "warning": "any important note or null"
+}`
+          }
+        ]
+      })
+    }
+  )
+
+  const data = await res.json() as any
+  const raw = data.choices?.[0]?.message?.content ?? ''
+
+  console.log('[identify-pill] ID from clues:', raw.slice(0, 300))
+
+  try {
+    const identified = JSON.parse(raw)
+    return {
+      ...visionRaw,
+      drugName: identified.drugName || visionRaw.drugName,
+      genericName: identified.genericName || visionRaw.genericName,
+      brandName: identified.brandName || visionRaw.brandName,
+      copyableName: identified.copyableName || visionRaw.copyableName,
+      confidence: identified.confidence || visionRaw.confidence,
+      usEquivalent: identified.usEquivalent,
+      warning: identified.warning || visionRaw.warning,
+      identificationMethod: identified.identificationMethod,
+    }
+  } catch {
+    const match = raw.match(/\{[\s\S]*\}/)
+    if (match) {
+      try {
+        const identified = JSON.parse(match[0])
+        return {
+          ...visionRaw,
+          drugName: identified.drugName || visionRaw.drugName,
+          genericName: identified.genericName,
+          copyableName: identified.copyableName || visionRaw.copyableName,
+          confidence: identified.confidence,
+        }
+      } catch {}
+    }
+    return visionRaw
   }
 }
