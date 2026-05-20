@@ -186,54 +186,74 @@ async function lookupPillboxDatabase(
   shape?: string,
 ): Promise<any | null> {
   try {
-    const cleanImprint = imprint.trim().toUpperCase().replace(/\s+/g, ' ');
+    const cleanImprint = imprint
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, '');
 
-    const { data: exactMatches } = await supabase
-      .from('pills')
-      .select(`
-        id,
-        medicine_name,
-        spl_strength,
-        spl_ingredients,
-        splimprint,
-        pillbox_imprint,
-        splcolor_text,
-        pillbox_color_text,
-        splshape_text,
-        pillbox_shape_text,
-        dosage_form,
-        dea_schedule_code,
-        dea_schedule_name,
-        ndc9,
-        rxcui,
-        author,
-        has_image,
-        file_name,
-        spp
-      `)
-      .eq('enabled', 'TRUE')
-      .or(`splimprint.ilike.%${cleanImprint}%,pillbox_imprint.ilike.%${cleanImprint}%`)
-      .limit(5);
+    const imprintParts = cleanImprint
+      .split(/[;,\s]+/)
+      .filter(p => p.length >= 2);
 
-    let matches = exactMatches || [];
+    console.log('[pillbox-db] Searching parts:', imprintParts);
+
+    const searchTerms = [cleanImprint, ...imprintParts];
+
+    let matches: any[] = [];
+
+    for (const term of searchTerms) {
+      const { data, error } = await supabase
+        .from('pills')
+        .select(`
+          id,
+          medicine_name,
+          spl_strength,
+          spl_ingredients,
+          splimprint,
+          pillbox_imprint,
+          splcolor_text,
+          pillbox_color_text,
+          splshape_text,
+          pillbox_shape_text,
+          dosage_form,
+          dea_schedule_code,
+          dea_schedule_name,
+          ndc9,
+          rxcui,
+          author,
+          has_image,
+          file_name,
+          spp
+        `)
+        .ilike('enabled', 'true')
+        .ilike('splimprint', `%${term}%`)
+        .limit(10);
+
+      console.log(`[pillbox-db] Term "${term}":`, data?.length, 'results', data?.[0]?.medicine_name);
+
+      if (data?.length) {
+        matches = data;
+        break;
+      }
+    }
+
+    if (!matches.length) return null;
 
     if (color && matches.length > 1) {
-      const colorFiltered = matches.filter(m =>
-        m.splcolor_text?.toLowerCase().includes(color.toLowerCase()) ||
-        m.pillbox_color_text?.toLowerCase().includes(color.toLowerCase()),
-      );
+      const colorFiltered = matches.filter(m => {
+        const pillColor = (m.splcolor_text || m.pillbox_color_text || '').toLowerCase();
+        return pillColor.includes(color.toLowerCase());
+      });
       if (colorFiltered.length > 0) matches = colorFiltered;
     }
 
     if (shape && matches.length > 1) {
-      const shapeFiltered = matches.filter(m =>
-        m.splshape_text?.toLowerCase().includes(shape.toLowerCase()) ||
-        m.pillbox_shape_text?.toLowerCase().includes(shape.toLowerCase()),
-      );
+      const shapeFiltered = matches.filter(m => {
+        const plShape = (m.splshape_text || m.pillbox_shape_text || '').toLowerCase();
+        return plShape.includes(shape.toLowerCase());
+      });
       if (shapeFiltered.length > 0) matches = shapeFiltered;
     }
-
-    if (!matches.length) return null;
 
     const pill = matches[0];
     if (!pill.medicine_name) return null;
@@ -248,8 +268,15 @@ async function lookupPillboxDatabase(
 
     const drugName = strength ? `${pill.medicine_name} ${strength}` : pill.medicine_name;
 
+    const imprintDisplay = pill.splimprint
+      ?.split(';')
+      .filter(Boolean)
+      .join(' / ') || imprint;
+
     const details = [
-      `Imprint: ${pill.splimprint || pill.pillbox_imprint}`,
+      pill.splimprint?.includes(';')
+        ? `Imprint: ${imprintDisplay} (two-sided)`
+        : `Imprint: ${imprintDisplay}`,
       pill.splcolor_text ? `Color: ${pill.splcolor_text}` : null,
       pill.splshape_text ? `Shape: ${pill.splshape_text}` : null,
       pill.dosage_form ? `Form: ${pill.dosage_form}` : null,
@@ -261,7 +288,7 @@ async function lookupPillboxDatabase(
     const { data: similarPills } = await supabase
       .from('pills')
       .select('id, medicine_name, spl_strength, splimprint, has_image, spp')
-      .eq('enabled', 'TRUE')
+      .ilike('enabled', 'true')
       .ilike('medicine_name', `%${pill.medicine_name}%`)
       .neq('id', pill.id)
       .limit(3);
@@ -469,6 +496,7 @@ INSTRUCTIONS:
 - If you see a brand name like Motrin, Tylenol, Advil, Benadryl etc, use it
 - If you see foreign text, translate it
 - Be CONFIDENT if you can clearly read text
+- For imprint codes: if you see a semicolon like 5892;V or L;484, report each part separately as well as together. The part before the semicolon is usually the most important identifier.
 
 Return ONLY this JSON, no other text:
 {
@@ -642,12 +670,17 @@ Return ONLY valid JSON:
     }
 
     if (merged.imprintFound) {
-      const dbResult = await lookupPillboxDatabase(merged.imprintFound)
-      if (dbResult) {
-        return {
-          ...dbResult,
-          boundingBox: merged.boundingBox,
-          additionalInfo: merged.additionalInfo + ' · ' + (dbResult.additionalInfo || ''),
+      const cleanedImprint = (merged.imprintFound as string)
+        .replace(/[^A-Z0-9]/gi, '')
+        .trim();
+      if (cleanedImprint.length >= 2) {
+        const dbResult = await lookupPillboxDatabase(cleanedImprint, undefined, undefined);
+        if (dbResult) {
+          return {
+            ...dbResult,
+            boundingBox: merged.boundingBox,
+            additionalInfo: merged.additionalInfo + ' · ' + (dbResult.additionalInfo || ''),
+          };
         }
       }
     }
