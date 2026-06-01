@@ -298,6 +298,14 @@ async function lookupPillboxDatabase(
       .neq('id', pill.id)
       .limit(3);
 
+    const isExactMatch = searchTerms.some(
+      t => pill.splimprint?.toUpperCase().replace(/\s+/g, '') === t,
+    );
+    const isControlledSubstance = !!(
+      pill.dea_schedule_code && pill.dea_schedule_code !== 'Not a controlled substance'
+    );
+    const confidence = (!isExactMatch && isControlledSubstance) ? 'medium' : 'high';
+
     return {
       objectType: pill.dosage_form?.toLowerCase().includes('capsule') ? 'capsule'
         : pill.dosage_form?.toLowerCase().includes('tablet') ? 'tablet'
@@ -305,7 +313,7 @@ async function lookupPillboxDatabase(
       drugName,
       genericName: genericName || cleanMedicineName,
       brandName: null,
-      confidence: 'high',
+      confidence,
       copyableName: genericName || cleanMedicineName,
       source: 'nihpillbox',
       sourceLabel: 'NIH Pillbox Database',
@@ -508,6 +516,7 @@ INSTRUCTIONS:
 - If you see foreign text, translate it
 - Be CONFIDENT if you can clearly read text
 - For imprint codes: if you see a semicolon like 5892;V or L;484, report each part separately as well as together. The part before the semicolon is usually the most important identifier.
+- IMPORTANT: For two-sided pills/capsules, read EACH side separately. Report them as side1;side2 format. Example: if one side says TY and other says 500, report imprintFound as 'TY;500'
 
 Return ONLY this JSON, no other text:
 {
@@ -572,6 +581,17 @@ Return ONLY this JSON, no other text:
   }
 }
 
+function validateDbResultAgainstVision(dbResult: any, visualDescription: string): boolean {
+  if (!visualDescription) return true;
+  const desc = visualDescription.toLowerCase();
+  const info = (dbResult.additionalInfo || '').toLowerCase();
+  const colorWords = ['white', 'red', 'blue', 'yellow', 'green', 'orange', 'pink', 'purple', 'brown', 'gray', 'grey', 'black', 'capsule', 'tablet', 'oval', 'round'];
+  const dbColors = colorWords.filter(w => info.includes(w));
+  if (dbColors.length === 0) return true;
+  const matches = dbColors.filter(w => desc.includes(w));
+  return matches.length > 0;
+}
+
 async function identifyFromClues(
   visionRaw: any,
   apiKey: string
@@ -592,6 +612,10 @@ async function identifyFromClues(
   }
   if (visionRaw.isForeign && visionRaw.additionalInfo) {
     clues.push(`Foreign packaging text: ${visionRaw.additionalInfo}`)
+  }
+
+  if (visionRaw.objectType === 'capsule' || visionRaw.objectType === 'pill') {
+    clues.push('Physical appearance must match identified drug — if identified drug does not match described color/shape, return confidence: low')
   }
 
   if (clues.length === 0) return visionRaw
@@ -686,7 +710,7 @@ Return ONLY valid JSON:
         .trim();
       if (cleanedImprint.length >= 2) {
         const dbResult = await lookupPillboxDatabase(cleanedImprint, undefined, undefined);
-        if (dbResult) {
+        if (dbResult && validateDbResultAgainstVision(dbResult, visionRaw.additionalInfo)) {
           return {
             ...dbResult,
             boundingBox: merged.boundingBox,
