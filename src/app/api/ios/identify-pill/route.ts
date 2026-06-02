@@ -83,63 +83,31 @@ export async function POST(req: NextRequest) {
     if (imageBase64) {
       const visionResult = await analyzeWithVision(imageBase64, mediaType, groqApiKey ?? '');
 
-      // Always run second identification step
-      const identified = await identifyFromClues(visionResult, groqApiKey ?? '');
+      // Try DB-first lookup using physical attributes
+      const dbResult = await lookupByPhysicalAttributes(
+        visionResult.shape,
+        visionResult.colors || [],
+        visionResult.form,
+        visionResult.imprintSide1,
+        visionResult.imprintSide2,
+        visionResult.imprintRaw,
+      );
 
-      // Strict confidence filter — never return a drug name unless confident
+      if (dbResult) {
+        return NextResponse.json(
+          { ...dbResult, additionalInfo: dbResult.additionalInfo, boundingBox: visionResult.boundingBox },
+          { headers: CORS_HEADERS },
+        );
+      }
+
+      // Fallback: use old identifyFromClues if DB lookup failed
+      const identified = await identifyFromClues(visionResult, groqApiKey ?? '');
       if (identified.confidence === 'low') {
         identified.drugName = null;
         identified.genericName = null;
         identified.brandName = null;
         identified.copyableName = null;
       }
-
-      // Reject copyableName if it looks like an imprint code rather than a real drug name
-      if (identified.copyableName) {
-        const copy = identified.copyableName as string;
-        const looksLikeImprint =
-          /^[A-Z0-9\s\-]{2,10}$/.test(copy) &&
-          !/^(Ibuprofen|Acetaminophen|Aspirin|Naproxen|Warfarin|Metformin|Atorvastatin|Lisinopril|Omeprazole|Sertraline|Fluoxetine|Amoxicillin|Azithromycin|Gabapentin|Tramadol|Alprazolam|Lorazepam|Diazepam|Clonazepam|Prednisone|Metoprolol|Amlodipine|Losartan|Furosemide|Levothyroxine|Simvastatin|Rosuvastatin|Pravastatin|Clopidogrel|Apixaban|Rivaroxaban|Escitalopram|Bupropion|Venlafaxine|Duloxetine|Quetiapine|Risperidone|Lamotrigine|Pregabalin|Codeine|Morphine|Oxycodone|Hydrocodone|Fentanyl|Doxycycline|Ciprofloxacin|Metronidazole|Clindamycin|Celecoxib|Meloxicam|Cyclosporine|Tacrolimus|Methotrexate|Insulin|Albuterol|Montelukast|Cetirizine|Loratadine|Diphenhydramine|Melatonin|Famotidine|Pantoprazole|Esomeprazole)/i.test(copy);
-
-        if (looksLikeImprint && identified.confidence !== 'high') {
-          identified.drugName = null;
-          identified.genericName = null;
-          identified.copyableName = null;
-          identified.confidence = 'low';
-        }
-      }
-
-      // If FDA cross-reference found imprint
-      if (identified.imprintFound && fdaApiKey) {
-        const fdaCross = await lookupByImprint(
-          identified.imprintFound,
-          undefined,
-          undefined,
-          fdaApiKey,
-        );
-        if (fdaCross) {
-          return NextResponse.json(
-            { ...identified, ...fdaCross, source: 'vision+id+fda' },
-            { headers: CORS_HEADERS },
-          );
-        }
-      }
-
-      // Appearance-based fallback for low-confidence results with no imprint
-      if (identified.confidence === 'low' && !identified.imprintFound) {
-        const appearanceResult = await lookupByAppearance(
-          identified.additionalInfo || '',
-          identified.additionalInfo || '',
-          fdaApiKey,
-        );
-        if (appearanceResult) {
-          return NextResponse.json(
-            { ...identified, ...appearanceResult, additionalInfo: identified.additionalInfo },
-            { headers: CORS_HEADERS },
-          );
-        }
-      }
-
       return NextResponse.json(identified, { headers: CORS_HEADERS });
     }
 
@@ -477,6 +445,124 @@ async function lookupByAppearance(
   }
 }
 
+async function lookupByPhysicalAttributes(
+  shape: string | null,
+  colors: string[],
+  form: string | null,
+  imprintSide1: string | null,
+  imprintSide2: string | null,
+  imprintRaw: string | null,
+): Promise<any | null> {
+  let query = supabase
+    .from('pills')
+    .select('id, medicine_name, spl_strength, spl_ingredients, splimprint, splcolor_text, splshape_text, dosage_form, dea_schedule_code, dea_schedule_name, ndc9, rxcui, has_image, spp')
+    .ilike('enabled', 'true')
+    .limit(200);
+
+  if (shape) query = query.ilike('splshape_text', `%${shape}%`);
+  if (form === 'capsule') query = query.ilike('dosage_form', '%capsule%');
+  else if (form === 'tablet') query = query.ilike('dosage_form', '%tablet%');
+
+  const { data: candidates } = await query;
+  if (!candidates?.length) return null;
+
+  let colorFiltered = candidates;
+  if (colors.length > 0) {
+    const filtered = candidates.filter(p => {
+      const pillColor = (p.splcolor_text || '').toLowerCase();
+      return colors.some(c => pillColor.includes(c.toLowerCase()));
+    });
+    if (filtered.length > 0) colorFiltered = filtered;
+  }
+
+  const imprintCandidates: { pill: any; matchScore: number }[] = [];
+  const searchTerms = [
+    imprintRaw,
+    imprintSide1,
+    imprintSide2,
+    imprintSide1 && imprintSide2 ? `${imprintSide1};${imprintSide2}` : null,
+    imprintSide2 && imprintSide1 ? `${imprintSide2};${imprintSide1}` : null,
+  ].filter(Boolean) as string[];
+
+  for (const pill of colorFiltered) {
+    const pillImprint = (pill.splimprint || '').toUpperCase();
+    for (const term of searchTerms) {
+      const t = term.toUpperCase().replace(/\s/g, '');
+      if (
+        pillImprint.includes(t) ||
+        pillImprint.replace(/;/g, '').includes(t) ||
+        t.includes(pillImprint.replace(/;/g, ''))
+      ) {
+        imprintCandidates.push({ pill, matchScore: t.length });
+        break;
+      }
+    }
+  }
+
+  const finalCandidates = imprintCandidates.length > 0
+    ? imprintCandidates.sort((a, b) => b.matchScore - a.matchScore).map(c => c.pill)
+    : colorFiltered.slice(0, 5);
+
+  const pill = finalCandidates[0];
+  if (!pill?.medicine_name) return null;
+
+  const hasImprintMatch = imprintCandidates.length > 0;
+  const isControlled = pill.dea_schedule_code && pill.dea_schedule_code !== 'Not a controlled substance';
+  const confidence = hasImprintMatch ? (isControlled ? 'medium' : 'high') : 'low';
+
+  if (isControlled && !hasImprintMatch) return null;
+
+  const strengthMatch = pill.spl_strength?.match(/([\d.]+\s*(?:mg|mcg|g|ml|%|units|IU))/i);
+  const strength = strengthMatch ? strengthMatch[1].trim() : null;
+  const cleanMedicineName = pill.medicine_name?.replace(/;/g, '').trim().replace(/\b\w/g, (c: string) => c.toUpperCase()) || '';
+  const ingredientMatch = pill.spl_ingredients?.match(/^([A-Z\s]+)\[/);
+  const genericName = ingredientMatch
+    ? ingredientMatch[1].trim().toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())
+    : cleanMedicineName;
+  const drugName = strength ? `${cleanMedicineName} ${strength}` : cleanMedicineName;
+  const imprintDisplay = pill.splimprint?.split(';').filter(Boolean).join(' / ') || imprintRaw || '';
+  const details = [
+    imprintDisplay ? `Imprint: ${imprintDisplay}` : null,
+    pill.splcolor_text ? `Color: ${pill.splcolor_text}` : null,
+    pill.splshape_text ? `Shape: ${pill.splshape_text}` : null,
+    pill.dosage_form ? `Form: ${pill.dosage_form}` : null,
+    isControlled ? `⚠️ ${pill.dea_schedule_name}` : null,
+    'Source: NIH Pillbox Database',
+  ].filter(Boolean).join(' · ');
+
+  const { data: similarPills } = await supabase
+    .from('pills')
+    .select('id, medicine_name, spl_strength, splimprint, has_image, spp')
+    .ilike('enabled', 'true')
+    .ilike('medicine_name', `%${pill.medicine_name}%`)
+    .neq('id', pill.id)
+    .limit(3);
+
+  return {
+    objectType: pill.dosage_form?.toLowerCase().includes('capsule') ? 'capsule'
+      : pill.dosage_form?.toLowerCase().includes('tablet') ? 'tablet'
+      : 'pill',
+    drugName,
+    genericName,
+    brandName: null,
+    confidence,
+    copyableName: genericName || cleanMedicineName,
+    source: 'nihpillbox',
+    sourceLabel: 'NIH Pillbox Database',
+    additionalInfo: details,
+    isControlled: !!isControlled,
+    controlledNote: pill.dea_schedule_name,
+    ndc: pill.ndc9,
+    rxcui: pill.rxcui,
+    imprintFound: imprintDisplay,
+    similarPills: (similarPills || []).map(p => ({
+      ...p,
+      medicine_name: p.medicine_name?.replace(/;/g, '').trim().replace(/\b\w/g, (c: string) => c.toUpperCase()),
+    })),
+    boundingBox: { position: 'center', width: 0.5, height: 0.3 },
+  };
+}
+
 async function analyzeWithVision(
   imageBase64: string,
   mediaType: string,
@@ -507,35 +593,32 @@ async function analyzeWithVision(
               },
               {
                 type: 'text',
-                text: `Read every word visible in this image. This is a medication identification task.
+                text: `You are helping identify a pill by its physical characteristics only. Do NOT try to identify the drug name.
 
-INSTRUCTIONS:
-- If you see ANY text on packaging, read it exactly
-- If you see a pill/tablet, describe its color, shape, and any imprint
-- If you see a brand name like Motrin, Tylenol, Advil, Benadryl etc, use it
-- If you see foreign text, translate it
-- Be CONFIDENT if you can clearly read text
-- For imprint codes: if you see a semicolon like 5892;V or L;484, report each part separately as well as together. The part before the semicolon is usually the most important identifier.
-- IMPORTANT: For two-sided pills/capsules, read EACH side separately. Report them as side1;side2 format. Example: if one side says TY and other says 500, report imprintFound as 'TY;500'
+Look at this image and return ONLY these physical attributes:
 
-Return ONLY this JSON, no other text:
+SHAPE — pick exactly one from this list:
+ROUND, OVAL, CAPSULE, TABLET, RECTANGLE, SQUARE, TRIANGLE, DIAMOND, PENTAGON (5 SIDED), HEXAGON (6 SIDED), OCTAGON (8 SIDED), DOUBLE CIRCLE, SEMI-CIRCLE, TRAPEZOID, CLOVER, TEAR, BULLET, FREEFORM
+
+COLOR — describe all colors you see on the pill (e.g. 'white', 'red and blue', 'yellow')
+
+FORM — is it a tablet (solid, one piece) or capsule (two-piece shell)?
+
+IMPRINT — read any text or numbers printed on the pill. Read each side separately. If two-sided report as SIDE1;SIDE2. If unclear report exactly what you can make out, even partial characters.
+
+Return ONLY this JSON:
 {
-  "objectType": "pill" | "tablet" | "capsule" | "bottle" | "container" | "foreign_medication" | "unrecognizable",
-  "drugName": "exact drug name and dose you can read, e.g. Motrin IB 200mg",
-  "genericName": "generic name if known, e.g. Ibuprofen",
-  "brandName": "brand name if visible",
-  "confidence": "high" if text clearly readable | "medium" if partially visible | "low" if unclear,
-  "copyableName": "single best name for interaction checking, e.g. Ibuprofen",
-  "imprintFound": "imprint code on pill if visible, e.g. L484",
-  "additionalInfo": "describe everything you see including colors, shapes, any text",
-  "boundingBox": {
-    "position": "center" | "top" | "bottom" | "left" | "right" | "top-left" | "top-right" | "bottom-left" | "bottom-right",
-    "width": 0.4,
-    "height": 0.4
-  },
+  "objectType": "pill" | "tablet" | "capsule" | "bottle" | "foreign_medication" | "unrecognizable",
+  "shape": "exact shape from list above",
+  "colors": ["color1", "color2"],
+  "form": "tablet" | "capsule",
+  "imprintSide1": "text on side 1 or null",
+  "imprintSide2": "text on side 2 or null",
+  "imprintRaw": "full imprint string e.g. TY;500",
+  "confidence": "high" | "medium" | "low",
+  "additionalInfo": "describe everything visible",
   "isForeign": false,
-  "foreignCountry": null,
-  "warning": null
+  "boundingBox": { "position": "center", "width": 0.4, "height": 0.4 }
 }`
               }
             ]
