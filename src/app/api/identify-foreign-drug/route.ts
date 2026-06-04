@@ -1,15 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface IdentifyRequest {
   foreignDrugName: string;
   countryName: string;
   language: string;
   purpose?: string;
-}
-
-interface GroqResponse {
-  choices?: { message?: { content?: string } }[];
-  error?: { message?: string };
 }
 
 async function tryRxNorm(drugName: string): Promise<string | null> {
@@ -32,9 +28,9 @@ async function tryRxNorm(drugName: string): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "GROQ_API_KEY is not set" }, { status: 503 });
+  const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!geminiApiKey) {
+    return NextResponse.json({ error: "GOOGLE_GENERATIVE_AI_API_KEY is not set" }, { status: 503 });
   }
 
   let body: IdentifyRequest;
@@ -88,42 +84,16 @@ export async function POST(req: NextRequest) {
     `}\n\n` +
     `For copyable_name: if you identified the drug with high or medium confidence, return only the clean generic or brand name (e.g. "simvastatin" or "ibuprofen"). If you found the INN but are unsure of the US equivalent, return the INN only (e.g. "benzocaine"). If you cannot identify the drug with any reasonable confidence, return null. NEVER put sentences, explanations, or phrases like "No direct US equivalent" in copyable_name — those belong in confidence_reason only.`;
 
-  let apiResponse: Response;
-  try {
-    apiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.2,
-        max_tokens: 700,
-      }),
-    });
-  } catch (err) {
-    console.error("[identify-foreign-drug] Network error:", err);
-    return NextResponse.json({ error: "Network error reaching Groq" }, { status: 502 });
-  }
-
-  const responseText = await apiResponse.text();
-  if (!apiResponse.ok) {
-    return NextResponse.json({ error: `Groq returned ${apiResponse.status}` }, { status: 502 });
-  }
-
-  let data: GroqResponse;
-  try {
-    data = JSON.parse(responseText) as GroqResponse;
-  } catch {
-    return NextResponse.json({ error: "Unparseable response from Groq" }, { status: 502 });
-  }
-
-  const content = data.choices?.[0]?.message?.content ?? "";
+  const genAI = new GoogleGenerativeAI(geminiApiKey);
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite-preview-06-17",
+    systemInstruction: systemPrompt,
+  });
+  const geminiResult = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: 700 },
+  });
+  const content = geminiResult.response.text();
   try {
     const cleaned = content.replace(/^```json?\s*/i, "").replace(/```\s*$/, "").trim();
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from '@supabase/supabase-js';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,10 +12,6 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST",
   "Access-Control-Allow-Headers": "Content-Type",
 };
-
-interface AnthropicResponse {
-  content?: { type: string; text?: string }[];
-}
 
 interface OpenFDAResult {
   results?: {
@@ -68,7 +65,7 @@ export async function POST(req: NextRequest) {
       shape,
     } = body;
 
-    const groqApiKey = process.env.GROQ_API_KEY;
+    const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     const fdaApiKey = process.env.OPENFDA_API_KEY;
 
     // PATH A — Imprint code lookup (most reliable for US pills)
@@ -81,7 +78,7 @@ export async function POST(req: NextRequest) {
 
     // PATH B — Vision AI analysis
     if (imageBase64) {
-      const visionResult = await analyzeWithVision(imageBase64, mediaType, groqApiKey ?? '');
+      const visionResult = await analyzeWithVision(imageBase64, mediaType, geminiApiKey ?? '');
 
       // Try DB-first lookup using physical attributes
       const dbResult = await lookupByPhysicalAttributes(
@@ -101,7 +98,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Fallback: use old identifyFromClues if DB lookup failed
-      const identified = await identifyFromClues(visionResult, groqApiKey ?? '');
+      const identified = await identifyFromClues(visionResult, geminiApiKey ?? '');
       if (identified.confidence === 'low') {
         identified.drugName = null;
         identified.genericName = null;
@@ -568,32 +565,7 @@ async function analyzeWithVision(
   mediaType: string,
   apiKey: string
 ): Promise<any> {
-  const res = await fetch(
-    'https://api.groq.com/openai/v1/chat/completions',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        max_tokens: 600,
-        temperature: 0.1,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mediaType};base64,${imageBase64}`,
-                  detail: 'high'
-                }
-              },
-              {
-                type: 'text',
-                text: `You are helping identify a pill by its physical characteristics only. Do NOT try to identify the drug name.
+  const visionPrompt = `You are helping identify a pill by its physical characteristics only. Do NOT try to identify the drug name.
 
 Look at this image and return ONLY these physical attributes:
 
@@ -619,26 +591,23 @@ Return ONLY this JSON:
   "additionalInfo": "describe everything visible",
   "isForeign": false,
   "boundingBox": { "position": "center", "width": 0.4, "height": 0.4 }
-}`
-              }
-            ]
-          }
-        ]
-      })
-    }
-  )
+}`;
 
-  const data = await res.json() as any
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const visionResult = await model.generateContent({
+    contents: [{
+      role: "user",
+      parts: [
+        { inlineData: { mimeType: mediaType, data: imageBase64 } },
+        { text: visionPrompt },
+      ],
+    }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 600 },
+  });
+  const raw = visionResult.response.text();
 
-  // Log the full Groq response for debugging
-  console.log('[identify-pill] Groq response:',
-    JSON.stringify(data).slice(0, 500))
-
-  const raw = data.choices?.[0]?.message
-    ?.content ?? ''
-
-  console.log('[identify-pill] Raw content:',
-    raw.slice(0, 300))
+  console.log('[identify-pill] Vision raw:', raw.slice(0, 300));
 
   try {
     return JSON.parse(raw)
@@ -703,22 +672,10 @@ async function identifyFromClues(
 
   if (clues.length === 0) return visionRaw
 
-  const res = await fetch(
-    'https://api.groq.com/openai/v1/chat/completions',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        max_tokens: 400,
-        temperature: 0.1,
-        messages: [
-          {
-            role: 'system',
-            content: `You are a pharmaceutical expert with complete knowledge of:
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash-lite-preview-06-17",
+    systemInstruction: `You are a pharmaceutical expert with complete knowledge of:
 - US brand and generic medications
 - Pill imprint codes and their drugs
 - Foreign medications and their US equivalents
@@ -743,11 +700,10 @@ STRICT RULES:
 - Foreign text must be fully translated before returning a drug name
 - TEVA codes: TEVA 3109 = Amoxicillin, TEVA 5728 = Atorvastatin, etc — only identify if you are certain of the mapping
 - If additionalInfo mentions a brand name clearly visible on packaging (Motrin, Tylenol, Advil, etc), that IS high confidence
-- Return drugName: null if unsure — it is better to say unknown than to be wrong`
-          },
-          {
-            role: 'user',
-            content: `Identify this medication from these clues:
+- Return drugName: null if unsure — it is better to say unknown than to be wrong`,
+  });
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: `Identify this medication from these clues:
 
 ${clues.join('\n')}
 
@@ -761,15 +717,10 @@ Return ONLY valid JSON:
   "identificationMethod": "imprint" | "visual" | "text" | "foreign_translation",
   "usEquivalent": "US equivalent if foreign medication",
   "warning": "any important note or null"
-}`
-          }
-        ]
-      })
-    }
-  )
-
-  const data = await res.json() as any
-  const raw = data.choices?.[0]?.message?.content ?? ''
+}` }] }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 400 },
+  });
+  const raw = result.response.text();
 
   console.log('[identify-pill] ID from clues:', raw.slice(0, 300))
 

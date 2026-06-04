@@ -1,14 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST",
   "Access-Control-Allow-Headers": "Content-Type",
 };
-
-interface GroqResponse {
-  choices?: { message?: { content?: string } }[];
-}
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: CORS_HEADERS });
@@ -30,61 +27,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
+    const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!geminiApiKey) {
       return NextResponse.json(
-        { error: "GROQ_API_KEY not set" },
+        { error: "GOOGLE_GENERATIVE_AI_API_KEY not set" },
         { status: 503, headers: CORS_HEADERS },
       );
     }
 
-    const groqRes = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          max_tokens: 300,
-          temperature: 0.2,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a pharmacology educator grading a student response. Return ONLY valid JSON, no other text.",
-            },
-            {
-              role: "user",
-              content: `Grade this response.
-Question: ${question}
-Grading criteria: ${gradingCriteria || "accuracy and clarity"}
-Student response: ${studentResponse}
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite-preview-06-17" });
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: `You are a pharmacology educator grading a student response. Return ONLY valid JSON, no other text.\n\nGrade this response.\nQuestion: ${question}\nGrading criteria: ${gradingCriteria || "accuracy and clarity"}\nStudent response: ${studentResponse}\n\nReturn JSON:\n{\n  "score": number 1-5,\n  "feedback": "2-3 sentence overall feedback",\n  "strengths": ["strength 1", "strength 2"],\n  "improvements": ["improvement 1"]\n}` }] }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 300 },
+    });
+    const raw = result.response.text();
 
-Return JSON:
-{
-  "score": number 1-5,
-  "feedback": "2-3 sentence overall feedback",
-  "strengths": ["strength 1", "strength 2"],
-  "improvements": ["improvement 1"]
-}`,
-            },
-          ],
-        }),
-      },
-    );
-
-    const data = (await groqRes.json()) as GroqResponse;
-    const raw = data.choices?.[0]?.message?.content ?? "";
-
-    let result: unknown;
+    let parsed: unknown;
     try {
-      result = JSON.parse(raw);
+      parsed = JSON.parse(raw);
     } catch {
       const match = raw.match(/\{[\s\S]*\}/);
-      result = match
+      parsed = match
         ? JSON.parse(match[0])
         : {
             score: 3,
@@ -94,7 +58,7 @@ Return JSON:
           };
     }
 
-    return NextResponse.json(result, { headers: CORS_HEADERS });
+    return NextResponse.json(parsed, { headers: CORS_HEADERS });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json(
