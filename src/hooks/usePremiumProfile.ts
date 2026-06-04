@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { decryptField } from "~/lib/encrypt";
 import { createClient } from "~/lib/supabase/client";
 
 export interface PremiumProfile {
@@ -29,11 +28,11 @@ export function usePremiumProfile() {
         .single();
       if (data) {
         setProfile({
-          age: decryptField(data.age ?? ""),
-          conditions: decryptField(data.conditions ?? ""),
-          medications: decryptField(data.medications ?? ""),
-          allergies: decryptField(data.allergies ?? ""),
-          notes: decryptField(data.notes ?? ""),
+          age: data.age ?? "",
+          conditions: data.conditions ?? "",
+          medications: data.medications ?? "",
+          allergies: data.allergies ?? "",
+          notes: data.notes ?? "",
         });
       }
       setLoading(false);

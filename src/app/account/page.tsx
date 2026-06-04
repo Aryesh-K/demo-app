@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { decryptField, encryptField } from "~/lib/encrypt";
 import { getProfile } from "~/lib/profile";
 import { createClient } from "~/lib/supabase/client";
 import { cn } from "~/lib/utils";
@@ -376,11 +375,11 @@ function PremiumInfoTab({
     const { error } = await supabase
       .from("profiles")
       .update({
-        age: encryptField(age) || null,
-        conditions: encryptField(conditions) || null,
-        medications: encryptField(medications) || null,
-        allergies: encryptField(allergies) || null,
-        notes: encryptField(notes) || null,
+        age: age || null,
+        conditions: conditions || null,
+        medications: medications || null,
+        allergies: allergies || null,
+        notes: notes || null,
       })
       .eq("id", user.id);
     if (error) console.error("[account] premium save error:", error);
@@ -566,11 +565,11 @@ export default function AccountPage() {
         // Decrypt sensitive fields before storing in state
         setProfile({
           ...profileData,
-          age: decryptField(profileData.age ?? ""),
-          conditions: decryptField(profileData.conditions ?? ""),
-          medications: decryptField(profileData.medications ?? ""),
-          allergies: decryptField(profileData.allergies ?? ""),
-          notes: decryptField(profileData.notes ?? ""),
+          age: profileData.age ?? "",
+          conditions: profileData.conditions ?? "",
+          medications: profileData.medications ?? "",
+          allergies: profileData.allergies ?? "",
+          notes: profileData.notes ?? "",
         });
       } else {
         setProfile({});
