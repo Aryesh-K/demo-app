@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite-preview-06-17" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: `You are a pharmacology educator grading a student response. Return ONLY valid JSON, no other text.\n\nGrade this response.\nQuestion: ${question}\nGrading criteria: ${gradingCriteria || "accuracy and clarity"}\nStudent response: ${studentResponse}\n\nReturn JSON:\n{\n  "score": number 1-5,\n  "feedback": "2-3 sentence overall feedback",\n  "strengths": ["strength 1", "strength 2"],\n  "improvements": ["improvement 1"]\n}` }] }],
       generationConfig: { temperature: 0.2, maxOutputTokens: 300 },

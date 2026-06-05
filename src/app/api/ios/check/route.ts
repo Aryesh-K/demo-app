@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite-preview-06-17" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: `You are a drug interaction checker. Return ONLY valid JSON, no other text:\n{"risk_level":"HIGH|MODERATE|LOW","interaction_type":"type label","simple_explanation":"2-3 sentences","mechanism":"1-2 sentences"}\n\nInteraction between: ${drug1} and ${drug2}` }] }],
       generationConfig: { temperature: 0.3, maxOutputTokens: 400 },

@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite-preview-06-17" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: `You are a pharmacology educator. Return ONLY valid JSON:\n{"simple_explanation":"3-4 sentences plain English","intermediate_explanation":"4-5 sentences technical","simple_key_terms":["term1","term2","term3"],"intermediate_key_terms":["term1","term2","term3"]}\n\nExplain the biology of: ${drug1} and ${drug2} interaction` }] }],
       generationConfig: { temperature: 0.3, maxOutputTokens: 500 },

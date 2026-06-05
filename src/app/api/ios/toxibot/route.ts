@@ -109,7 +109,7 @@ Always end responses that touch on personal health decisions with a brief discla
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-lite-preview-06-17",
+      model: "gemini-2.5-flash-lite",
       systemInstruction: systemPrompt,
     });
 
