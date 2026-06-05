@@ -114,7 +114,11 @@ Always end responses that touch on personal health decisions with a brief discla
     });
 
     // Convert messages to Gemini format
-    const geminiHistory = messages.slice(0, -1).map(m => ({
+    const historyMessages = messages.slice(0, -1);
+    // Gemini requires history to start with a user message — drop leading assistant messages
+    const firstUserIndex = historyMessages.findIndex(m => m.role === 'user');
+    const trimmedHistory = firstUserIndex > 0 ? historyMessages.slice(firstUserIndex) : historyMessages;
+    const geminiHistory = trimmedHistory.map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }));
