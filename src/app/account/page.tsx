@@ -339,24 +339,15 @@ function PremiumInfoTab({
 }) {
   const [age, setAge] = useState(profile.age ?? "");
   const [conditions, setConditions] = useState(profile.conditions ?? "");
-  const [medicationList, setMedicationList] = useState<
-    Array<{ name: string; dose: string }>
-  >(() => {
-    const str = profile.medications ?? "";
-    const loaded = str
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((s) => {
-        const parts = s.split(" ");
-        const last = parts[parts.length - 1] ?? "";
-        const hasDose = /\d/.test(last);
-        return hasDose
-          ? { name: parts.slice(0, -1).join(" "), dose: last }
-          : { name: s, dose: "" };
-      });
-    return loaded.length > 0 ? loaded : [{ name: "", dose: "" }];
-  });
+  const savedMedications = (() => {
+    try {
+      const parsed = JSON.parse(profile.medications ?? '[]')
+      if (Array.isArray(parsed)) return parsed
+      return []
+    } catch {
+      return []
+    }
+  })()
   const [allergies, setAllergies] = useState(profile.allergies ?? "");
   const [notes, setNotes] = useState(profile.notes ?? "");
   const [saving, setSaving] = useState(false);
@@ -365,19 +356,12 @@ function PremiumInfoTab({
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const medications = medicationList
-      .filter((m) => m.name.trim())
-      .map((m) =>
-        m.dose.trim() ? `${m.name.trim()} ${m.dose.trim()}` : m.name.trim(),
-      )
-      .join(", ");
     const supabase = createClient();
     const { error } = await supabase
       .from("profiles")
       .update({
         age: age || null,
         conditions: conditions || null,
-        medications: medications || null,
         allergies: allergies || null,
         notes: notes || null,
       })
@@ -385,7 +369,7 @@ function PremiumInfoTab({
     if (error) console.error("[account] premium save error:", error);
     setSaving(false);
     setSaved(true);
-    onSaved({ age, conditions, medications, allergies, notes });
+    onSaved({ age, conditions, allergies, notes });
     setTimeout(() => setSaved(false), 3000);
   }
 
@@ -422,56 +406,37 @@ function PremiumInfoTab({
 
       <div className="flex flex-col gap-2">
         <Label>Current Medications</Label>
-        {medicationList.map((med, idx) => (
-          <div key={idx} className="flex items-center gap-2">
-            <Input
-              value={med.name}
-              onChange={(e) =>
-                setMedicationList((prev) =>
-                  prev.map((m, i) =>
-                    i === idx ? { ...m, name: e.target.value } : m,
-                  ),
-                )
-              }
-              placeholder="e.g. Metformin"
-              className="flex-1"
-            />
-            <Input
-              value={med.dose}
-              onChange={(e) =>
-                setMedicationList((prev) =>
-                  prev.map((m, i) =>
-                    i === idx ? { ...m, dose: e.target.value } : m,
-                  ),
-                )
-              }
-              placeholder="e.g. 500mg"
-              className="w-28"
-            />
-            <button
-              type="button"
-              onClick={() =>
-                setMedicationList((prev) => prev.filter((_, i) => i !== idx))
-              }
-              disabled={medicationList.length === 1}
-              aria-label="Remove medication"
-              className="shrink-0 rounded px-1 text-sm text-destructive/70 transition-colors hover:text-destructive disabled:pointer-events-none disabled:opacity-30"
-            >
-              ×
-            </button>
+        {savedMedications.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No medications saved yet.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {savedMedications.map((med: any, idx: number) => (
+              <div key={idx} className="flex items-center justify-between rounded-lg border border-border bg-card/50 px-3 py-2.5">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium text-foreground">{med.name}</span>
+                  {med.dose && med.unit && (
+                    <span className="text-xs text-muted-foreground">{med.dose} {med.unit}</span>
+                  )}
+                  {med.scheduleType && (
+                    <span className="text-xs text-muted-foreground">
+                      {med.scheduleType === 'interval'
+                        ? `Every ${med.intervalHours} hours`
+                        : med.timesPerDay === 1 ? 'Once daily'
+                        : med.timesPerDay === 2 ? 'Twice daily'
+                        : 'Three times daily'}
+                    </span>
+                  )}
+                </div>
+                {med.reminderEnabled && (
+                  <span className="text-xs text-teal-400">🔔 Reminder on</span>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-        {medicationList.length < 10 && (
-          <button
-            type="button"
-            onClick={() =>
-              setMedicationList((prev) => [...prev, { name: "", dose: "" }])
-            }
-            className="w-fit rounded-md border border-teal-700 px-3 py-1.5 text-xs text-teal-400 transition-colors hover:bg-teal-950/40 hover:text-teal-300"
-          >
-            + Add Medication
-          </button>
         )}
+        <p className="text-xs text-muted-foreground italic">
+          To add, edit, or remove medications, use the ToxiClear AI iOS app.
+        </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
