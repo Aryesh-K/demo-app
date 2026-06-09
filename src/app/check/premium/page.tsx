@@ -802,6 +802,9 @@ export default function CheckPremium() {
   const [animFading, setAnimFading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const [drugInfos, setDrugInfos] = useState<Record<string, any>>({});
+  const [drugInfoLoading, setDrugInfoLoading] = useState(false);
+  const [expandedDrugInfo, setExpandedDrugInfo] = useState<Record<string, boolean>>({});
 
   function updateDrug(id: string, patch: Partial<Omit<DrugEntry, "id">>) {
     setDrugs((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
@@ -915,6 +918,8 @@ export default function CheckPremium() {
           const names = drugs.map((d) => d.name).filter(Boolean);
           return [...names, ...prev.filter((s) => !names.includes(s))].slice(0, 5);
         });
+        const filledNames = drugs.filter(d => d.name.trim()).map(d => d.name.trim());
+        fetchDrugInfos(filledNames);
         setAnimFading(true);
         setTimeout(() => {
           setAnimFading(false);
@@ -944,7 +949,33 @@ export default function CheckPremium() {
       });
   }
 
+  const fetchDrugInfos = async (drugNames: string[]) => {
+    setDrugInfoLoading(true);
+    try {
+      const res = await fetch("/api/ios/drug-info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ drugs: drugNames }),
+      });
+      const data = await res.json();
+      if (data.drugs) {
+        const map: Record<string, any> = {};
+        data.drugs.forEach((d: any) => { map[d.name.toLowerCase()] = d; });
+        setDrugInfos(map);
+        const expanded: Record<string, boolean> = {};
+        drugNames.forEach(name => { expanded[name.toLowerCase()] = false; });
+        setExpandedDrugInfo(expanded);
+      }
+    } catch (err) {
+      console.error("[drug-info]", err);
+    } finally {
+      setDrugInfoLoading(false);
+    }
+  };
+
   function handleNewCheck() {
+    setDrugInfos({});
+    setExpandedDrugInfo({});
     setDrugs([
       {
         id: "drug-1",
@@ -1118,6 +1149,64 @@ export default function CheckPremium() {
       </div>
 
       <div ref={resultsRef}>
+      {Object.keys(drugInfos).length > 0 && (
+        <div className="flex flex-col gap-3 mb-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Drug Information</p>
+          {drugs.filter(d => d.name.trim()).map(drug => {
+            const key = drug.name.trim().toLowerCase();
+            const info = drugInfos[key];
+            const isExpanded = expandedDrugInfo[key] ?? false;
+            if (!info) return null;
+            return (
+              <div key={drug.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setExpandedDrugInfo(prev => ({ ...prev, [key]: !prev[key] }))}
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground">{drug.name.trim()}</span>
+                    {info.active_ingredient && info.active_ingredient.toLowerCase() !== drug.name.trim().toLowerCase() && (
+                      <span className="text-xs text-muted-foreground">· {info.active_ingredient}</span>
+                    )}
+                  </div>
+                  <span className="text-muted-foreground text-xs">{isExpanded ? "▲" : "▼"}</span>
+                </button>
+                {isExpanded && (
+                  <div className="px-4 pb-4 flex flex-col gap-3 border-t border-border pt-3">
+                    {info.what_it_is && (
+                      <p className="text-sm text-muted-foreground leading-relaxed">{info.what_it_is}</p>
+                    )}
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {info.common_uses && (
+                        <div className="rounded-lg bg-muted/40 px-3 py-2">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Common Uses</p>
+                          <p className="text-sm text-foreground">{info.common_uses}</p>
+                        </div>
+                      )}
+                      {info.food_interactions && (
+                        <div className="rounded-lg bg-muted/40 px-3 py-2">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Food Interactions</p>
+                          <p className="text-sm text-foreground">{info.food_interactions}</p>
+                        </div>
+                      )}
+                      {info.timing_notes && (
+                        <div className="rounded-lg bg-muted/40 px-3 py-2 sm:col-span-2">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Timing Notes</p>
+                          <p className="text-sm text-foreground">{info.timing_notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {drugInfoLoading && (
+            <p className="text-xs text-muted-foreground animate-pulse">Loading drug information...</p>
+          )}
+        </div>
+      )}
       {/* Molecule animation — loops until API responds */}
       {phase === "animating" && <MoleculeAnimation fading={animFading} />}
 
