@@ -1053,7 +1053,7 @@ export default function CheckPremium() {
           {/* Submit */}
           <Button
             onClick={handleSubmit}
-            disabled={phase === "animating"}
+            disabled={phase === ("animating" as Phase)}
             className="w-full bg-yellow-700 text-white hover:bg-yellow-600 disabled:opacity-50"
             size="lg"
           >
