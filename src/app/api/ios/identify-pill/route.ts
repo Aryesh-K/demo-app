@@ -236,7 +236,8 @@ async function lookupPillboxDatabase(
       ? ingredientMatch[1].trim().toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())
       : cleanMedicineName;
 
-    const drugName = strength ? `${cleanMedicineName} ${strength}` : cleanMedicineName;
+    const displayName = genericName !== cleanMedicineName ? genericName : cleanMedicineName;
+    const drugName = strength ? `${displayName} ${strength}` : displayName;
 
     const imprintDisplay = pill.splimprint
       ?.split(';')
