@@ -645,7 +645,7 @@ export default function LearnFree() {
       {/* Submit */}
       <Button
         onClick={handleSubmit}
-        disabled={phase === "animating"}
+        disabled={phase === ("animating" as Phase)}
         className="w-full bg-teal-700 text-white hover:bg-teal-600 disabled:opacity-50"
         size="lg"
       >
