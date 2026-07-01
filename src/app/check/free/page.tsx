@@ -614,7 +614,7 @@ export default function CheckFree() {
       {/* Submit */}
       <Button
         onClick={handleSubmit}
-        disabled={phase === "animating"}
+        disabled={phase === ("animating" as Phase)}
         className="w-full bg-blue-900 text-white hover:bg-blue-800 disabled:opacity-50"
         size="lg"
       >
