@@ -13,7 +13,7 @@ export function ToxiLoader({ fading = false, label = "Analyzing…" }: ToxiLoade
   const INNER_R = 52;
   const DOT_R = 9;
   const NODE_R = 6;
-  const REVOLUTION_MS = 1800;
+  const REVOLUTION_MS = 900;
 
   // Outer hexagon points (flat-top)
   const outerPoints = Array.from({ length: 6 }, (_, i) => {
@@ -45,7 +45,27 @@ export function ToxiLoader({ fading = false, label = "Analyzing…" }: ToxiLoade
       if (!startTimeRef.current) startTimeRef.current = timestamp;
       const elapsed = timestamp - startTimeRef.current;
       const totalTime = REVOLUTION_MS * totalSegments;
-      const p = (elapsed % totalTime) / REVOLUTION_MS;
+      const rawProgress = (elapsed % totalTime) / REVOLUTION_MS;
+
+      // Apply gravity easing per segment
+      // Each segment gets eased individually based on its vertical position
+      const segIdx = Math.floor(rawProgress) % totalSegments;
+      const segFrac = rawProgress - Math.floor(rawProgress);
+
+      // Get the vertical midpoint of this segment (0 = top, 1 = bottom)
+      const seg = segments[segIdx];
+      const midY = ((seg.from.y + seg.to.y) / 2 - CENTER) / INNER_R;
+      // midY ranges from -1 (top) to +1 (bottom)
+
+      // Speed multiplier: faster at bottom (midY=1), slower at top (midY=-1)
+      // Use easeInOut but biased by vertical position
+      const gravityBias = (midY + 1) / 2; // 0 at top, 1 at bottom
+      // Ease: slow->fast when going down, fast->slow when going up
+      const easedFrac = gravityBias > 0.5
+        ? segFrac * segFrac * (3 - 2 * segFrac) * 1.2  // faster, ease-in
+        : segFrac * (2 - segFrac) * 0.85; // slower, ease-out
+
+      const p = Math.floor(rawProgress) + Math.min(easedFrac, 0.999);
       setProgress(p);
       animRef.current = requestAnimationFrame(animate);
     };
@@ -83,6 +103,7 @@ export function ToxiLoader({ fading = false, label = "Analyzing…" }: ToxiLoade
         </circle>
         {/* Glow */}
         <circle cx={dotX} cy={dotY} r={DOT_R + 6} fill="#EF9F27" fillOpacity="0.15" />
+        <circle cx={dotX} cy={dotY} r={DOT_R + 12} fill="#EF9F27" fillOpacity="0.07" />
       </svg>
       <p className="animate-pulse text-sm text-muted-foreground">{label}</p>
     </div>
