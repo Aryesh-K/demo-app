@@ -11,6 +11,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { isPrescriptionDrug } from "~/lib/prescribed-detection";
 import { createClient } from "~/lib/supabase/client";
+import { ToxiLoader } from "~/components/toxi-loader";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -47,91 +48,6 @@ interface ApiResult {
 
 const SELECT_CLS =
   "h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-2 py-1 text-sm text-foreground shadow-xs outline-none focus:border-ring dark:bg-input/30";
-
-// ─── Molecule animation ───────────────────────────────────────────────────────
-
-function MoleculeAnimation({ fading }: { fading: boolean }) {
-  const [animPhase, setAnimPhase] = useState(0);
-  const stateRef = useRef({
-    cancelled: false,
-    timers: [] as ReturnType<typeof setTimeout>[],
-  });
-
-  useEffect(() => {
-    const s = stateRef.current;
-    s.cancelled = false;
-
-    function runCycle() {
-      if (s.cancelled) return;
-      s.timers.forEach(clearTimeout);
-      s.timers = [];
-      setAnimPhase(0);
-      s.timers.push(
-        setTimeout(() => {
-          if (!s.cancelled) setAnimPhase(1);
-        }, 50),
-        setTimeout(() => {
-          if (!s.cancelled) setAnimPhase(2);
-        }, 600),
-        setTimeout(() => {
-          if (!s.cancelled) setAnimPhase(3);
-        }, 850),
-        setTimeout(() => runCycle(), 2200),
-      );
-    }
-
-    runCycle();
-    return () => {
-      s.cancelled = true;
-      s.timers.forEach(clearTimeout);
-    };
-  }, []);
-
-  const sliding = animPhase >= 1;
-  const bonded = animPhase >= 2;
-  const pulsing = animPhase >= 3;
-
-  return (
-    <div
-      className="flex flex-col items-center gap-4 py-8"
-      style={{ opacity: fading ? 0 : 1, transition: "opacity 0.3s ease" }}
-    >
-      <div className="flex items-center justify-center gap-5">
-        <div
-          className="size-11 rounded-full bg-blue-600/75"
-          style={{
-            opacity: sliding ? 1 : 0,
-            transform: sliding ? "translateX(0)" : "translateX(-52px)",
-            transition:
-              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
-            boxShadow: pulsing ? "0 0 28px 10px rgba(37,99,235,0.4)" : "none",
-          }}
-        />
-        <div
-          className="h-[3px] rounded-full bg-blue-400"
-          style={{
-            width: "2.25rem",
-            opacity: bonded ? 1 : 0,
-            transition: "opacity 0.25s ease",
-          }}
-        />
-        <div
-          className="size-11 rounded-full bg-green-500/75"
-          style={{
-            opacity: sliding ? 1 : 0,
-            transform: sliding ? "translateX(0)" : "translateX(52px)",
-            transition:
-              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
-            boxShadow: pulsing ? "0 0 28px 10px rgba(34,197,94,0.4)" : "none",
-          }}
-        />
-      </div>
-      <p className="animate-pulse text-sm text-muted-foreground">
-        Analyzing interaction…
-      </p>
-    </div>
-  );
-}
 
 // ─── Drug input group ─────────────────────────────────────────────────────────
 
@@ -443,6 +359,7 @@ export default function CheckFree() {
   }
 
   function handleSubmit() {
+    const submitTime = Date.now();
     const trimA = drugA.trim();
     const trimB = drugB.trim();
     if (!trimA || !trimB) {
@@ -531,12 +448,17 @@ export default function CheckFree() {
         setRecentSearches((prev) =>
           [drugA, drugB, ...prev.filter((s) => s !== drugA && s !== drugB)].slice(0, 5),
         );
-        setAnimFading(true);
+        const MIN_DISPLAY_MS = 2700; // 1.5 revolutions at 1800ms each
+        const elapsed2 = Date.now() - submitTime;
+        const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed2);
         setTimeout(() => {
-          setAnimFading(false);
-          setApiResult(data);
-          setPhase("results");
-        }, 300);
+          setAnimFading(true);
+          setTimeout(() => {
+            setAnimFading(false);
+            setApiResult(data);
+            setPhase("results");
+          }, 300);
+        }, remaining);
       })
       .catch((err: unknown) => {
         const isValidation =
@@ -594,6 +516,8 @@ export default function CheckFree() {
         </p>
       </div>
 
+      {phase === "idle" || phase === "premium" || phase === "error" ? (
+        <>
       {/* Drug inputs */}
       <div className="grid grid-cols-2 gap-6">
         <DrugInputGroup
@@ -696,10 +620,11 @@ export default function CheckFree() {
       >
         Check Interaction →
       </Button>
+        </>
+      ) : null}
 
       <div ref={resultsRef}>
-      {/* Molecule animation — loops until API responds */}
-      {phase === "animating" && <MoleculeAnimation fading={animFading} />}
+      {phase === "animating" && <ToxiLoader fading={animFading} label="Checking interaction…" />}
 
       {/* Premium upgrade wall */}
       {phase === "premium" && (

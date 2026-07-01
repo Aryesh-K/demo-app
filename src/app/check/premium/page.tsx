@@ -12,6 +12,7 @@ import { usePremiumProfile } from "~/hooks/usePremiumProfile";
 import { usePremiumGuard } from "~/hooks/usePremiumGuard";
 import { isPrescriptionDrug } from "~/lib/prescribed-detection";
 import { cn } from "~/lib/utils";
+import { ToxiLoader } from "~/components/toxi-loader";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -179,91 +180,6 @@ function buildHealthContext(profile: HealthProfile): string {
   if (profile.allergies.included && profile.allergies.value.trim())
     parts.push(`Allergies: ${profile.allergies.value.trim()}`);
   return parts.join(", ");
-}
-
-// ─── Molecule animation ───────────────────────────────────────────────────────
-
-function MoleculeAnimation({ fading }: { fading: boolean }) {
-  const [animPhase, setAnimPhase] = useState(0);
-  const stateRef = useRef({
-    cancelled: false,
-    timers: [] as ReturnType<typeof setTimeout>[],
-  });
-
-  useEffect(() => {
-    const s = stateRef.current;
-    s.cancelled = false;
-
-    function runCycle() {
-      if (s.cancelled) return;
-      s.timers.forEach(clearTimeout);
-      s.timers = [];
-      setAnimPhase(0);
-      s.timers.push(
-        setTimeout(() => {
-          if (!s.cancelled) setAnimPhase(1);
-        }, 50),
-        setTimeout(() => {
-          if (!s.cancelled) setAnimPhase(2);
-        }, 600),
-        setTimeout(() => {
-          if (!s.cancelled) setAnimPhase(3);
-        }, 850),
-        setTimeout(() => runCycle(), 2200),
-      );
-    }
-
-    runCycle();
-    return () => {
-      s.cancelled = true;
-      s.timers.forEach(clearTimeout);
-    };
-  }, []);
-
-  const sliding = animPhase >= 1;
-  const bonded = animPhase >= 2;
-  const pulsing = animPhase >= 3;
-
-  return (
-    <div
-      className="flex flex-col items-center gap-4 py-8"
-      style={{ opacity: fading ? 0 : 1, transition: "opacity 0.3s ease" }}
-    >
-      <div className="flex items-center justify-center gap-5">
-        <div
-          className="size-11 rounded-full bg-yellow-600/75"
-          style={{
-            opacity: sliding ? 1 : 0,
-            transform: sliding ? "translateX(0)" : "translateX(-52px)",
-            transition:
-              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
-            boxShadow: pulsing ? "0 0 28px 10px rgba(202,138,4,0.4)" : "none",
-          }}
-        />
-        <div
-          className="h-[3px] rounded-full bg-yellow-400"
-          style={{
-            width: "2.25rem",
-            opacity: bonded ? 1 : 0,
-            transition: "opacity 0.25s ease",
-          }}
-        />
-        <div
-          className="size-11 rounded-full bg-amber-500/75"
-          style={{
-            opacity: sliding ? 1 : 0,
-            transform: sliding ? "translateX(0)" : "translateX(52px)",
-            transition:
-              "opacity 0.5s ease-out, transform 0.5s ease-out, box-shadow 0.3s ease",
-            boxShadow: pulsing ? "0 0 28px 10px rgba(245,158,11,0.4)" : "none",
-          }}
-        />
-      </div>
-      <p className="animate-pulse text-sm text-muted-foreground">
-        Analyzing interactions…
-      </p>
-    </div>
-  );
 }
 
 // ─── Drug card ────────────────────────────────────────────────────────────────
@@ -837,6 +753,7 @@ export default function CheckPremium() {
   }
 
   function handleSubmit() {
+    const submitTime = Date.now();
     const filledDrugs = drugs.filter((d) => d.name.trim().length > 0);
     if (filledDrugs.length < 2) {
       setValidationError(
@@ -920,12 +837,17 @@ export default function CheckPremium() {
         });
         const filledNames = drugs.filter(d => d.name.trim()).map(d => d.name.trim());
         fetchDrugInfos(filledNames);
-        setAnimFading(true);
+        const MIN_DISPLAY_MS = 2700; // 1.5 revolutions at 1800ms each
+        const elapsed2 = Date.now() - submitTime;
+        const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed2);
         setTimeout(() => {
-          setAnimFading(false);
-          setApiResult(data);
-          setPhase("results");
-        }, 300);
+          setAnimFading(true);
+          setTimeout(() => {
+            setAnimFading(false);
+            setApiResult(data);
+            setPhase("results");
+          }, 300);
+        }, remaining);
       })
       .catch((err: unknown) => {
         const isValidation =
@@ -1030,6 +952,8 @@ export default function CheckPremium() {
         </p>
       </div>
 
+      {phase === "idle" || phase === "error" ? (
+        <>
       {/* Two-column input area */}
       <div
         className="items-start"
@@ -1147,6 +1071,8 @@ export default function CheckPremium() {
           />
         </div>
       </div>
+        </>
+      ) : null}
 
       <div ref={resultsRef}>
       {Object.keys(drugInfos).length > 0 && (
@@ -1207,8 +1133,7 @@ export default function CheckPremium() {
           )}
         </div>
       )}
-      {/* Molecule animation — loops until API responds */}
-      {phase === "animating" && <MoleculeAnimation fading={animFading} />}
+      {phase === "animating" && <ToxiLoader fading={animFading} label="Analyzing interactions…" />}
 
       {/* Error */}
       {phase === "error" && (
